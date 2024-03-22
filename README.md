@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
-# terraform-azurerm-avm-template
+# terraform-azurerm-avm-res-recoveryservices-vault
 
-This is a template repo for Terraform Azure Verified Modules.
+This is avm-res-recoveryservices-vault repo for Terraform Azure Verified Modules.
 
 Things to do:
 

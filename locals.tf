@@ -16,4 +16,7 @@ locals {
       }
     ]
   ]) : "${assoc.pe_key}-${assoc.asg_key}" => assoc }
+
+  location = var.location != null ? var.location : data.azurerm_resource_group.parent.location
+
 }
