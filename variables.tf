@@ -34,11 +34,6 @@ variable "location" {
 
 }
 
-variable "identity" {
-  type        = string
-  description = "(option) Specify Identity Setting. 'SystemAssigned', 'UserAssigned', 'SystemAssigned,UserAssigned' "
-  default     = null
-}
 variable "sku" {
   type        = string
   description = "(required) Specify SKU for Azure Recovery Service Vaults. Standard, RS0 (default)"
