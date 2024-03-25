@@ -48,10 +48,20 @@ resource "azurerm_resource_group" "this" {
 # Leaving location as `null` will cause the module to use the resource group location
 # with a data source.
 module "test" {
-  source = "../../"
+  source = "../.."
   # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
   # ...
   enable_telemetry    = var.enable_telemetry # see variables.tf
-  name                = ""                   # TODO update with module.naming.<RESOURCE_TYPE>.name_unique
+  name                = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"                 # TODO update with module.naming.<RESOURCE_TYPE>.name_unique
   resource_group_name = azurerm_resource_group.this.name
+  location = azurerm_resource_group.this.location
+  cross_region_restore_enabled                   = false
+  alerts_for_all_job_failures_enabled            = true
+  alerts_for_critical_operation_failures_enabled = true
+  classic_vmware_replication_enabled             = false
+  public_network_access_enabled                  = false
+  storage_mode_type                              = "GeoRedundant"
+  sku                                            = "RS0"
+  customer_managed_key = null
+
 }
