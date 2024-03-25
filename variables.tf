@@ -183,16 +183,6 @@ variable "lock" {
   }
 }
 
-# tflint-ignore: terraform_unused_declarations
-variable "managed_identities" {
-  type = object({
-    system_assigned            = optional(bool, false)
-    user_assigned_resource_ids = optional(set(string), [])
-  })
-  description = "Managed identities to be created for the resource."
-  default     = {}
-}
-
 variable "private_endpoints" {
   type = map(object({
     name = optional(string, null)
