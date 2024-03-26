@@ -1,4 +1,4 @@
-# TODO: insert resources here.
+
 data "azurerm_resource_group" "parent" {
   name  = var.resource_group_name
 }
@@ -48,8 +48,6 @@ resource "azurerm_recovery_services_vault" "this" {
 
 }
 
-
-# required AVM resources interfaces
 resource "azurerm_management_lock" "this" {
   count      = var.lock.kind != "None" ? 1 : 0
   name       = coalesce(var.lock.name, "lock-${var.name}")

@@ -60,15 +60,17 @@ module "recovery_services_vault" {
   sku                                            = "RS0"
   customer_managed_key = null
 
-    #create a private endpoint for each endpoint type
+  #create a private endpoint for each endpoint type
   private_endpoints = {
     for endpoint in local.endpoints :
     endpoint => {
+
       # the name must be set to avoid conflicting resources.
       name                          = "pe-${endpoint}-${local.vault_name}"
       subnet_resource_id            = azurerm_subnet.private.id
       subresource_name              = [endpoint]
       private_dns_zone_resource_ids = [azurerm_private_dns_zone.this[endpoint].id]
+
       # these are optional but illustrate making well-aligned service connection & NIC names.
       private_service_connection_name = "psc-${endpoint}-${local.vault_name}"
       network_interface_name          = "nic-pe-${endpoint}-${local.vault_name}"
