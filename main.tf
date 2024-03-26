@@ -26,12 +26,12 @@ resource "azurerm_recovery_services_vault" "this" {
   }
 
   dynamic "encryption" {
-    for_each = var.customer_managed_key != null ? var.customer_managed_key : {}
+    for_each = length(var.customer_managed_key) > 0 ? {this = var.customer_managed_key} : {}
     content {
-      key_id                            = customer_managed_key.value.key_vault_resource_id != null ? customer_managed_key.value.key_vault_resource_id : null
-      infrastructure_encryption_enabled = customer_managed_key.value.key_vault_resource_id != null ? true : null
-      user_assigned_identity_id         = customer_managed_key.value.user_assigned_identity_id                        
-      use_system_assigned_identity      = customer_managed_key.value.user_assigned_identity_id != null ? false : true 
+      key_id                            = encryption.value.key_vault_resource_id != null ? encryption.value.key_vault_resource_id : null
+      infrastructure_encryption_enabled = encryption.value.key_vault_resource_id != null ? true : null
+      user_assigned_identity_id         = encryption.value.user_assigned_identity_resource_id != null ? encryption.value.user_assigned_identity_resource_id : null
+      use_system_assigned_identity      = encryption.value.user_assigned_identity_resource_id != null ? false : true 
     }
   }
   monitoring {

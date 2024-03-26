@@ -103,7 +103,7 @@ variable "customer_managed_key" {
     key_version                        = optional(string, null)
     user_assigned_identity_resource_id = optional(string, null)
   })
-  default     = null
+  default     = {}
   description = <<DESCRIPTION
     Defines a customer managed key to use for encryption.
 
