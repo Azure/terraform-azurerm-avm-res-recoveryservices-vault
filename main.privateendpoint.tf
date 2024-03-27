@@ -1,3 +1,4 @@
+# Privae endpoint resource and application security group association
 resource "azurerm_private_endpoint" "this" {
   for_each = var.private_endpoints
 
