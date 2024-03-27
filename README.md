@@ -9,6 +9,11 @@ This terraform module is designed to deploy Azure Recovery Services Vault. It ha
 * Supports enabling private endpoints for backups and site recovery.
 * Support customer's managed key for encryption (cmk)
 
+## Limitations and notes
+
+* Feature in preview: Using `user-assigned managed identities` still in preview. [reference](https://learn.microsoft.com/en-us/azure/backup/encryption-at-rest-with-cmk?tabs=portal#assign-a-user-assigned-managed-identity-to-the-vault-in-preview)
+  * Vaults that use `user-assigned managed identities` for CMK encryption don't support the use of private endpoints for backup. [reference](https://learn.microsoft.com/en-us/azure/backup/
+
 <!-- markdownlint-disable MD033 -->
 ## Requirements
 
