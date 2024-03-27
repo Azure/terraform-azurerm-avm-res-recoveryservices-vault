@@ -24,7 +24,7 @@ resource "azurerm_resource_group" "this" {
 }
 
 locals {
-  test_regions = ["eastus", "eastus2", "westu2", "westus3"]
+  test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
   vault_name = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
   rg_name = "${module.naming.resource_group.slug}-${module.azure_region.location_short}-app1-001"
 }
@@ -58,7 +58,7 @@ module "recovery_services_vault" {
   public_network_access_enabled                  = false
   storage_mode_type                              = "GeoRedundant"
   sku                                            = "RS0"
-  customer_managed_key = null
+  customer_managed_key = {}
 
   #create a private endpoint for each endpoint type
   private_endpoints = {

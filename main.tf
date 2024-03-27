@@ -27,7 +27,7 @@ resource "azurerm_recovery_services_vault" "this" {
   }
 
   dynamic "encryption" {
-    for_each = length(var.customer_managed_key) > 0 ? { this = var.customer_managed_key } : {}
+    for_each = (var.customer_managed_key["customer_managed_key_id"] != null) && (var.customer_managed_key != null && length(var.customer_managed_key) > 0) ? { this = var.customer_managed_key } : {}
 
     content {
       key_id                            = encryption.value.customer_managed_key_id != null ? encryption.value.customer_managed_key_id : null
