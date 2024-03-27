@@ -54,13 +54,11 @@ variable "storage_mode_type" {
   validation {
     error_message = "Storage Type error: Must be one of the follwoing. GeoRedundant, LocallyRedundant and ZoneRedundant. Defaults to GeoRedundant"
     condition     = can(regex("^[GeoRedundant]|[LocallyRedundant]|[ZoneRedundant]$", var.storage_mode_type))
-
   }
 }
 variable "cross_region_restore_enabled" {
   type        = bool
   description = "(optional) Specify Cross Region Restore. true, false (default). var.storage_mode_type must GeoRedundant when setting to true"
-
 }
 variable "soft_delete_enabled" {
   type        = bool

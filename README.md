@@ -46,6 +46,12 @@ The following resources are used by this module:
 
 The following input variables are required:
 
+### <a name="input_cross_region_restore_enabled"></a> [cross\_region\_restore\_enabled](#input\_cross\_region\_restore\_enabled)
+
+Description: (optional) Specify Cross Region Restore. true, false (default). var.storage\_mode\_type must GeoRedundant when setting to true
+
+Type: `bool`
+
 ### <a name="input_location"></a> [location](#input\_location)
 
 Description: Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location.
@@ -73,12 +79,6 @@ Type: `string`
 ## Optional Inputs
 
 The following input variables are optional (have default values):
-
-### <a name="input_cross_region_restore_enabled"></a> [cross\_region\_restore\_enabled](#input\_cross\_region\_restore\_enabled)
-
-Description: (optional) Specify Cross Region Restore. true, false (default). var.storage\_mode\_type must GeoRedundant when setting to true
-
-Type: `bool`
 
 ### <a name="input_alerts_for_all_job_failures_enabled"></a> [alerts\_for\_all\_job\_failures\_enabled](#input\_alerts\_for\_all\_job\_failures\_enabled)
 
