@@ -89,15 +89,25 @@ variable "managed_identities" {
     system_assigned            = optional(bool, false)
     user_assigned_resource_ids = optional(set(string), [])
   })
-  default     = {}
-  description = "Managed identities to be created for the resource."
-}
+  default = {}
 
+  description = <<DESCRIPTION
+Managed identities to be created for the resource
+
+Example Input:
+
+```terraform
+managed_identities = {
+    system_assigned = "false"
+    user_assigned_resource_ids = ["user_assigned_resource_ids", "user_assigned_resource_ids]
+  }
+}
+```
+DESCRIPTION
+}
 variable "customer_managed_key" {
   type = object({
-    key_vault_resource_id              = optional(string, null)
-    key_name                           = optional(string, null)
-    key_version                        = optional(string, null)
+    customer_managed_key_id            = optional(string, null)
     user_assigned_identity_resource_id = optional(string, null)
   })
   default     = {}
@@ -105,22 +115,19 @@ variable "customer_managed_key" {
     Defines a customer managed key to use for encryption.
 
     object({
-      key_vault_resource_id              = (Required) - The full Azure Resource ID of the key_vault where the customer managed key will be referenced from.
-      key_name                           = (Required) - The key name for the customer managed key in the key vault.
-      key_version                        = (Optional) - The version of the key to use
-      user_assigned_identity_resource_id = (Optional) - The user assigned identity to use when access the key vault
+      customer_managed_key_id              = (Required) - The full Azure Resource ID of the key_vault where the customer managed key will be referenced from.
+      user_assigned_identity_resource_id = (Optional) - The user assigned identity to use when access the encryption key saved in a key vault
     })
 
     Example Inputs:
     ```terraform
     customer_managed_key = {
-      key_vault_resource_id = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test-resource-group/providers/Microsoft.KeyVault/vaults/example-key-vault"
-      key_name              = "sample-customer-key"
+      customer_managed_key_id = ""
+      user_assigned_identity_resource_id              = ""
     }
     ```
    DESCRIPTION
 }
-
 variable "diagnostic_settings" {
   type = map(object({
     name                                     = optional(string, null)
