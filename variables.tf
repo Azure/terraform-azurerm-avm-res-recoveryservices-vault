@@ -9,6 +9,7 @@ If it is set to false, then no telemetry will be collected.
 DESCRIPTION
 }
 
+# This is required for most resource modules
 variable "name" {
   type        = string
   description = "Name: specify a name for the Azure Recovery Services Vault. Upper/Lower case letters, numbers and hyphens. number of characters 2-50"
@@ -21,19 +22,16 @@ variable "name" {
 
   }
 }
-# This is required for most resource modules
 variable "resource_group_name" {
   type        = string
   description = "The resource group where the resources will be deployed."
 
 }
-
 variable "location" {
   type        = string
   description = "Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location."
 
 }
-
 variable "sku" {
   type        = string
   description = "(required) Specify SKU for Azure Recovery Service Vaults. Standard, RS0 (default)"
@@ -61,7 +59,7 @@ variable "storage_mode_type" {
 }
 variable "cross_region_restore_enabled" {
   type        = bool
-  description = "(Optional) Specify Cross Region Restore. true, false (default). var.storage_mode_type must GeoRedundant when setting to true"
+  description = "(optional) Specify Cross Region Restore. true, false (default). var.storage_mode_type must GeoRedundant when setting to true"
 
 }
 variable "soft_delete_enabled" {
@@ -172,7 +170,6 @@ A map of diagnostic settings to create on the Key Vault. The map key is delibera
 - `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
 DESCRIPTION
 }
-
 variable "lock" {
   type = object({
     name = optional(string, null)
@@ -186,7 +183,6 @@ variable "lock" {
     error_message = "The lock level must be one of: 'None', 'CanNotDelete', or 'ReadOnly'."
   }
 }
-
 variable "private_endpoints" {
   type = map(object({
     name = optional(string, null)
@@ -240,8 +236,6 @@ A map of private endpoints to create on this resource. The map key is deliberate
   - `private_ip_address` - The private IP address of the IP configuration.
 DESCRIPTION
 }
-
-
 variable "role_assignments" {
   type = map(object({
     role_definition_id_or_name             = string
@@ -266,7 +260,6 @@ A map of role assignments to create on this resource. The map key is deliberatel
 > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
 DESCRIPTION
 }
-
 variable "tags" {
   type        = map(any)
   description = "The map of tags to be applied to the resource"
