@@ -119,17 +119,15 @@ Default: `null`
 Description:     Defines a customer managed key to use for encryption.
 
     object({  
-      key\_vault\_resource\_id              = (Required) - The full Azure Resource ID of the key\_vault where the customer managed key will be referenced from.  
-      key\_name                           = (Required) - The key name for the customer managed key in the key vault.  
-      key\_version                        = (Optional) - The version of the key to use  
-      user\_assigned\_identity\_resource\_id = (Optional) - The user assigned identity to use when access the key vault
+      customer\_managed\_key\_id              = (Required) - The full Azure Resource ID of the key\_vault where the customer managed key will be referenced from.  
+      user\_assigned\_identity\_resource\_id = (Optional) - The user assigned identity to use when access the encryption key saved in a key vault
     })
 
     Example Inputs:
     ```terraform
     customer_managed_key = {
-      customer_managed_key_id = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/test-resource-group/providers/Microsoft.KeyVault/vaults/example-key-vault"
-      key_name              = "sample-customer-key"
+      customer_managed_key_id = ""
+      user_assigned_identity_resource_id              = ""
     }
     
 ```
@@ -138,9 +136,7 @@ Type:
 
 ```hcl
 object({
-    customer_managed_key_id              = optional(string, null)
-    key_name                           = optional(string, null)
-    key_version                        = optional(string, null)
+    customer_managed_key_id            = optional(string, null)
     user_assigned_identity_resource_id = optional(string, null)
   })
 ```
@@ -216,7 +212,17 @@ Default: `{}`
 
 ### <a name="input_managed_identities"></a> [managed\_identities](#input\_managed\_identities)
 
-Description: Managed identities to be created for the resource.
+Description: Managed identities to be created for the resource
+
+Example Input:
+
+```terraform
+managed_identities = {
+    system_assigned = "false"
+    user_assigned_resource_ids = ["user_assigned_resource_ids", "user_assigned_resource_ids]
+  }
+}
+```
 
 Type:
 
