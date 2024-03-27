@@ -25,8 +25,8 @@ resource "azurerm_resource_group" "this" {
 
 locals {
   test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
-  vault_name = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
-  rg_name = "${module.naming.resource_group.slug}-${module.azure_region.location_short}-app1-001"
+  vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
+  rg_name      = "${module.naming.resource_group.slug}-${module.azure_region.location_short}-app1-001"
 }
 
 module "regions" {
@@ -35,14 +35,14 @@ module "regions" {
 }
 
 module "azure_region" {
-  source  = "claranet/regions/azurerm"
+  source = "claranet/regions/azurerm"
   # version = "x.x.x"
 
   azure_region = "westus3"
 }
 
 locals {
-  endpoints = toset(["AzureBackup", "AzureSiteRecovery",])
+  endpoints           = toset(["AzureBackup", "AzureSiteRecovery", ])
   endpoints_dns_zones = toset(["AzureBackup", "AzureSiteRecovery", "blob", "queue"])
 }
 module "recovery_services_vault" {
@@ -64,17 +64,17 @@ module "recovery_services_vault" {
     user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
   }
   customer_managed_key = {
-    customer_managed_key_id              = azurerm_key_vault_key.this.id
+    customer_managed_key_id            = azurerm_key_vault_key.this.id
     user_assigned_identity_resource_id = azurerm_user_assigned_identity.this_identity.id
   }
 
   tags = {
-        env   = "Prod"
-        owner = "ABREG0"
-        dept  = "IT"
-      }
+    env   = "Prod"
+    owner = "ABREG0"
+    dept  = "IT"
+  }
 
-  depends_on = [ azurerm_key_vault_key.this, module.avm_res_keyvault_vault, ]
+  depends_on = [azurerm_key_vault_key.this, module.avm_res_keyvault_vault, ]
 }
 
 data "azurerm_client_config" "current" {}
