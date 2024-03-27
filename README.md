@@ -116,8 +116,8 @@ Description:     Defines a customer managed key to use for encryption.
     Example Inputs:
     ```terraform
     customer_managed_key = {
-      customer_managed_key_id = ""
-      user_assigned_identity_resource_id              = ""
+      customer_managed_key_id             = "https://kv-giuh.vault.azure.net/keys/kvk-giuh/0127xxxxx4fdd94cdbd26481a1985"
+      user_assigned_identity_resource_id  = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uai-name"
     }
     
 ```
