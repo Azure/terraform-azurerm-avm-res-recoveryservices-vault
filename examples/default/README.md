@@ -32,12 +32,11 @@ resource "azurerm_resource_group" "this" {
 locals {
   test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
-  rg_name      = "${module.naming.resource_group.slug}-${module.azure_region.location_short}-app1-001"
 }
 
 module "regions" {
   source = "Azure/regions/azurerm"
-  # version = "<version>" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
+  version = "0.5.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
 }
 
 module "azure_region" {
@@ -71,8 +70,6 @@ module "recovery_services_vault" {
   }
 
 }
-
-data "azurerm_client_config" "current" {}
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -82,13 +79,9 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.3.0)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (>= 1.7.0)
-
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
-
-- <a name="requirement_time"></a> [time](#requirement\_time) (>= 0.7.0)
 
 ## Providers
 
@@ -105,7 +98,6 @@ The following resources are used by this module:
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_string.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) (resource)
-- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -118,15 +110,7 @@ No optional inputs.
 
 ## Outputs
 
-The following outputs are exported:
-
-### <a name="output_resource_group_location"></a> [resource\_group\_location](#output\_resource\_group\_location)
-
-Description: n/a
-
-### <a name="output_short_region"></a> [short\_region](#output\_short\_region)
-
-Description: n/a
+No outputs.
 
 ## Modules
 
@@ -154,7 +138,7 @@ Version:
 
 Source: Azure/regions/azurerm
 
-Version:
+Version: 0.5.2
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

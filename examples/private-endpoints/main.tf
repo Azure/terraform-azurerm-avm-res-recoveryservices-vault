@@ -26,12 +26,11 @@ resource "azurerm_resource_group" "this" {
 locals {
   test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
-  rg_name      = "${module.naming.resource_group.slug}-${module.azure_region.location_short}-app1-001"
 }
 
 module "regions" {
   source = "Azure/regions/azurerm"
-  # version = "<version>" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
+  version = "0.5.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
 }
 
 module "azure_region" {
