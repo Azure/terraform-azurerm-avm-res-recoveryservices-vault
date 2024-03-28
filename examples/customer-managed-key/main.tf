@@ -34,16 +34,12 @@ module "regions" {
 }
 
 module "azure_region" {
-  source = "claranet/regions/azurerm"
+  source  = "claranet/regions/azurerm"
   version = "7.1.1"
 
   azure_region = "westus3"
 }
 
-locals {
-  endpoints           = toset(["AzureBackup", "AzureSiteRecovery", ])
-  endpoints_dns_zones = toset(["AzureBackup", "AzureSiteRecovery", "blob", "queue"])
-}
 module "recovery_services_vault" {
   source = "../../"
 
@@ -84,9 +80,6 @@ resource "azurerm_user_assigned_identity" "this_identity" {
   resource_group_name = azurerm_resource_group.this.name
 }
 
-data "azurerm_role_definition" "this" {
-  name = "Contributor"
-}
 #Create a Customer Managed Key for a Resovery Services Vautl.
 resource "azurerm_key_vault_key" "this" {
   key_opts = [

@@ -40,8 +40,8 @@ module "regions" {
 }
 
 module "azure_region" {
-  source = "claranet/regions/azurerm"
-  # version = "x.x.x"
+  source  = "claranet/regions/azurerm"
+  version = "7.1.1"
 
   azure_region = "westus3"
 }
@@ -251,7 +251,7 @@ The following Modules are called:
 
 Source: claranet/regions/azurerm
 
-Version:
+Version: 7.1.1
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
