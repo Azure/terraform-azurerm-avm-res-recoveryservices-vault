@@ -4,7 +4,7 @@
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
   max = length(local.test_regions) - 1
-  min = 0
+  min = local.min
 }
 # This allow use to randomize the name of resources
 resource "random_string" "this" {
@@ -26,6 +26,7 @@ resource "azurerm_resource_group" "this" {
 locals {
   test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
+  min          = 0
 }
 
 module "regions" {
