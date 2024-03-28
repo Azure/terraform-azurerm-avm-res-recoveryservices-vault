@@ -140,12 +140,6 @@ resource "azurerm_network_security_rule" "no_internet" {
   source_port_range           = "*"
 }
 
-variable "bypass_ip_cidr" {
-  type        = string
-  default     = null
-  description = "value to bypass the IP CIDR on firewall rules"
-}
-
 module "public_ip" {
   count = var.bypass_ip_cidr == null ? 1 : 0
 
