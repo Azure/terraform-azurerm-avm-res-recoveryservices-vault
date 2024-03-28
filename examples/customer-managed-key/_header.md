@@ -1,3 +1,3 @@
-# Default example
+# Customer-Managed-Key example  
 
-This deploys the module in its simplest form.
+Example deploy Recovery services vault with customer managed key.

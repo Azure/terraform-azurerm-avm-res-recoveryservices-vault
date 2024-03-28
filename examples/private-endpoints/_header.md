@@ -1,3 +1,3 @@
-# Default example
+# Private-endpoints example  
 
-This deploys the module in its simplest form.
+Example deploy Recovery services vault with private endpoints.
