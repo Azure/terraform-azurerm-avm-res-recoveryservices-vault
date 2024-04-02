@@ -40,3 +40,6 @@ README-generated.md
 avm.tflint.hcl
 avm.tflint_example.hcl
 *tfplan*
+
+# ignore vs code configurations
+**/.vscode/*

@@ -1,3 +1,4 @@
+
 variable "enable_telemetry" {
   type        = bool
   default     = true
@@ -9,43 +10,120 @@ DESCRIPTION
 }
 
 # This is required for most resource modules
+variable "name" {
+  type        = string
+  description = "Name: specify a name for the Azure Recovery Services Vault. Upper/Lower case letters, numbers and hyphens. number of characters 2-50"
+
+  validation {
+
+    error_message = "Naming error: follow this constrains. Upper/Lower case letters, numbers and hyphens. number of characters 2-50"
+
+    condition = can(regex("^[a-zA-Z0-9-]{2,50}$", var.name))
+
+  }
+}
 variable "resource_group_name" {
   type        = string
   description = "The resource group where the resources will be deployed."
-}
 
+}
 variable "location" {
   type        = string
   description = "Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location."
-  default     = null
-}
 
-variable "name" {
+}
+variable "sku" {
   type        = string
-  description = "The name of the this resource."
+  description = "(required) Specify SKU for Azure Recovery Service Vaults. Standard, RS0 (default)"
+
+}
+variable "public_network_access_enabled" {
+  type        = bool
+  description = "(optional) Specify Public Network Access. true (default), false"
+  default     = true
+}
+variable "immutability" {
+  type        = string
+  description = "(optional) Specify Immutability Setting of vault. Locked, Unlocked, Disabled (default)"
+  default     = "Disabled"
+}
+variable "storage_mode_type" {
+  type        = string
+  description = "(optional) Specify Storage type of the Recovery Services Vault. GeoRedundant (default), LocallyRedundant, ZoneRedundant"
+  default     = "GeoRedundant"
   validation {
-    condition     = can(regex("TODO determine REGEX", var.name))
-    error_message = "The name must be TODO."
-    # TODO remove the example below once complete:
-    #condition     = can(regex("^[a-z0-9]{5,50}$", var.name))
-    #error_message = "The name must be between 5 and 50 characters long and can only contain lowercase letters and numbers."
+    error_message = "Storage Type error: Must be one of the follwoing. GeoRedundant, LocallyRedundant and ZoneRedundant. Defaults to GeoRedundant"
+    condition     = can(regex("^[GeoRedundant]|[LocallyRedundant]|[ZoneRedundant]$", var.storage_mode_type))
   }
 }
+variable "cross_region_restore_enabled" {
+  type        = bool
+  description = "(optional) Specify Cross Region Restore. true, false (default). var.storage_mode_type must GeoRedundant when setting to true"
+}
+variable "soft_delete_enabled" {
+  type        = bool
+  description = "(optional) Specify Setting for Soft Delete. true (default), false"
+  default     = true
+}
+variable "classic_vmware_replication_enabled" {
+  type        = bool
+  description = "(option) Specify Setting for Classic VMWare Replication. true, false"
+  default     = null
+}
+variable "alerts_for_all_job_failures_enabled" {
+  type        = bool
+  description = "(optional) Specify Setting for Monitoring 'Alerts for All Job Failures'. true (default), false"
+  default     = true
+}
+variable "alerts_for_critical_operation_failures_enabled" {
+  type        = bool
+  description = "(optional) Specify Setting for Monitoring 'Alerts for Critical Operration Failures'. true (default), false"
+  default     = true
+}
+variable "managed_identities" {
+  type = object({
+    system_assigned            = optional(bool, false)
+    user_assigned_resource_ids = optional(set(string), [])
+  })
+  default = {}
 
-# required AVM interfaces
-# remove only if not supported by the resource
-# tflint-ignore: terraform_unused_declarations
+  description = <<DESCRIPTION
+Managed identities to be created for the resource
+
+Example Input:
+
+```terraform
+managed_identities = {
+    system_assigned = "false"
+    user_assigned_resource_ids = ["user_assigned_resource_ids", "user_assigned_resource_ids]
+  }
+}
+```
+DESCRIPTION
+}
 variable "customer_managed_key" {
   type = object({
-    key_vault_resource_id              = optional(string)
-    key_name                           = optional(string)
-    key_version                        = optional(string, null)
+    customer_managed_key_id            = optional(string, null)
     user_assigned_identity_resource_id = optional(string, null)
   })
-  description = "Customer managed keys that should be associated with the resource."
   default     = {}
-}
+  description = <<DESCRIPTION
+    Defines a customer managed key to use for encryption.
 
+    object({
+      customer_managed_key_id              = (Required) - The full Azure Resource ID of the key_vault where the customer managed key will be referenced from.
+      user_assigned_identity_resource_id = (Optional) - The user assigned identity to use when access the encryption key saved in a key vault
+    })
+
+    Example Inputs:
+    ```terraform
+    customer_managed_key = {
+      customer_managed_key_id             = "https://kv-giuh.vault.azure.net/keys/kvk-giuh/0127xxxxx4fdd94cdbd26481a1985"
+      user_assigned_identity_resource_id  = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uai-name"
+    }
+    ```
+   DESCRIPTION
+}
 variable "diagnostic_settings" {
   type = map(object({
     name                                     = optional(string, null)
@@ -90,7 +168,6 @@ A map of diagnostic settings to create on the Key Vault. The map key is delibera
 - `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
 DESCRIPTION
 }
-
 variable "lock" {
   type = object({
     name = optional(string, null)
@@ -104,17 +181,6 @@ variable "lock" {
     error_message = "The lock level must be one of: 'None', 'CanNotDelete', or 'ReadOnly'."
   }
 }
-
-# tflint-ignore: terraform_unused_declarations
-variable "managed_identities" {
-  type = object({
-    system_assigned            = optional(bool, false)
-    user_assigned_resource_ids = optional(set(string), [])
-  })
-  description = "Managed identities to be created for the resource."
-  default     = {}
-}
-
 variable "private_endpoints" {
   type = map(object({
     name = optional(string, null)
@@ -133,12 +199,14 @@ variable "private_endpoints" {
     }), {})
     tags                                    = optional(map(any), null)
     subnet_resource_id                      = string
+    subresource_name                        = list(string)
     private_dns_zone_group_name             = optional(string, "default")
     private_dns_zone_resource_ids           = optional(set(string), [])
     application_security_group_associations = optional(map(string), {})
     private_service_connection_name         = optional(string, null)
     network_interface_name                  = optional(string, null)
     location                                = optional(string, null)
+    inherit_tags                            = optional(bool, false)
     resource_group_name                     = optional(string, null)
     ip_configurations = optional(map(object({
       name               = string
@@ -166,7 +234,6 @@ A map of private endpoints to create on this resource. The map key is deliberate
   - `private_ip_address` - The private IP address of the IP configuration.
 DESCRIPTION
 }
-
 variable "role_assignments" {
   type = map(object({
     role_definition_id_or_name             = string
@@ -191,8 +258,6 @@ A map of role assignments to create on this resource. The map key is deliberatel
 > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
 DESCRIPTION
 }
-
-# tflint-ignore: terraform_unused_declarations
 variable "tags" {
   type        = map(any)
   description = "The map of tags to be applied to the resource"

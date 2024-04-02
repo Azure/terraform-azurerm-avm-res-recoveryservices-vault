@@ -1,18 +1,18 @@
 <!-- BEGIN_TF_DOCS -->
-# terraform-azurerm-avm-template
+# terraform-azurerm-avm-recoveryservices-vault
 
-This is a template repo for Terraform Azure Verified Modules.
+This terraform module is designed to deploy Azure Recovery Services Vault. It has support to create private link private endpoints to make the resource privately accessible via customer's private virtual networks and use a customer managed encryption key.
 
-Things to do:
+## Features
 
-1. Set up a GitHub repo environment called `test`.
-1. Configure environment protection rule to ensure that approval is required before deploying to this environment.
-1. Create a user-assigned managed identity in your test subscription.
-1. Create a role assignment for the managed identity on your test subscription, use the minimum required role.
-1. Configure federated identity credentials on the user assigned managed identity. Use the GitHub environment.
-1. Search and update TODOs within the code and remove the TODO comments once complete.
+* Create an Azure recovery services vault resource with options such as immutability, soft delete, storage type, cross region restore, public network configuration, identity settings, and monitoring.
+* Supports enabling private endpoints for backups and site recovery.
+* Support customer's managed key for encryption (cmk)
 
-Major version Zero (0.y.z) is for initial development. Anything MAY change at any time. A module SHOULD NOT be considered stable till at least it is major version one (1.0.0) or greater. Changes will always be via new versions being published and no changes will be made to existing published versions. For more details please go to <https://semver.org/>
+## Limitations and notes
+
+* Feature in preview: Using `user-assigned managed identities` still in preview. [reference](https://learn.microsoft.com/en-us/azure/backup/encryption-at-rest-with-cmk?tabs=portal#assign-a-user-assigned-managed-identity-to-the-vault-in-preview)
+  * Vaults that use `user-assigned managed identities` for CMK encryption don't support the use of private endpoints for backup. [reference](https://learn.microsoft.com/en-us/azure/backup/)
 
 <!-- markdownlint-disable MD033 -->
 ## Requirements
@@ -37,10 +37,10 @@ The following providers are used by this module:
 
 The following resources are used by this module:
 
-- [azurerm_TODO_the_resource_for_this_module.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/TODO_the_resource_for_this_module) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_private_endpoint.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
+- [azurerm_recovery_services_vault.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/recovery_services_vault) (resource)
 - [azurerm_resource_group_template_deployment.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group_template_deployment) (resource)
 - [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [random_id.telem](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
@@ -51,9 +51,21 @@ The following resources are used by this module:
 
 The following input variables are required:
 
+### <a name="input_cross_region_restore_enabled"></a> [cross\_region\_restore\_enabled](#input\_cross\_region\_restore\_enabled)
+
+Description: (optional) Specify Cross Region Restore. true, false (default). var.storage\_mode\_type must GeoRedundant when setting to true
+
+Type: `bool`
+
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location.
+
+Type: `string`
+
 ### <a name="input_name"></a> [name](#input\_name)
 
-Description: The name of the this resource.
+Description: Name: specify a name for the Azure Recovery Services Vault. Upper/Lower case letters, numbers and hyphens. number of characters 2-50
 
 Type: `string`
 
@@ -63,21 +75,63 @@ Description: The resource group where the resources will be deployed.
 
 Type: `string`
 
+### <a name="input_sku"></a> [sku](#input\_sku)
+
+Description: (required) Specify SKU for Azure Recovery Service Vaults. Standard, RS0 (default)
+
+Type: `string`
+
 ## Optional Inputs
 
 The following input variables are optional (have default values):
 
+### <a name="input_alerts_for_all_job_failures_enabled"></a> [alerts\_for\_all\_job\_failures\_enabled](#input\_alerts\_for\_all\_job\_failures\_enabled)
+
+Description: (optional) Specify Setting for Monitoring 'Alerts for All Job Failures'. true (default), false
+
+Type: `bool`
+
+Default: `true`
+
+### <a name="input_alerts_for_critical_operation_failures_enabled"></a> [alerts\_for\_critical\_operation\_failures\_enabled](#input\_alerts\_for\_critical\_operation\_failures\_enabled)
+
+Description: (optional) Specify Setting for Monitoring 'Alerts for Critical Operration Failures'. true (default), false
+
+Type: `bool`
+
+Default: `true`
+
+### <a name="input_classic_vmware_replication_enabled"></a> [classic\_vmware\_replication\_enabled](#input\_classic\_vmware\_replication\_enabled)
+
+Description: (option) Specify Setting for Classic VMWare Replication. true, false
+
+Type: `bool`
+
+Default: `null`
+
 ### <a name="input_customer_managed_key"></a> [customer\_managed\_key](#input\_customer\_managed\_key)
 
-Description: Customer managed keys that should be associated with the resource.
+Description:     Defines a customer managed key to use for encryption.
+
+    object({  
+      customer\_managed\_key\_id              = (Required) - The full Azure Resource ID of the key\_vault where the customer managed key will be referenced from.  
+      user\_assigned\_identity\_resource\_id = (Optional) - The user assigned identity to use when access the encryption key saved in a key vault
+    })
+
+    Example Inputs:
+    ```terraform
+    customer_managed_key = {
+      customer_managed_key_id             = "https://kv-giuh.vault.azure.net/keys/kvk-giuh/0127xxxxx4fdd94cdbd26481a1985"
+      user_assigned_identity_resource_id  = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uai-name"
+    }
+    
+```
 
 Type:
 
 ```hcl
 object({
-    key_vault_resource_id              = optional(string)
-    key_name                           = optional(string)
-    key_version                        = optional(string, null)
+    customer_managed_key_id            = optional(string, null)
     user_assigned_identity_resource_id = optional(string, null)
   })
 ```
@@ -128,13 +182,13 @@ Type: `bool`
 
 Default: `true`
 
-### <a name="input_location"></a> [location](#input\_location)
+### <a name="input_immutability"></a> [immutability](#input\_immutability)
 
-Description: Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location.
+Description: (optional) Specify Immutability Setting of vault. Locked, Unlocked, Disabled (default)
 
 Type: `string`
 
-Default: `null`
+Default: `"Disabled"`
 
 ### <a name="input_lock"></a> [lock](#input\_lock)
 
@@ -153,7 +207,17 @@ Default: `{}`
 
 ### <a name="input_managed_identities"></a> [managed\_identities](#input\_managed\_identities)
 
-Description: Managed identities to be created for the resource.
+Description: Managed identities to be created for the resource
+
+Example Input:
+
+```terraform
+managed_identities = {
+    system_assigned = "false"
+    user_assigned_resource_ids = ["user_assigned_resource_ids", "user_assigned_resource_ids]
+  }
+}
+```
 
 Type:
 
@@ -206,12 +270,14 @@ map(object({
     }), {})
     tags                                    = optional(map(any), null)
     subnet_resource_id                      = string
+    subresource_name                        = list(string)
     private_dns_zone_group_name             = optional(string, "default")
     private_dns_zone_resource_ids           = optional(set(string), [])
     application_security_group_associations = optional(map(string), {})
     private_service_connection_name         = optional(string, null)
     network_interface_name                  = optional(string, null)
     location                                = optional(string, null)
+    inherit_tags                            = optional(bool, false)
     resource_group_name                     = optional(string, null)
     ip_configurations = optional(map(object({
       name               = string
@@ -221,6 +287,14 @@ map(object({
 ```
 
 Default: `{}`
+
+### <a name="input_public_network_access_enabled"></a> [public\_network\_access\_enabled](#input\_public\_network\_access\_enabled)
+
+Description: (optional) Specify Public Network Access. true (default), false
+
+Type: `bool`
+
+Default: `true`
 
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
@@ -250,6 +324,22 @@ map(object({
 ```
 
 Default: `{}`
+
+### <a name="input_soft_delete_enabled"></a> [soft\_delete\_enabled](#input\_soft\_delete\_enabled)
+
+Description: (optional) Specify Setting for Soft Delete. true (default), false
+
+Type: `bool`
+
+Default: `true`
+
+### <a name="input_storage_mode_type"></a> [storage\_mode\_type](#input\_storage\_mode\_type)
+
+Description: (optional) Specify Storage type of the Recovery Services Vault. GeoRedundant (default), LocallyRedundant, ZoneRedundant
+
+Type: `string`
+
+Default: `"GeoRedundant"`
 
 ### <a name="input_tags"></a> [tags](#input\_tags)
 

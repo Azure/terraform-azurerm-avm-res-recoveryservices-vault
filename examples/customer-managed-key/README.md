@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
-# Default example
+# Customer-Managed-Key example  
 
-This deploys the module in its simplest form.
+Example deploy Recovery services vault with customer managed key.
 
 ```hcl
 
@@ -60,8 +60,14 @@ module "recovery_services_vault" {
   storage_mode_type                              = "GeoRedundant"
   sku                                            = "RS0"
 
-  managed_identities   = {}
-  customer_managed_key = {}
+  managed_identities = {
+    system_assigned            = true
+    user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
+  }
+  customer_managed_key = {
+    customer_managed_key_id            = azurerm_key_vault_key.this.id
+    user_assigned_identity_resource_id = azurerm_user_assigned_identity.this_identity.id
+  }
 
   tags = {
     env   = "Prod"
@@ -69,7 +75,68 @@ module "recovery_services_vault" {
     dept  = "IT"
   }
 
+  depends_on = [azurerm_key_vault_key.this, module.avm_res_keyvault_vault, ]
 }
+
+data "azurerm_client_config" "current" {}
+
+resource "azurerm_user_assigned_identity" "this_identity" {
+  location            = azurerm_resource_group.this.location
+  name                = module.naming.user_assigned_identity.name_unique
+  resource_group_name = azurerm_resource_group.this.name
+}
+
+#Create a Customer Managed Key for a Resovery Services Vautl.
+resource "azurerm_key_vault_key" "this" {
+  key_opts = [
+    "decrypt",
+    "encrypt",
+    "sign",
+    "unwrapKey",
+    "verify",
+    "wrapKey"
+  ]
+  key_type     = "RSA"
+  key_vault_id = module.avm_res_keyvault_vault.resource.id
+  name         = module.naming.key_vault_key.name_unique
+  key_size     = 2048
+
+  depends_on = [module.avm_res_keyvault_vault]
+}
+
+#create a keyvault for storing the credential with RBAC for the deployment user
+module "avm_res_keyvault_vault" {
+  source              = "Azure/avm-res-keyvault-vault/azurerm"
+  version             = "0.5.1"
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  name                = module.naming.key_vault.name_unique
+  resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
+  network_acls = {
+    default_action = "Allow"
+  }
+
+  role_assignments = {
+    deployment_user_secrets = {
+      role_definition_id_or_name = "Key Vault Administrator"
+      principal_id               = data.azurerm_client_config.current.object_id
+    }
+
+    customer_managed_key = {
+      role_definition_id_or_name = "Key Vault Crypto Officer"
+      principal_id               = azurerm_user_assigned_identity.this_identity.principal_id
+    }
+  }
+
+
+  wait_for_rbac_before_secret_operations = {
+    create = "60s"
+  }
+  tags = {
+    Dep = "IT"
+  }
+}
+
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -95,9 +162,12 @@ The following providers are used by this module:
 
 The following resources are used by this module:
 
+- [azurerm_key_vault_key.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_key) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_user_assigned_identity.this_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_string.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) (resource)
+- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -115,6 +185,12 @@ No outputs.
 ## Modules
 
 The following Modules are called:
+
+### <a name="module_avm_res_keyvault_vault"></a> [avm\_res\_keyvault\_vault](#module\_avm\_res\_keyvault\_vault)
+
+Source: Azure/avm-res-keyvault-vault/azurerm
+
+Version: 0.5.1
 
 ### <a name="module_azure_region"></a> [azure\_region](#module\_azure\_region)
 
