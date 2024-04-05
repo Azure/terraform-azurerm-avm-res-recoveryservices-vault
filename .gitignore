@@ -43,3 +43,7 @@ avm.tflint_example.hcl
 
 # ignore vs code configurations
 **/.vscode/*
+*.md.tmp
+.DS_Store
+avm.tflint.merged.hcl
+avm.tflint_example.merged.hcl
