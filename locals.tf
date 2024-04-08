@@ -1,6 +1,5 @@
 
 locals {
-  resource_group_location            = try(data.azurerm_resource_group.parent.location, null)
   role_definition_resource_substring = "/providers/Microsoft.Authorization/roleDefinitions"
 }
 
@@ -15,7 +14,5 @@ locals {
       }
     ]
   ]) : "${assoc.pe_key}-${assoc.asg_key}" => assoc }
-
-  location = var.location != null ? var.location : data.azurerm_resource_group.parent.location
 
 }
