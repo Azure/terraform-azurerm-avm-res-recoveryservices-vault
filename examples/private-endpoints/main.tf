@@ -58,6 +58,7 @@ module "recovery_services_vault" {
   storage_mode_type                              = "GeoRedundant"
   sku                                            = "RS0"
 
+
   #create a private endpoint for each endpoint type
   private_endpoints = {
     for endpoint in local.endpoints :
