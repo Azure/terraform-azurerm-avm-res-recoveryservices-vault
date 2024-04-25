@@ -23,7 +23,7 @@ resource "azurerm_recovery_services_vault" "this" {
     content {
       infrastructure_encryption_enabled = encryption.value.key_vault_resource_id != null ? true : null
       key_id                            = encryption.value.key_vault_resource_id != null ? encryption.value.key_vault_resource_id : null
-      use_system_assigned_identity      = encryption.value["user_assigned_identity"]  != null ? false : true
+      use_system_assigned_identity      = encryption.value["user_assigned_identity"] != null ? false : true
       user_assigned_identity_id         = encryption.value["user_assigned_identity"] != null ? encryption.value["user_assigned_identity"].resource_id : null
     }
   }
