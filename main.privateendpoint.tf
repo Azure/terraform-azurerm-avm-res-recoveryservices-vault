@@ -7,7 +7,7 @@ resource "azurerm_private_endpoint" "this" {
   resource_group_name           = each.value.resource_group_name != null ? each.value.resource_group_name : var.resource_group_name
   subnet_id                     = each.value.subnet_resource_id
   custom_network_interface_name = each.value.network_interface_name
-  tags                          = each.value.inherit_tags ? merge(each.value.tags, var.tags) : each.value.tags
+  tags                          = each.value.tags != null ? merge(each.value.tags, var.tags) : null
 
   private_service_connection {
     is_manual_connection           = false
