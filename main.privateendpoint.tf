@@ -35,7 +35,8 @@ resource "azurerm_private_endpoint" "this" {
   }
 }
 resource "azurerm_private_endpoint_application_security_group_association" "this" {
-  for_each                      = local.private_endpoint_application_security_group_associations
-  private_endpoint_id           = azurerm_private_endpoint.this[each.value.pe_key].id
+  for_each = local.private_endpoint_application_security_group_associations
+
   application_security_group_id = each.value.asg_resource_id
+  private_endpoint_id           = azurerm_private_endpoint.this[each.value.pe_key].id
 }

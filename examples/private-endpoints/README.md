@@ -63,7 +63,6 @@ module "recovery_services_vault" {
   public_network_access_enabled                  = false
   storage_mode_type                              = "GeoRedundant"
   sku                                            = "RS0"
-  customer_managed_key                           = {}
 
   #create a private endpoint for each endpoint type
   private_endpoints = {
