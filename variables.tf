@@ -50,10 +50,27 @@ variable "classic_vmware_replication_enabled" {
   description = "(option) Specify Setting for Classic VMWare Replication. true, false"
 }
 
+variable "soft_delete_enabled" {
+  type        = bool
+  default     = true
+  description = "(optional) Specify Setting for Soft Delete. true (default), false"
+}
+
+variable "storage_mode_type" {
+  type        = string
+  default     = "GeoRedundant"
+  description = "(optional) Specify Storage type of the Recovery Services Vault. GeoRedundant (default), LocallyRedundant, ZoneRedundant"
+
+  validation {
+    error_message = "Storage Type error: Must be one of the follwoing. GeoRedundant, LocallyRedundant and ZoneRedundant. Defaults to GeoRedundant"
+    condition     = can(regex("^[GeoRedundant]|[LocallyRedundant]|[ZoneRedundant]$", var.storage_mode_type))
+  }
+}
+
 variable "customer_managed_key" {
   type = object({
-    key_vault_resource_id = optional(string, null)
-    key_name              = optional(string, null)
+    key_vault_resource_id = string
+    key_name              = string
     key_version           = optional(string, null)
     user_assigned_identity = optional(object({
       resource_id = optional(string, null)
@@ -185,7 +202,7 @@ variable "private_endpoints" {
     name               = optional(string, null)
     role_assignments   = optional(map(object({})), {}) # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#role-assignments
     lock               = optional(object({}), {})      # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#resource-locks
-    tags               = optional(map(string), null)   # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#tags
+    tags               = optional(map(any), null)      # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#tags
     subnet_resource_id = string
     ## You only need to expose the subresource_name if there are multiple underlying services, e.g. storage.
     ## Which has blob, file, etc.
@@ -204,6 +221,7 @@ variable "private_endpoints" {
     })), {})
   }))
   default     = {}
+  nullable    = false
   description = <<DESCRIPTION
   A map of private endpoints to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
@@ -223,7 +241,6 @@ variable "private_endpoints" {
     - `name` - The name of the IP configuration.
     - `private_ip_address` - The private IP address of the IP configuration.
   DESCRIPTION
-  nullable    = false
 }
 
 variable "private_endpoints_manage_dns_zone_group" {
@@ -263,23 +280,6 @@ A map of role assignments to create on this resource. The map key is deliberatel
 > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
 DESCRIPTION
   nullable    = false
-}
-
-variable "soft_delete_enabled" {
-  type        = bool
-  default     = true
-  description = "(optional) Specify Setting for Soft Delete. true (default), false"
-}
-
-variable "storage_mode_type" {
-  type        = string
-  default     = "GeoRedundant"
-  description = "(optional) Specify Storage type of the Recovery Services Vault. GeoRedundant (default), LocallyRedundant, ZoneRedundant"
-
-  validation {
-    error_message = "Storage Type error: Must be one of the follwoing. GeoRedundant, LocallyRedundant and ZoneRedundant. Defaults to GeoRedundant"
-    condition     = can(regex("^[GeoRedundant]|[LocallyRedundant]|[ZoneRedundant]$", var.storage_mode_type))
-  }
 }
 
 variable "tags" {

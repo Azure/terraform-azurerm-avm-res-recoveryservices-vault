@@ -4,6 +4,17 @@ data "azurerm_resource_group" "parent" {
   name = var.resource_group_name
 }
 
+# data "azurerm_key_vault_key" "this" {
+#   name         = "secret-sauce"
+#   key_vault_id = var.customer_managed_key["key_vault_resource_id"]
+# }
+
+# data "azurerm_key_vault_key" "this" {
+#   count = var.customer_managed_key["key_vault_resource_id"] != null ? 1 : 0
+#   name         = var.customer_managed_key["key_name"] # Replace with the actual key name
+#   key_vault_id = var.customer_managed_key["key_vault_resource_id"]
+# }
+
 # create Recovery vault: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/recovery_services_vault
 resource "azurerm_recovery_services_vault" "this" {
   location                      = var.location
@@ -18,11 +29,11 @@ resource "azurerm_recovery_services_vault" "this" {
   tags                          = var.tags
 
   dynamic "encryption" {
-    for_each = var.customer_managed_key != null ? { this = var.customer_managed_key } : {}
+    for_each = var.customer_managed_key != null ? { this = var.customer_managed_key } : null
 
     content {
-      infrastructure_encryption_enabled = encryption.value.key_vault_resource_id != null ? true : null
-      key_id                            = encryption.value.key_vault_resource_id != null ? encryption.value.key_vault_resource_id : null
+      infrastructure_encryption_enabled = var.customer_managed_key["key_name"] != null ? true : false
+      key_id                            = encryption.value.key_name != null ? encryption.value.key_name : null
       use_system_assigned_identity      = encryption.value["user_assigned_identity"] != null ? false : true
       user_assigned_identity_id         = encryption.value["user_assigned_identity"] != null ? encryption.value["user_assigned_identity"].resource_id : null
     }
