@@ -21,8 +21,8 @@ resource "azurerm_private_endpoint" "this" {
     content {
       name               = ip_configuration.value.name
       private_ip_address = ip_configuration.value.private_ip_address
-      subresource_name   = each.value.asg_resource_id # [each.value.subresource_name]
       member_name        = each.value.asg_resource_id #each.value.subresource_name
+      subresource_name   = each.value.asg_resource_id # [each.value.subresource_name]
     }
   }
   dynamic "private_dns_zone_group" {
