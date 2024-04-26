@@ -11,11 +11,17 @@ foreach ($folder in $exampleFolders) {
     Start-Sleep 10
     
     Write-Output "`n Terraform init on $($folder.FullName)"
-    terraform -chdir="$folder" plan -parallelism=60
+    terraform -chdir="$folder" plan -out="$($folder.Name)" -parallelism=60
     
     Start-Sleep 10
     
     Write-Output "`n Terraform init on $($folder.FullName)"
-    terraform -chdir="$folder" apply -parallelism=60 #-target
+    terraform -chdir="$folder" apply -auto-approve -parallelism=60 "$($folder.Name)"
+    
+    Start-Sleep 10
+    
+    Write-Output "`n Terraform init on $($folder.FullName)"
+    terraform -chdir="$folder" plan -out="$($folder.Name)-destroy" -parallelism=60 -destroy
+    terraform -chdir="$folder" destroy -auto-approve -parallelism=60 "$($folder.Name)-destroy"
 
 }

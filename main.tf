@@ -29,7 +29,7 @@ resource "azurerm_recovery_services_vault" "this" {
   tags                          = var.tags
 
   dynamic "encryption" {
-    for_each = var.customer_managed_key != null ? { this = var.customer_managed_key } : null
+    for_each = var.customer_managed_key != null ? { this = var.customer_managed_key } : {}
 
     content {
       infrastructure_encryption_enabled = var.customer_managed_key["key_name"] != null ? true : false
