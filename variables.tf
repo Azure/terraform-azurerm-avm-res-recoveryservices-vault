@@ -190,7 +190,7 @@ variable "private_endpoints" {
     ## You only need to expose the subresource_name if there are multiple underlying services, e.g. storage.
     ## Which has blob, file, etc.
     ## If there is only one then leave this out and hardcode the value in the module.
-    subresource_name                        = list(string)
+    subresource_name                        = string
     private_dns_zone_group_name             = optional(string, "default")
     private_dns_zone_resource_ids           = optional(set(string), [])
     application_security_group_associations = optional(map(string), {})

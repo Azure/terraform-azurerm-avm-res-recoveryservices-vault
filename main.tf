@@ -1,8 +1,8 @@
 
 # resource gorup data source
-data "azurerm_resource_group" "parent" {
-  name = var.resource_group_name
-}
+# data "azurerm_resource_group" "parent" {
+#   name = var.resource_group_name
+# }
 
 # data "azurerm_key_vault_key" "this" {
 #   name         = "secret-sauce"

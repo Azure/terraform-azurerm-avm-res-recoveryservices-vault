@@ -25,7 +25,7 @@ resource "azurerm_resource_group" "this" {
 
 locals {
   test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
-  vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
+  vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-002"
 }
 
 module "regions" {
@@ -106,7 +106,7 @@ module "avm_res_keyvault_vault" {
   source              = "Azure/avm-res-keyvault-vault/azurerm"
   version             = "0.5.1"
   tenant_id           = data.azurerm_client_config.current.tenant_id
-  name                = module.naming.key_vault.name_unique
+  name                = "${module.naming.key_vault.name_unique}-002"
   resource_group_name = azurerm_resource_group.this.name
   location            = azurerm_resource_group.this.location
   network_acls = {

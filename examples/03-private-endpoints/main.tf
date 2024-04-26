@@ -25,7 +25,7 @@ resource "azurerm_resource_group" "this" {
 
 locals {
   test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
-  vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
+  vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-003"
 }
 
 module "regions" {
@@ -62,13 +62,13 @@ module "recovery_services_vault" {
     system_assigned            = true
     user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
   }
-  customer_managed_key = {
-    key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
-    key_name              = azurerm_key_vault_key.this.name
-    user_assigned_identity_resource_id = {
-      resource_id = azurerm_user_assigned_identity.this_identity.id
-    }
-  }
+  # customer_managed_key = {
+  #   key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
+  #   key_name              = azurerm_key_vault_key.this.name
+  #   user_assigned_identity_resource_id = {
+  #     resource_id = azurerm_user_assigned_identity.this_identity.id
+  #   }
+  # }
 
   #create a private endpoint for each endpoint type
   private_endpoints = {
@@ -78,7 +78,7 @@ module "recovery_services_vault" {
       # the name must be set to avoid conflicting resources.
       name                          = "pe-${endpoint}-${local.vault_name}"
       subnet_resource_id            = azurerm_subnet.private.id
-      subresource_name              = [endpoint]
+      subresource_name              = endpoint
       private_dns_zone_resource_ids = [azurerm_private_dns_zone.this[endpoint].id]
 
       # these are optional but illustrate making well-aligned service connection & NIC names.
@@ -183,53 +183,53 @@ data "azurerm_role_definition" "this" {
   name = "Contributor"
 }
 
-#Create a Customer Managed Key for a Resovery Services Vautl.
-resource "azurerm_key_vault_key" "this" {
-  key_opts = [
-    "decrypt",
-    "encrypt",
-    "sign",
-    "unwrapKey",
-    "verify",
-    "wrapKey"
-  ]
-  key_type     = "RSA"
-  key_vault_id = module.avm_res_keyvault_vault.resource.id
-  name         = module.naming.key_vault_key.name_unique
-  key_size     = 2048
+# #Create a Customer Managed Key for a Resovery Services Vautl.
+# resource "azurerm_key_vault_key" "this" {
+#   key_opts = [
+#     "decrypt",
+#     "encrypt",
+#     "sign",
+#     "unwrapKey",
+#     "verify",
+#     "wrapKey"
+#   ]
+#   key_type     = "RSA"
+#   key_vault_id = module.avm_res_keyvault_vault.resource.id
+#   name         = module.naming.key_vault_key.name_unique
+#   key_size     = 2048
 
-  depends_on = [module.avm_res_keyvault_vault]
-}
+#   depends_on = [module.avm_res_keyvault_vault]
+# }
 
-#create a keyvault for storing the credential with RBAC for the deployment user
-module "avm_res_keyvault_vault" {
-  source              = "Azure/avm-res-keyvault-vault/azurerm"
-  version             = "0.5.1"
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  name                = module.naming.key_vault.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
-  network_acls = {
-    default_action = "Allow"
-  }
+# #create a keyvault for storing the credential with RBAC for the deployment user
+# module "avm_res_keyvault_vault" {
+#   source              = "Azure/avm-res-keyvault-vault/azurerm"
+#   version             = "0.5.1"
+#   tenant_id           = data.azurerm_client_config.current.tenant_id
+#   name                = "${module.naming.key_vault.name_unique}-003"
+#   resource_group_name = azurerm_resource_group.this.name
+#   location            = azurerm_resource_group.this.location
+#   network_acls = {
+#     default_action = "Allow"
+#   }
 
-  role_assignments = {
-    deployment_user_secrets = {
-      role_definition_id_or_name = "Key Vault Administrator"
-      principal_id               = data.azurerm_client_config.current.object_id
-    }
+#   role_assignments = {
+#     deployment_user_secrets = {
+#       role_definition_id_or_name = "Key Vault Administrator"
+#       principal_id               = data.azurerm_client_config.current.object_id
+#     }
 
-    customer_managed_key = {
-      role_definition_id_or_name = "Key Vault Crypto Officer"
-      principal_id               = azurerm_user_assigned_identity.this_identity.principal_id
-    }
-  }
+#     customer_managed_key = {
+#       role_definition_id_or_name = "Key Vault Crypto Officer"
+#       principal_id               = azurerm_user_assigned_identity.this_identity.principal_id
+#     }
+#   }
 
 
-  wait_for_rbac_before_secret_operations = {
-    create = "60s"
-  }
-  tags = {
-    Dep = "IT"
-  }
-}
+#   wait_for_rbac_before_secret_operations = {
+#     create = "60s"
+#   }
+#   tags = {
+#     Dep = "IT"
+#   }
+# }
