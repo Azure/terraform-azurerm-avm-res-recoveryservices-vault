@@ -53,3 +53,7 @@ examples/01-default/01-default-destroy
 examples/02-customer-managed-key/02-customer-managed-key
 examples/02-customer-managed-key/02-customer-managed-key-destroy
 examples/03-private-endpoints/03-private-endpoints
+.avm-module-testing.ps1
+examples/01-default/01-default
+examples/03-private-endpoints/03-private-endpoints
+examples/02-customer-managed-key/02-customer-managed-key
