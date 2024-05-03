@@ -12,17 +12,19 @@ foreach ($folder in $exampleFolders) {
     Start-Sleep 10
     
     write-host "`n Terraform plan on $($folder.FullName)" -ForegroundColor green  -BackgroundColor Blue
-    terraform -chdir="$folder" plan -out="$($folder.Name)" -parallelism=60
+    terraform -chdir="$folder" plan -out="$($folder.Name).plan" -parallelism=60
     
     Start-Sleep 10
     
     write-host "`n Terraform apply on $($folder.FullName)" -ForegroundColor green  -BackgroundColor Blue
-    terraform -chdir="$folder" apply -auto-approve -parallelism=60 "$($folder.Name)"
+    terraform -chdir="$folder" apply -auto-approve -parallelism=60 "$($folder.Name).plan"
     
     Start-Sleep 10
     
     write-host "`n Terraform destroy on $($folder.FullName)" -ForegroundColor red -BackgroundColor Blue
-    terraform -chdir="$folder" plan -out="$($folder.Name)-destroy" -parallelism=60 -destroy
-    terraform -chdir="$folder" apply -auto-approve -parallelism=60 "$($folder.Name)-destroy"
+    terraform -chdir="$folder" plan -out="$($folder.Name)-destroy.plan" -parallelism=60 -destroy
+    terraform -chdir="$folder" apply -auto-approve -parallelism=60 "$($folder.Name)-destroy.plan"
+
+    Get-ChildItem -Filter *.plan -Recurse | Remove-Item -Force
 
 }
