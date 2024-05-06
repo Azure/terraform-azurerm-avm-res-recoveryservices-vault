@@ -56,7 +56,7 @@ variable "customer_managed_key" {
     key_name              = string
     key_version           = optional(string, null)
     user_assigned_identity = optional(object({
-      resource_id = optional(string, null)
+      resource_id = string
     }), null)
   })
   default     = null
@@ -187,10 +187,21 @@ DESCRIPTION
 
 variable "private_endpoints" {
   type = map(object({
-    name               = optional(string, null)
-    role_assignments   = optional(map(object({})), {}) # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#role-assignments
-    lock               = optional(object({}), {})      # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#resource-locks
-    tags               = optional(map(string), null)   # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#tags
+    name = optional(string, null)
+    role_assignments = optional(map(object({
+      role_definition_id_or_name             = string
+      principal_id                           = string
+      description                            = optional(string, null)
+      skip_service_principal_aad_check       = optional(bool, false)
+      condition                              = optional(string, null)
+      condition_version                      = optional(string, null)
+      delegated_managed_identity_resource_id = optional(string, null)
+    })), {}) # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#role-assignments
+    lock = optional(object({
+      kind = string
+      name = optional(string, null)
+    }), null)                                        # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#resource-locks
+    tags               = optional(map(string), null) # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#tags
     subnet_resource_id = string
     ## You only need to expose the subresource_name if there are multiple underlying services, e.g. storage.
     ## Which has blob, file, etc.
