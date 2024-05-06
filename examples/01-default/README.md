@@ -60,9 +60,6 @@ module "recovery_services_vault" {
   storage_mode_type                              = "GeoRedundant"
   sku                                            = "RS0"
 
-  managed_identities   = {}
-  customer_managed_key = {}
-
   tags = {
     env   = "Prod"
     owner = "ABREG0"

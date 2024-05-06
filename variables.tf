@@ -1,12 +1,11 @@
-
-variable "enable_telemetry" {
+variable "cross_region_restore_enabled" {
   type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see <https://aka.ms/avm/telemetryinfo>.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
+  description = "(optional) Specify Cross Region Restore. true, false (default). var.storage_mode_type must GeoRedundant when setting to true"
+}
+
+variable "location" {
+  type        = string
+  description = "Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location."
 }
 
 # This is required for most resource modules
@@ -22,108 +21,68 @@ variable "name" {
 
   }
 }
+
 variable "resource_group_name" {
   type        = string
   description = "The resource group where the resources will be deployed."
-
 }
-variable "location" {
-  type        = string
-  description = "Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location."
 
-}
 variable "sku" {
   type        = string
   description = "(required) Specify SKU for Azure Recovery Service Vaults. Standard, RS0 (default)"
+}
 
-}
-variable "public_network_access_enabled" {
-  type        = bool
-  description = "(optional) Specify Public Network Access. true (default), false"
-  default     = true
-}
-variable "immutability" {
-  type        = string
-  description = "(optional) Specify Immutability Setting of vault. Locked, Unlocked, Disabled (default)"
-  default     = "Disabled"
-}
-variable "storage_mode_type" {
-  type        = string
-  description = "(optional) Specify Storage type of the Recovery Services Vault. GeoRedundant (default), LocallyRedundant, ZoneRedundant"
-  default     = "GeoRedundant"
-  validation {
-    error_message = "Storage Type error: Must be one of the follwoing. GeoRedundant, LocallyRedundant and ZoneRedundant. Defaults to GeoRedundant"
-    condition     = can(regex("^[GeoRedundant]|[LocallyRedundant]|[ZoneRedundant]$", var.storage_mode_type))
-  }
-}
-variable "cross_region_restore_enabled" {
-  type        = bool
-  description = "(optional) Specify Cross Region Restore. true, false (default). var.storage_mode_type must GeoRedundant when setting to true"
-}
-variable "soft_delete_enabled" {
-  type        = bool
-  description = "(optional) Specify Setting for Soft Delete. true (default), false"
-  default     = true
-}
-variable "classic_vmware_replication_enabled" {
-  type        = bool
-  description = "(option) Specify Setting for Classic VMWare Replication. true, false"
-  default     = null
-}
 variable "alerts_for_all_job_failures_enabled" {
   type        = bool
-  description = "(optional) Specify Setting for Monitoring 'Alerts for All Job Failures'. true (default), false"
   default     = true
+  description = "(optional) Specify Setting for Monitoring 'Alerts for All Job Failures'. true (default), false"
 }
+
 variable "alerts_for_critical_operation_failures_enabled" {
   type        = bool
-  description = "(optional) Specify Setting for Monitoring 'Alerts for Critical Operration Failures'. true (default), false"
   default     = true
+  description = "(optional) Specify Setting for Monitoring 'Alerts for Critical Operration Failures'. true (default), false"
 }
-variable "managed_identities" {
+
+variable "classic_vmware_replication_enabled" {
+  type        = bool
+  default     = null
+  description = "(option) Specify Setting for Classic VMWare Replication. true, false"
+}
+
+variable "customer_managed_key" {
   type = object({
-    system_assigned            = optional(bool, false)
-    user_assigned_resource_ids = optional(set(string), [])
+    key_vault_resource_id = string
+    key_name              = string
+    key_version           = optional(string, null)
+    user_assigned_identity = optional(object({
+      resource_id = string
+    }), null)
   })
-  default = {}
-
+  default     = null
   description = <<DESCRIPTION
-Managed identities to be created for the resource
+An object type defines a customer managed key to use for encryption.
 
-Example Input:
+- `key_vault_resource_id` - (Required) - The full Azure Resource ID of the key_vault where the customer managed key will be referenced from.
+- `key_name` - (Required) - The full Azur Resource ID of the customer managed Key stored in the key vault
+- `key_version` - (Optional) - Customer managed key version
+- `user_assigned_identity` - (Optional) - The user assigned identity to use when access the encryption key saved in a key vault
 
+
+Example Inputs:
 ```terraform
-managed_identities = {
-    system_assigned = "false"
-    user_assigned_resource_ids = ["user_assigned_resource_ids", "user_assigned_resource_ids]
+key_vault_resource_id = {
+  key_vault_resource_id = "https://kv-giuh.vault.azure.net/keys/kvk-giuh/0127xxxxx4fdd94cdbd26481a1985"
+  key_name  = "https://kv-giuh.vault.azure.net/keys/kvk-giuh/0127xxxxx4fdd94cdbd26481a1985"
+  version = null
+  user_assigned_identity = {
+    resource_id = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uai-name"
   }
 }
 ```
 DESCRIPTION
 }
-variable "customer_managed_key" {
-  type = object({
-    customer_managed_key_id            = optional(string, null)
-    user_assigned_identity_resource_id = optional(string, null)
-  })
-  default     = {}
-  description = <<DESCRIPTION
-    Defines a customer managed key to use for encryption.
 
-    object({
-      customer_managed_key_id              = (Required) - The full Azure Resource ID of the key_vault where the customer managed key will be referenced from.
-      user_assigned_identity_resource_id = (Optional) - The user assigned identity to use when access the encryption key saved in a key vault
-    })
-
-    Example Inputs:
-    ```terraform
-    customer_managed_key = {
-      customer_managed_key_id             = "https://kv-giuh.vault.azure.net/keys/kvk-giuh/0127xxxxx4fdd94cdbd26481a1985"
-      user_assigned_identity_resource_id  = "/subscriptions/0000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uai-name"
-    }
-    ```
-   DESCRIPTION
-}
 variable "diagnostic_settings" {
   type = map(object({
     name                                     = optional(string, null)
@@ -137,22 +96,7 @@ variable "diagnostic_settings" {
     event_hub_name                           = optional(string, null)
     marketplace_partner_resource_id          = optional(string, null)
   }))
-  default  = {}
-  nullable = false
-
-  validation {
-    condition     = alltrue([for _, v in var.diagnostic_settings : contains(["Dedicated", "AzureDiagnostics"], v.log_analytics_destination_type)])
-    error_message = "Log analytics destination type must be one of: 'Dedicated', 'AzureDiagnostics'."
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.diagnostic_settings :
-        v.workspace_resource_id != null || v.storage_account_resource_id != null || v.event_hub_authorization_rule_resource_id != null || v.marketplace_partner_resource_id != null
-      ]
-    )
-    error_message = "At least one of `workspace_resource_id`, `storage_account_resource_id`, `marketplace_partner_resource_id`, or `event_hub_authorization_rule_resource_id`, must be set."
-  }
+  default     = {}
   description = <<DESCRIPTION
 A map of diagnostic settings to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
@@ -167,20 +111,80 @@ A map of diagnostic settings to create on the Key Vault. The map key is delibera
 - `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
 - `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
 DESCRIPTION
+  nullable    = false
+
+  validation {
+    condition     = alltrue([for _, v in var.diagnostic_settings : contains(["Dedicated", "AzureDiagnostics"], v.log_analytics_destination_type)])
+    error_message = "Log analytics destination type must be one of: 'Dedicated', 'AzureDiagnostics'."
+  }
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.diagnostic_settings :
+        v.workspace_resource_id != null || v.storage_account_resource_id != null || v.event_hub_authorization_rule_resource_id != null || v.marketplace_partner_resource_id != null
+      ]
+    )
+    error_message = "At least one of `workspace_resource_id`, `storage_account_resource_id`, `marketplace_partner_resource_id`, or `event_hub_authorization_rule_resource_id`, must be set."
+  }
 }
+
+variable "enable_telemetry" {
+  type        = bool
+  default     = true
+  description = <<DESCRIPTION
+This variable controls whether or not telemetry is enabled for the module.
+For more information see <https://aka.ms/avm/telemetryinfo>.
+If it is set to false, then no telemetry will be collected.
+DESCRIPTION
+}
+
+variable "immutability" {
+  type        = string
+  default     = "Disabled"
+  description = "(optional) Specify Immutability Setting of vault. Locked, Unlocked, Disabled (default)"
+}
+
 variable "lock" {
   type = object({
     name = optional(string, null)
-    kind = optional(string, "None")
+    kind = string
   })
-  description = "The lock level to apply. Default is `None`. Possible values are `None`, `CanNotDelete`, and `ReadOnly`."
-  default     = {}
-  nullable    = false
+  default     = null
+  description = <<DESCRIPTION
+Controls the Resource Lock configuration for this resource. The following properties can be specified:
+
+- `kind` - (Required) The type of lock. Possible values are `\"CanNotDelete\"` and `\"ReadOnly\"`.
+- `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
+DESCRIPTION
+
   validation {
-    condition     = contains(["CanNotDelete", "ReadOnly", "None"], var.lock.kind)
-    error_message = "The lock level must be one of: 'None', 'CanNotDelete', or 'ReadOnly'."
+    condition     = var.lock != null ? contains(["CanNotDelete", "ReadOnly"], var.lock.kind) : true
+    error_message = "Lock kind must be either `\"CanNotDelete\"` or `\"ReadOnly\"`."
   }
 }
+
+variable "managed_identities" {
+  type = object({
+    system_assigned            = optional(bool, false)
+    user_assigned_resource_ids = optional(set(string), [])
+  })
+  default     = {}
+  description = <<DESCRIPTION
+Managed identities to be created for the resource
+
+Example Input:
+
+```terraform
+managed_identities = {
+    system_assigned = "false"
+    user_assigned_resource_ids = ["user_assigned_resource_ids", "user_assigned_resource_ids]
+  }
+}
+```
+DESCRIPTION
+  nullable    = false
+}
+
 variable "private_endpoints" {
   type = map(object({
     name = optional(string, null)
@@ -192,21 +196,23 @@ variable "private_endpoints" {
       condition                              = optional(string, null)
       condition_version                      = optional(string, null)
       delegated_managed_identity_resource_id = optional(string, null)
-    })), {})
+    })), {}) # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#role-assignments
     lock = optional(object({
+      kind = string
       name = optional(string, null)
-      kind = optional(string, "None")
-    }), {})
-    tags                                    = optional(map(any), null)
-    subnet_resource_id                      = string
-    subresource_name                        = list(string)
+    }), null)                                        # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#resource-locks
+    tags               = optional(map(string), null) # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#tags
+    subnet_resource_id = string
+    ## You only need to expose the subresource_name if there are multiple underlying services, e.g. storage.
+    ## Which has blob, file, etc.
+    ## If there is only one then leave this out and hardcode the value in the module.
+    subresource_name                        = string
     private_dns_zone_group_name             = optional(string, "default")
     private_dns_zone_resource_ids           = optional(set(string), [])
     application_security_group_associations = optional(map(string), {})
     private_service_connection_name         = optional(string, null)
     network_interface_name                  = optional(string, null)
     location                                = optional(string, null)
-    inherit_tags                            = optional(bool, false)
     resource_group_name                     = optional(string, null)
     ip_configurations = optional(map(object({
       name               = string
@@ -215,7 +221,7 @@ variable "private_endpoints" {
   }))
   default     = {}
   description = <<DESCRIPTION
-A map of private endpoints to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+A map of private endpoints to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
 - `role_assignments` - (Optional) A map of role assignments to create on the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time. See `var.role_assignments` for more information.
@@ -228,12 +234,27 @@ A map of private endpoints to create on this resource. The map key is deliberate
 - `private_service_connection_name` - (Optional) The name of the private service connection. One will be generated if not set.
 - `network_interface_name` - (Optional) The name of the network interface. One will be generated if not set.
 - `location` - (Optional) The Azure location where the resources will be deployed. Defaults to the location of the resource group.
-- `resource_group_name` - (Optional) The resource group where the resources will be deployed. Defaults to the resource group of this resource.
+- `resource_group_name` - (Optional) The resource group where the resources will be deployed. Defaults to the resource group of the Key Vault.
 - `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   - `name` - The name of the IP configuration.
   - `private_ip_address` - The private IP address of the IP configuration.
 DESCRIPTION
+  nullable    = false
 }
+
+variable "private_endpoints_manage_dns_zone_group" {
+  type        = bool
+  default     = true
+  description = "Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy."
+  nullable    = false
+}
+
+variable "public_network_access_enabled" {
+  type        = bool
+  default     = true
+  description = "(optional) Specify Public Network Access. true (default), false"
+}
+
 variable "role_assignments" {
   type = map(object({
     role_definition_id_or_name             = string
@@ -257,10 +278,28 @@ A map of role assignments to create on this resource. The map key is deliberatel
 
 > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
 DESCRIPTION
-}
-variable "tags" {
-  type        = map(any)
-  description = "The map of tags to be applied to the resource"
-  default     = {}
+  nullable    = false
 }
 
+variable "soft_delete_enabled" {
+  type        = bool
+  default     = true
+  description = "(optional) Specify Setting for Soft Delete. true (default), false"
+}
+
+variable "storage_mode_type" {
+  type        = string
+  default     = "GeoRedundant"
+  description = "(optional) Specify Storage type of the Recovery Services Vault. GeoRedundant (default), LocallyRedundant, ZoneRedundant"
+
+  validation {
+    error_message = "Storage Type error: Must be one of the follwoing. GeoRedundant, LocallyRedundant and ZoneRedundant. Defaults to GeoRedundant"
+    condition     = can(regex("^[GeoRedundant]|[LocallyRedundant]|[ZoneRedundant]$", var.storage_mode_type))
+  }
+}
+
+variable "tags" {
+  type        = map(string)
+  default     = null
+  description = "The map of tags to be applied to the resource"
+}
