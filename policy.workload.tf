@@ -3,7 +3,7 @@ module "recovery_workload_policy" {
   source = "./modules/workload"
 
   workload_policy = {
-    name                = "pol-rsv-sql-vault-004"
+    name                = "pol-rsv-SAPh-vault-01"
     resource_group_name = var.resource_group_name
     recovery_vault_name = azurerm_recovery_services_vault.this.name
     workload_type       = "SAPHanaDatabase"
