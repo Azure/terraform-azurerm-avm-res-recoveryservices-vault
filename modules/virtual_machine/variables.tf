@@ -1,17 +1,3 @@
-variable "name" {
-  type        = string
-  description = "(required) Specify Name for Azure Recovery Services Vaults"
-}
-
-variable "recovery_vault_name" {
-  type        = string
-  description = "(required) Specify Azure Recovery Services Vault"
-}
-
-variable "resource_group_name" {
-  type        = string
-  description = "(required) Specify Name for Azure Resource Group"
-}
 
 variable "backups_config" {
   type = object({
