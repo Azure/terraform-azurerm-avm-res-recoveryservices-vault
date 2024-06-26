@@ -1,4 +1,3 @@
-
 variable "backups_config" {
   type = object({
     name                           = string
