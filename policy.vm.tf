@@ -1,9 +1,6 @@
 
 module "recovery_services_vault_vm_policy" {
   source                         = "./modules/virtual_machine"
-  name                           = "pol-rsv-vm-vault-001"
-  resource_group_name            = var.resource_group_name
-  recovery_vault_name            = azurerm_recovery_services_vault.this.name
   timezone                       = "Pacific Standard Time"
   instant_restore_retention_days = 5
   policy_type                    = "V2"
