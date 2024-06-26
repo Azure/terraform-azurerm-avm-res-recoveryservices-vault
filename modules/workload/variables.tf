@@ -1,4 +1,3 @@
-
 variable "workload_policy" {
   type = object({
     name                = string

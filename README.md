@@ -107,7 +107,7 @@ Description: (option) Specify Setting for Classic VMWare Replication. true, fals
 
 Type: `bool`
 
-Default: `null`
+Default: `false`
 
 ### <a name="input_customer_managed_key"></a> [customer\_managed\_key](#input\_customer\_managed\_key)
 
@@ -377,13 +377,25 @@ The following outputs are exported:
 
 Description:   A map of private endpoints. The map key is the supplied input to var.private\_endpoints. The map value is the entire azurerm\_private\_endpoint resource."
 
-### <a name="output_resource"></a> [resource](#output\_resource)
+### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
-Description: This is the full output for the resource.
+Description: resource Id output
 
 ## Modules
 
-No modules.
+The following Modules are called:
+
+### <a name="module_recovery_services_vault_vm_policy"></a> [recovery\_services\_vault\_vm\_policy](#module\_recovery\_services\_vault\_vm\_policy)
+
+Source: ./modules/virtual_machine
+
+Version:
+
+### <a name="module_recovery_workload_policy"></a> [recovery\_workload\_policy](#module\_recovery\_workload\_policy)
+
+Source: ./modules/workload
+
+Version:
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

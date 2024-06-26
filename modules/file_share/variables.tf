@@ -1,20 +1,19 @@
-
 variable "backups_config" {
   type = object({
-    name = string
+    name                = string
     resource_group_name = string
     recovery_vault_name = string
-    timezone = string
+    timezone            = string
 
-    frequency     = string
+    frequency = string
 
     retention_daily = optional(number, null)
 
     backup = object({
-      time          = string
+      time = string
       hourly = optional(object({
         interval        = number
-        start_time = string
+        start_time      = string
         window_duration = number
       }))
     })

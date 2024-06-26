@@ -46,7 +46,7 @@ variable "alerts_for_critical_operation_failures_enabled" {
 
 variable "classic_vmware_replication_enabled" {
   type        = bool
-  default     = null
+  default     = false
   description = "(option) Specify Setting for Classic VMWare Replication. true, false"
 }
 

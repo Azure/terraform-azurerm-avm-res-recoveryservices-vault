@@ -1,58 +1,24 @@
-
 variable "name" {
   type        = string
   description = "(required) Specify Name for Azure Recovery Services Vaults"
 }
-variable "resource_group_name" {
-  type        = string
-  description = "(required) Specify Name for Azure Resource Group"
 
-}
 variable "recovery_vault_name" {
   type        = string
   description = "(required) Specify Azure Recovery Services Vault"
 }
-variable "timezone" {
-  type        = string
-  default     = "Pacific Standard Time"
-  description = <<DESCRIPTION
-  (required) Specify time zone. default UTC, Pacific Standard Time
-  for other times visit: https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/
-  DESCRIPTION
-}
-variable "instant_restore_retention_days" {
-  type        = number
-  default     = null # this number can't be higher than retention_daily count
-  description = <<DESCRIPTION
-  (Optional) Specifies the instant restore retention range in days. Possible values are between 1 and 5 when policy_type is V1, and 1 to 30 when policy_type is V2. 
-  instant_restore_retention_days must be set to 5 if the backup frequency is set to Weekly.
-  DESCRIPTION
 
-}
-variable "policy_type" {
+variable "resource_group_name" {
   type        = string
-  default     = "V2"
-  description = "(required) Specify policy type. V1, V2 (default)"
-}
-variable "instant_restore_resource_group" {
-  type = map(object({
-    prefix = optional(string, null)
-    suffix = optional(string, null)
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-  (optional) Specify restore resource group pefix and/or suffix.
-  `prefix` = prefix for the restore resource group name
-  `suffix = suffic for the restore resource group name.
-  DESCRIPTION
+  description = "(required) Specify Name for Azure Resource Group"
 }
 
 variable "backups_config" {
   type = object({
-    name = string
-    resource_group_name = string
-    recovery_vault_name = string
-    timezone = string
+    name                           = string
+    resource_group_name            = string
+    recovery_vault_name            = string
+    timezone                       = string
     instant_restore_retention_days = optional(number, null)
     instant_restore_resource_group = map(object({
       prefix = optional(string, null)
@@ -60,7 +26,7 @@ variable "backups_config" {
 
     }))
     policy_type = string
-    frequency     = string
+    frequency   = string
 
     retention_daily = optional(number, null)
 
@@ -158,4 +124,41 @@ variable "backups_config" {
         }
       }
     DESCRIPTION
+}
+
+variable "instant_restore_resource_group" {
+  type = map(object({
+    prefix = optional(string, null)
+    suffix = optional(string, null)
+  }))
+  default     = {}
+  description = <<DESCRIPTION
+  (optional) Specify restore resource group pefix and/or suffix.
+  `prefix` = prefix for the restore resource group name
+  `suffix = suffic for the restore resource group name.
+  DESCRIPTION
+}
+
+variable "instant_restore_retention_days" {
+  type        = number
+  default     = null # this number can't be higher than retention_daily count
+  description = <<DESCRIPTION
+  (Optional) Specifies the instant restore retention range in days. Possible values are between 1 and 5 when policy_type is V1, and 1 to 30 when policy_type is V2. 
+  instant_restore_retention_days must be set to 5 if the backup frequency is set to Weekly.
+  DESCRIPTION
+}
+
+variable "policy_type" {
+  type        = string
+  default     = "V2"
+  description = "(required) Specify policy type. V1, V2 (default)"
+}
+
+variable "timezone" {
+  type        = string
+  default     = "Pacific Standard Time"
+  description = <<DESCRIPTION
+  (required) Specify time zone. default UTC, Pacific Standard Time
+  for other times visit: https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/
+  DESCRIPTION
 }
