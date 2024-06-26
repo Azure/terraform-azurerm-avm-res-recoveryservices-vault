@@ -1,15 +1,7 @@
 
 module "recovery_services_vault_vm_policy" {
-  source                         = "./modules/virtual_machine"
-  timezone                       = "Pacific Standard Time"
-  instant_restore_retention_days = 5
-  policy_type                    = "V2"
-  instant_restore_resource_group = {
-    ps = { prefix = "prefix-"
-      suffix = null
+  source = "./modules/virtual_machine"
 
-    }
-  }
   backups_config = {
     name                           = "pol-rsv-vm-vault-001"
     resource_group_name            = var.resource_group_name

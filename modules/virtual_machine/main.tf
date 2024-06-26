@@ -37,7 +37,7 @@ resource "azurerm_backup_policy_vm" "this" {
     weekdays      = var.backups_config.frequency == "Weekly" && length(var.backups_config["backup"].weekdays) != null ? var.backups_config["backup"].weekdays : null
   }
   dynamic "instant_restore_resource_group" {
-    for_each = length(var.instant_restore_resource_group) > 0 ? var.instant_restore_resource_group : {}
+    for_each = length(var.backups_config.instant_restore_resource_group) > 0 ? var.backups_config.instant_restore_resource_group : {}
     content {
       prefix = instant_restore_resource_group.value["prefix"] != null ? instant_restore_resource_group.value["prefix"] : "prefix-"
       suffix = instant_restore_resource_group.value["prefix"] != null && instant_restore_resource_group.value["suffix"] != null ? instant_restore_resource_group.value["suffix"] : null
