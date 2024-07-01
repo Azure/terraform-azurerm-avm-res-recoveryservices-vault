@@ -3,22 +3,19 @@
 locals {
 
   diff = { for key_index, value in var.backups_config :
-    "${key_index}" => value
+    ${key_index}=> value
     if key_index == "differential" && var.vm_policy["backup_frequency"] == "Weekly"
   }
   log = { for key_index, value in var.vm_policy["backup"] :
-    "${key_index}" => value
+    ${key_index}=> value
     if key_index == "log"
   }
   full = { for key_index, value in var.vm_policy["backup"] :
-    "${key_index}" => value
+    ${key_index}=> value
     if key_index == "full"
   }
   backup = merge(local.full, local.log, local.diff)
 
-}
-output "output_backup" {
-  value = local.backup
 }
 */
 resource "azurerm_backup_policy_vm" "this" {

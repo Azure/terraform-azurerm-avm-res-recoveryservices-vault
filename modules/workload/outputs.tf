@@ -1,3 +1,8 @@
+output "output_protection_policy" {
+  description = "The output protection policy"
+  value       = local.backup
+}
+
 output "resource" {
   description = "resource Id output"
   value       = var.workload_policy == null ? null : azurerm_backup_policy_vm_workload.this[0]
@@ -8,9 +13,4 @@ output "resource" {
 output "resource_id" {
   description = "resource Id output"
   value       = var.workload_policy == null ? null : azurerm_backup_policy_vm_workload.this[0].id
-}
-
-output "output_protection_policy" {
-  description = "The output protection policy"
-  value = local.backup
 }

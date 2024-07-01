@@ -105,7 +105,7 @@ The following outputs are exported:
 
 ### <a name="output_output_protection_policy"></a> [output\_protection\_policy](#output\_output\_protection\_policy)
 
-Description: n/a
+Description: The output protection policy
 
 ### <a name="output_resource"></a> [resource](#output\_resource)
 

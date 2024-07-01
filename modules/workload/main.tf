@@ -8,14 +8,15 @@ locals {
     (key_index) => value
     if key_index == "full"
   }
-  log = var.workload_policy == null ? {} :{ for key_index, value in var.workload_policy.protection_policy :
+  log = var.workload_policy == null ? {} : { for key_index, value in var.workload_policy.protection_policy :
     (key_index) => value
     if key_index == "log"
   }
 }
 
 resource "azurerm_backup_policy_vm_workload" "this" {
-  count               = var.workload_policy == null ? 0 : 1
+  count = var.workload_policy == null ? 0 : 1
+
   name                = var.workload_policy.name
   recovery_vault_name = var.workload_policy.recovery_vault_name
   resource_group_name = var.workload_policy.resource_group_name
