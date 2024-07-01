@@ -1,23 +1,21 @@
-
 locals {
   backup = merge(local.full, local.log, local.diff)
-  diff = { for key_index, value in var.workload_policy.protection_policy :
-    "${key_index}" => value
+  diff = var.workload_policy == null ? {} : { for key_index, value in var.workload_policy.protection_policy :
+    (key_index) => value
     if key_index == "differential" && var.workload_policy["backup_frequency"] == "Weekly"
   }
-  full = { for key_index, value in var.workload_policy.protection_policy :
-    "${key_index}" => value
+  full = var.workload_policy == null ? {} : { for key_index, value in var.workload_policy.protection_policy :
+    (key_index) => value
     if key_index == "full"
   }
-  log = { for key_index, value in var.workload_policy.protection_policy :
-    "${key_index}" => value
+  log = var.workload_policy == null ? {} :{ for key_index, value in var.workload_policy.protection_policy :
+    (key_index) => value
     if key_index == "log"
   }
 }
-output "output_protection_policy" {
-  value = local.backup
-}
+
 resource "azurerm_backup_policy_vm_workload" "this" {
+  count               = var.workload_policy == null ? 0 : 1
   name                = var.workload_policy.name
   recovery_vault_name = var.workload_policy.recovery_vault_name
   resource_group_name = var.workload_policy.resource_group_name
