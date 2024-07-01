@@ -21,7 +21,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.3.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.107.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
 
@@ -29,7 +29,7 @@ The following requirements are needed by this module:
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.71.0)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.107.0)
 
 - <a name="provider_random"></a> [random](#provider\_random) (>= 3.5.0)
 
@@ -38,6 +38,7 @@ The following providers are used by this module:
 The following resources are used by this module:
 
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
+- [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
 - [azurerm_private_endpoint.this_managed_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint.this_unmanaged_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
@@ -107,7 +108,7 @@ Description: (option) Specify Setting for Classic VMWare Replication. true, fals
 
 Type: `bool`
 
-Default: `null`
+Default: `false`
 
 ### <a name="input_customer_managed_key"></a> [customer\_managed\_key](#input\_customer\_managed\_key)
 
@@ -273,6 +274,7 @@ map(object({
       condition                              = optional(string, null)
       condition_version                      = optional(string, null)
       delegated_managed_identity_resource_id = optional(string, null)
+      principal_type                         = optional(string, null)
     })), {}) # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#role-assignments
     lock = optional(object({
       kind = string
@@ -340,6 +342,7 @@ map(object({
     condition                              = optional(string, null)
     condition_version                      = optional(string, null)
     delegated_managed_identity_resource_id = optional(string, null)
+    principal_type                         = optional(string, null)
   }))
 ```
 
@@ -379,11 +382,27 @@ Description:   A map of private endpoints. The map key is the supplied input to 
 
 ### <a name="output_resource"></a> [resource](#output\_resource)
 
-Description: This is the full output for the resource.
+Description: resource Id output
+
+### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
+
+Description: resource Id output
 
 ## Modules
 
-No modules.
+The following Modules are called:
+
+### <a name="module_recovery_services_vault_vm_policy"></a> [recovery\_services\_vault\_vm\_policy](#module\_recovery\_services\_vault\_vm\_policy)
+
+Source: ./modules/virtual_machine
+
+Version:
+
+### <a name="module_recovery_workload_policy"></a> [recovery\_workload\_policy](#module\_recovery\_workload\_policy)
+
+Source: ./modules/workload
+
+Version:
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

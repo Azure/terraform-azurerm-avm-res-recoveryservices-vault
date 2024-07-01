@@ -6,6 +6,7 @@ variable "cross_region_restore_enabled" {
 variable "location" {
   type        = string
   description = "Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location."
+  nullable    = false
 }
 
 # This is required for most resource modules
@@ -46,7 +47,7 @@ variable "alerts_for_critical_operation_failures_enabled" {
 
 variable "classic_vmware_replication_enabled" {
   type        = bool
-  default     = null
+  default     = false
   description = "(option) Specify Setting for Classic VMWare Replication. true, false"
 }
 
@@ -196,6 +197,7 @@ variable "private_endpoints" {
       condition                              = optional(string, null)
       condition_version                      = optional(string, null)
       delegated_managed_identity_resource_id = optional(string, null)
+      principal_type                         = optional(string, null)
     })), {}) # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#role-assignments
     lock = optional(object({
       kind = string
@@ -264,6 +266,7 @@ variable "role_assignments" {
     condition                              = optional(string, null)
     condition_version                      = optional(string, null)
     delegated_managed_identity_resource_id = optional(string, null)
+    principal_type                         = optional(string, null)
   }))
   default     = {}
   description = <<DESCRIPTION
