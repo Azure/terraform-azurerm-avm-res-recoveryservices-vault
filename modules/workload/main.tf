@@ -24,6 +24,7 @@ resource "azurerm_backup_policy_vm_workload" "this" {
 
   dynamic "protection_policy" {
     for_each = length(local.full) > 0 ? local.full : {}
+
     content {
       policy_type = protection_policy.value["policy_type"]
 
@@ -34,12 +35,14 @@ resource "azurerm_backup_policy_vm_workload" "this" {
       }
       dynamic "retention_daily" {
         for_each = var.workload_policy["backup_frequency"] != "Weekly" ? { this = protection_policy.value["retention_daily_count"] } : {}
+
         content {
           count = protection_policy.value["retention_daily_count"]
         }
       }
       dynamic "retention_monthly" {
         for_each = protection_policy.value["retention_monthly"] != null ? { this = protection_policy.value["retention_monthly"] } : {}
+
         content {
           count       = protection_policy.value["retention_monthly"].count != null ? protection_policy.value["retention_monthly"].count : null # (Required) The number of monthly backups to keep. Must be between 1 and 9999
           format_type = var.workload_policy["backup_frequency"]
@@ -50,6 +53,7 @@ resource "azurerm_backup_policy_vm_workload" "this" {
       }
       dynamic "retention_weekly" {
         for_each = var.workload_policy["backup_frequency"] == "Weekly" ? { this = protection_policy.value["retention_weekly"] } : {}
+
         content {
           count    = retention_weekly.value.count
           weekdays = retention_weekly.value.weekdays
@@ -57,6 +61,7 @@ resource "azurerm_backup_policy_vm_workload" "this" {
       }
       dynamic "retention_yearly" {
         for_each = protection_policy.value["retention_yearly"] != null ? { this = protection_policy.value["retention_yearly"] } : {}
+
         content {
           count       = protection_policy.value["retention_yearly"].count != null ? protection_policy.value["retention_yearly"].count : null # (Required) The number of monthly backups to keep. Must be between 1 and 9999
           format_type = var.workload_policy["backup_frequency"]
@@ -71,6 +76,7 @@ resource "azurerm_backup_policy_vm_workload" "this" {
   # log backup
   dynamic "protection_policy" {
     for_each = length(local.log) > 0 ? local.log : {}
+
     content {
       policy_type = protection_policy.value["policy_type"]
 
@@ -85,6 +91,7 @@ resource "azurerm_backup_policy_vm_workload" "this" {
   # diff backup
   dynamic "protection_policy" {
     for_each = length(local.diff) > 0 ? local.diff : {}
+
     content {
       policy_type = protection_policy.value["policy_type"]
 

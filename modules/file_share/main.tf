@@ -39,6 +39,7 @@ resource "azurerm_backup_policy_file_share" "this" {
   }
   dynamic "retention_daily" {
     for_each = var.backups_config.frequency != "Weekly" ? { this = var.backups_config["retention_daily"] } : {}
+
     content {
       count = var.backups_config.frequency != "Weekly" ? regex("^[1-200]$", var.backups_config["retention_daily"]) : null
     }
