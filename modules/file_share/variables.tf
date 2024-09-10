@@ -1,9 +1,24 @@
-variable "backups_config" {
+
+variable "recovery_vault_name" {
+  type        = string
+  description = "recovery_vault_name: specify a recovery_vault_name for the Azure Recovery Services Vault. Upper/Lower case letters, numbers and hyphens. number of characters 2-50"
+
+  validation {
+
+    error_message = "Naming error: follow this constrains. Upper/Lower case letters, numbers and hyphens. number of characters 2-50"
+
+    condition = can(regex("^[a-zA-Z0-9-]{2,50}$", var.recovery_vault_name))
+
+  }
+}
+variable "resource_group_name" {
+  type        = string
+  description = "The resource group where the resources will be deployed."
+}
+variable "file_share_backup_policy" {
   type = object({
-    name                = string
-    resource_group_name = string
-    recovery_vault_name = string
-    timezone            = string
+    name     = string
+    timezone = string
 
     frequency = string
 
@@ -48,10 +63,10 @@ variable "backups_config" {
     - `role_assignments` - (Optional) A map of role assignments to create on the 
 
     - `backup` - (required) backup options.
-        - `frequency` - (Required) Sets the backup frequency. Possible values are Hourly, Daily and Weekly.
+        - `frequency` - (Required) Sets the backup frequency. Possible values are hourly, Daily and Weekly.
         - `time` - (required) Specify time in a 24 hour format HH:MM. "22:00"
-        - `hour_interval` - (Optional) Interval in hour at which backup is triggered. Possible values are 4, 6, 8 and 12. This is used when frequency is Hourly. 6
-        - `hour_duration` -  (Optional) Duration of the backup window in hours. Possible values are between 4 and 24 This is used when frequency is Hourly. 12
+        - `hour_interval` - (Optional) Interval in hour at which backup is triggered. Possible values are 4, 6, 8 and 12. This is used when frequency is hourly. 6
+        - `hour_duration` -  (Optional) Duration of the backup window in hours. Possible values are between 4 and 24 This is used when frequency is hourly. 12
         - `weekdays` -  (Optional) The days of the week to perform backups on. Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday. This is used when frequency is Weekly. ["Tuesday", "Saturday"]
     - `retention_daily` - (Optional)
       - `count` - 
@@ -76,7 +91,7 @@ variable "backups_config" {
       retentions = {
       rest1 = {
         backup = {
-          frequency     = "Hourly"
+          frequency     = "hourly"
           time          = "22:00"
           hour_interval = 6
           hour_duration = 12
