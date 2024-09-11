@@ -38,13 +38,25 @@ The following resources are used by this module:
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
 
-No required inputs.
+The following input variables are required:
+
+### <a name="input_recovery_vault_name"></a> [recovery\_vault\_name](#input\_recovery\_vault\_name)
+
+Description: recovery\_vault\_name: specify a recovery\_vault\_name for the Azure Recovery Services Vault. Upper/Lower case letters, numbers and hyphens. number of characters 2-50
+
+Type: `string`
+
+### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
+
+Description: The resource group where the resources will be deployed.
+
+Type: `string`
 
 ## Optional Inputs
 
 The following input variables are optional (have default values):
 
-### <a name="input_workload_policy"></a> [workload\_policy](#input\_workload\_policy)
+### <a name="input_workload_backup_policy"></a> [workload\_backup\_policy](#input\_workload\_backup\_policy)
 
 Description: (Required)
 
@@ -52,10 +64,8 @@ Type:
 
 ```hcl
 object({
-    name                = string
-    resource_group_name = string
-    recovery_vault_name = string
-    workload_type       = string
+    name          = string
+    workload_type = string
     settings = object({
       time_zone           = string
       compression_enabled = bool

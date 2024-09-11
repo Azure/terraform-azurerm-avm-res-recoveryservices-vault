@@ -436,7 +436,7 @@ variable "managed_identities" {
     user_assigned_resource_ids = optional(set(string), [])
   })
   validation {
-    condition     = var.managed_identities.type != null ? contains(["UserAssigned", "SystemAssigned, UserAssigned"], var.managed_identities.type) ? length(var.managed_identities.user_assigned_resource_ids) != 0 : true : true
+    condition     = length(var.managed_identities) < 1 ? contains(["UserAssigned", "SystemAssigned, UserAssigned"], var.managed_identities.type) ? length(var.managed_identities.user_assigned_resource_ids) != 0 : true : true
     error_message = "user_assigned_resource_ids must not be null, provide user assigned identies IDs."
   }
   default     = {}

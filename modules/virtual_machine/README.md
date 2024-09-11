@@ -38,13 +38,25 @@ The following resources are used by this module:
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
 
-No required inputs.
+The following input variables are required:
+
+### <a name="input_recovery_vault_name"></a> [recovery\_vault\_name](#input\_recovery\_vault\_name)
+
+Description: recovery\_vault\_name: specify a recovery\_vault\_name for the Azure Recovery Services Vault. Upper/Lower case letters, numbers and hyphens. number of characters 2-50
+
+Type: `string`
+
+### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
+
+Description: The resource group where the resources will be deployed.
+
+Type: `string`
 
 ## Optional Inputs
 
 The following input variables are optional (have default values):
 
-### <a name="input_backups_config"></a> [backups\_config](#input\_backups\_config)
+### <a name="input_vm_backup_policy"></a> [vm\_backup\_policy](#input\_vm\_backup\_policy)
 
 Description:     A map objects for backup and retation options.
 
@@ -114,8 +126,6 @@ Type:
 ```hcl
 object({
     name                           = string
-    resource_group_name            = string
-    recovery_vault_name            = string
     timezone                       = string
     instant_restore_retention_days = optional(number, null)
     instant_restore_resource_group = map(object({
