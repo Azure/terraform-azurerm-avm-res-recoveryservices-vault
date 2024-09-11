@@ -52,7 +52,7 @@ resource "azurerm_storage_account" "primary" {
   location                 = azurerm_resource_group.primary.location
   resource_group_name      = azurerm_resource_group.primary.name
   account_tier             = "Standard"
-  account_replication_type = "GRS"
+  account_replication_type = "ZRS"
 }
 module "recovery_services_vault" {
   source = "../../"

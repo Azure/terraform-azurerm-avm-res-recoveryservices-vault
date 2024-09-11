@@ -1,21 +1,21 @@
 
 # use try() to normalize and validate values for weekly, monthly, yearly retation
-locals {
+# locals {
 
-  backup = { for key_index, value in var.file_share_backup_policy.backup :
-    "${key_index}" => value
-  if key_index != "hourly" }
-  log = { for key_index, value in var.file_share_backup_policy["retention_weekly"] :
-    "${key_index}" => value
-    # if key_index == "log"
-  }
-  full = { for key_index, value in var.file_share_backup_policy["retention_monthly"] :
-    "${key_index}" => value
-    # if key_index == "full"
-  }
-  # backup = merge(local.full, local.log, local.diff)
+#   backup = { for key_index, value in var.file_share_backup_policy.backup :
+#     "${key_index}" => value
+#   if key_index != "hourly" }
+#   log = { for key_index, value in var.file_share_backup_policy["retention_weekly"] :
+#     "${key_index}" => value
+#     # if key_index == "log"
+#   }
+#   full = { for key_index, value in var.file_share_backup_policy["retention_monthly"] :
+#     "${key_index}" => value
+#     # if key_index == "full"
+#   }
+#   # backup = merge(local.full, local.log, local.diff)
 
-}
+# }
 
 resource "azurerm_backup_policy_file_share" "this" {
 
