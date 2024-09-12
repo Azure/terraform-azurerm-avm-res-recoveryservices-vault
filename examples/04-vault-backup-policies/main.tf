@@ -68,8 +68,8 @@ module "recovery_services_vault" {
   storage_mode_type                              = "GeoRedundant"
   sku                                            = "RS0"
   managed_identities = {
-    type = "SystemAssigned, UserAssigned"
-    # user_assigned_resource_ids = [ "", ]
+    system_assigned            = true
+    user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
   }
 
   tags = {

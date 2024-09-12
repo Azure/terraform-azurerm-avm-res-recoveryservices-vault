@@ -432,28 +432,17 @@ DESCRIPTION
 
 variable "managed_identities" {
   type = object({
-    type                       = optional(string, null)
+    system_assigned            = optional(bool, false)
     user_assigned_resource_ids = optional(set(string), [])
   })
-  validation {
-    condition     = length(var.managed_identities) < 1 ? contains(["UserAssigned", "SystemAssigned, UserAssigned"], var.managed_identities.type) ? length(var.managed_identities.user_assigned_resource_ids) != 0 : true : true
-    error_message = "user_assigned_resource_ids must not be null, provide user assigned identies IDs."
-  }
   default     = {}
-  description = <<DESCRIPTION
-Managed identities to be created for the resource
-
-Example Input:
-
-```terraform
-managed_identities = {
-    type = "SystemAssigned" || "UserAssigned || "SystemAssigned, UserAssigned"
-    user_assigned_resource_ids = ["user_assigned_resource_ids", "user_assigned_resource_ids] # Required when user assigned is set
-  }
-}
-```
-DESCRIPTION
   nullable    = false
+  description = <<DESCRIPTION
+  Controls the Managed Identity configuration on this resource. The following properties can be specified:
+  
+  - `system_assigned` - (Optional) Specifies if the System Assigned Managed Identity should be enabled.
+  - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
+  DESCRIPTION
 }
 
 variable "private_endpoints" {

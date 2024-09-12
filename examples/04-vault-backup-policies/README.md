@@ -74,8 +74,8 @@ module "recovery_services_vault" {
   storage_mode_type                              = "GeoRedundant"
   sku                                            = "RS0"
   managed_identities = {
-    type = "SystemAssigned, UserAssigned"
-    # user_assigned_resource_ids = [ "", ]
+    system_assigned            = true
+    user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
   }
 
   tags = {
@@ -231,8 +231,6 @@ The following requirements are needed by this module:
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.3.0)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.107.0)
-
-- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
 
