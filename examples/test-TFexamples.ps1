@@ -61,3 +61,9 @@ Start-Sleep 60
 ./avm.bat pr-check
 
 #>
+terraform fmt -recursive
+terraform-docs -c '.\.terraform-docs.yml' .
+$docFolders = @("examples", "modules\vault_backup_policies")
+foreach($folder in $docFolders){
+    get-childItem -path $folder -Directory | % {echo "$($_.FullName)\"; terraform-docs -c '.\.terraform-docs.yml' "$($_.FullName)\"}
+}

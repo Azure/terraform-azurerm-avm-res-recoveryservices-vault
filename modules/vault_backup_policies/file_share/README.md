@@ -1,18 +1,14 @@
 <!-- BEGIN_TF_DOCS -->
 # terraform-azurerm-avm-recoveryservices-vault
 
-This terraform module is designed to deploy Azure Recovery Services Vault. It has support to create private link private endpoints to make the resource privately accessible via customer's private virtual networks and use a customer managed encryption key.
+Azure Recovery Services Vault File Share custom backup policy module
+
+...
+...
 
 ## Features
 
-* Create an Azure recovery services vault resource with options such as immutability, soft delete, storage type, cross region restore, public network configuration, identity settings, and monitoring.
-* Supports enabling private endpoints for backups and site recovery.
-* Support customer's managed key for encryption (cmk)
-
 ## Limitations and notes
-
-* Feature in preview: Using `user-assigned managed identities` still in preview. [reference](https://learn.microsoft.com/en-us/azure/backup/encryption-at-rest-with-cmk?tabs=portal#assign-a-user-assigned-managed-identity-to-the-vault-in-preview)
-  * Vaults that use `user-assigned managed identities` for CMK encryption don't support the use of private endpoints for backup. [reference](https://learn.microsoft.com/en-us/azure/backup/)
 
 <!-- markdownlint-disable MD033 -->
 ## Requirements
@@ -23,17 +19,11 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.107.0)
 
-## Providers
-
-The following providers are used by this module:
-
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.107.0)
-
 ## Resources
 
 The following resources are used by this module:
 
-- [azurerm_backup_policy_vm.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_policy_vm) (resource)
+- [azurerm_backup_policy_file_share.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_policy_file_share) (resource)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -56,7 +46,7 @@ Type: `string`
 
 The following input variables are optional (have default values):
 
-### <a name="input_vm_backup_policy"></a> [vm\_backup\_policy](#input\_vm\_backup\_policy)
+### <a name="input_file_share_backup_policy"></a> [file\_share\_backup\_policy](#input\_file\_share\_backup\_policy)
 
 Description:     A map objects for backup and retation options.
 
@@ -64,10 +54,10 @@ Description:     A map objects for backup and retation options.
     - `role_assignments` - (Optional) A map of role assignments to create on the
 
     - `backup` - (required) backup options.
-        - `frequency` - (Required) Sets the backup frequency. Possible values are Hourly, Daily and Weekly.
+        - `frequency` - (Required) Sets the backup frequency. Possible values are hourly, Daily and Weekly.
         - `time` - (required) Specify time in a 24 hour format HH:MM. "22:00"
-        - `hour_interval` - (Optional) Interval in hour at which backup is triggered. Possible values are 4, 6, 8 and 12. This is used when frequency is Hourly. 6
-        - `hour_duration` -  (Optional) Duration of the backup window in hours. Possible values are between 4 and 24 This is used when frequency is Hourly. 12
+        - `hour_interval` - (Optional) Interval in hour at which backup is triggered. Possible values are 4, 6, 8 and 12. This is used when frequency is hourly. 6
+        - `hour_duration` -  (Optional) Duration of the backup window in hours. Possible values are between 4 and 24 This is used when frequency is hourly. 12
         - `weekdays` -  (Optional) The days of the week to perform backups on. Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday. This is used when frequency is Weekly. ["Tuesday", "Saturday"]
     - `retention_daily` - (Optional)
       - `count` -
@@ -92,7 +82,7 @@ Description:     A map objects for backup and retation options.
       retentions = {  
       rest1 = {  
         backup = {  
-          frequency     = "Hourly"  
+          frequency     = "hourly"  
           time          = "22:00"  
           hour\_interval = 6  
           hour\_duration = 12
@@ -125,24 +115,20 @@ Type:
 
 ```hcl
 object({
-    name                           = string
-    timezone                       = string
-    instant_restore_retention_days = optional(number, null)
-    instant_restore_resource_group = map(object({
-      prefix = optional(string, null)
-      suffix = optional(string, null)
+    name     = string
+    timezone = string
 
-    }))
-    policy_type = string
-    frequency   = string
+    frequency = string
 
     retention_daily = optional(number, null)
 
     backup = object({
-      time          = string
-      hour_interval = optional(number, null)
-      hour_duration = optional(number, null)
-      weekdays      = optional(list(string), [])
+      time = string
+      hourly = optional(object({
+        interval        = number
+        start_time      = string
+        window_duration = number
+      }))
     })
 
     retention_weekly = optional(object({
