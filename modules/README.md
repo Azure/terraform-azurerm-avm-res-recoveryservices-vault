@@ -19,6 +19,10 @@ This terraform module is designed to deploy Azure Recovery Services Vault. It ha
 
 No requirements.
 
+## Providers
+
+No providers.
+
 ## Resources
 
 No resources.
