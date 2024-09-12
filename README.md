@@ -662,19 +662,19 @@ The following Modules are called:
 
 ### <a name="module_recovery_services_vault_file_share_policy"></a> [recovery\_services\_vault\_file\_share\_policy](#module\_recovery\_services\_vault\_file\_share\_policy)
 
-Source: ./modules/file_share
+Source: ./modules/vault_backup_policies/file_share
 
 Version:
 
 ### <a name="module_recovery_services_vault_vm_policy"></a> [recovery\_services\_vault\_vm\_policy](#module\_recovery\_services\_vault\_vm\_policy)
 
-Source: ./modules/virtual_machine
+Source: ./modules/vault_backup_policies/virtual_machine
 
 Version:
 
 ### <a name="module_recovery_workload_policy"></a> [recovery\_workload\_policy](#module\_recovery\_workload\_policy)
 
-Source: ./modules/workload
+Source: ./modules/vault_backup_policies/workload
 
 Version:
 
