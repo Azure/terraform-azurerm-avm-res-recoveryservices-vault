@@ -52,6 +52,12 @@ module "azure_region" {
 
   azure_region = "westus3"
 }
+resource "azurerm_user_assigned_identity" "this_identity" {
+  location            = azurerm_resource_group.this.location
+  name                = module.naming.user_assigned_identity.name_unique
+  resource_group_name = azurerm_resource_group.this.name
+}
+
 # must be located in the same region as the VM to be backed up
 resource "azurerm_storage_account" "primary" {
   name                     = "rsvwestus32201"
@@ -242,6 +248,7 @@ The following resources are used by this module:
 - [azurerm_resource_group.secondary](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_storage_account.primary](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) (resource)
+- [azurerm_user_assigned_identity.this_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_string.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) (resource)
 

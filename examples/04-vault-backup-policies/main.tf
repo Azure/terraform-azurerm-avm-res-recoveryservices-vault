@@ -46,6 +46,12 @@ module "azure_region" {
 
   azure_region = "westus3"
 }
+resource "azurerm_user_assigned_identity" "this_identity" {
+  location            = azurerm_resource_group.this.location
+  name                = module.naming.user_assigned_identity.name_unique
+  resource_group_name = azurerm_resource_group.this.name
+}
+
 # must be located in the same region as the VM to be backed up
 resource "azurerm_storage_account" "primary" {
   name                     = "rsvwestus32201"
