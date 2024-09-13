@@ -35,6 +35,7 @@ resource "azurerm_backup_policy_vm" "this" {
   }
   dynamic "instant_restore_resource_group" {
     for_each = length(var.backups_config.instant_restore_resource_group) > 0 ? var.backups_config.instant_restore_resource_group : {}
+
     content {
       prefix = instant_restore_resource_group.value["prefix"] != null ? instant_restore_resource_group.value["prefix"] : "prefix-"
       suffix = instant_restore_resource_group.value["prefix"] != null && instant_restore_resource_group.value["suffix"] != null ? instant_restore_resource_group.value["suffix"] : null
@@ -42,6 +43,7 @@ resource "azurerm_backup_policy_vm" "this" {
   }
   dynamic "retention_daily" {
     for_each = var.backups_config.frequency != "Weekly" ? { this = var.backups_config["retention_daily"] } : {}
+
     content {
       count = var.backups_config.frequency != "Weekly" ? var.backups_config["retention_daily"] : null
     }
