@@ -25,11 +25,11 @@ resource "azurerm_resource_group" "this" {
 
 resource "azurerm_resource_group" "primary" {
   location = "North Central US"
-  name     = module.naming.resource_group.name_unique
+  name     = "${module.naming.resource_group.name_unique}-ncus"
 }
 resource "azurerm_resource_group" "secondary" {
   location = "South Central US"
-  name     = module.naming.resource_group.name_unique
+  name     = "${module.naming.resource_group.name_unique}-scus"
 }
 locals {
   test_regions = ["eastus", "eastus2", "westus3"]
