@@ -1,11 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
-# terraform-azurerm-avm-recoveryservices-vault
+# Default example
 
-This terraform module is designed to deploy Azure Recovery Services Vault. It has support to create private link private endpoints to make the resource privately accessible via customer's private virtual networks and use a customer managed encryption key.
-
-## Features
-
-## Limitations and notes
+* This deploys the module in its simplest form.
 
 <!-- markdownlint-disable MD033 -->
 ## Requirements
@@ -15,6 +11,12 @@ The following requirements are needed by this module:
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.3.0)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.107.0)
+
+## Providers
+
+The following providers are used by this module:
+
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.107.0)
 
 ## Resources
 
