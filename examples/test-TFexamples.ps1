@@ -61,6 +61,7 @@ Start-Sleep 60
 ./avm.bat pr-check
 
 #>
+
 terraform fmt -recursive
 terraform-docs -c '.\.terraform-docs.yml' .
 $docFolders = @("examples", "modules\vault_backup_policies")
