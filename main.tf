@@ -1,20 +1,4 @@
 
-# resource gorup data source
-# data "azurerm_resource_group" "parent" {
-#   name = var.resource_group_name
-# }
-
-# data "azurerm_key_vault_key" "this" {
-#   name         = "secret-sauce"
-#   key_vault_id = var.customer_managed_key["key_vault_resource_id"]
-# }
-
-# data "azurerm_key_vault_key" "this" {
-#   count = var.customer_managed_key["key_vault_resource_id"] != null ? 1 : 0
-#   name         = var.customer_managed_key["key_name"] # Replace with the actual key name
-#   key_vault_id = var.customer_managed_key["key_vault_resource_id"]
-# }
-
 # create Recovery vault: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/recovery_services_vault
 resource "azurerm_recovery_services_vault" "this" {
   location                           = var.location
@@ -39,11 +23,12 @@ resource "azurerm_recovery_services_vault" "this" {
       user_assigned_identity_id         = encryption.value["user_assigned_identity"] != null ? encryption.value["user_assigned_identity"].resource_id : null
     }
   }
+  ## Resources supporting both SystemAssigned and UserAssigned
   dynamic "identity" {
-    for_each = var.managed_identities != null ? { this = var.managed_identities } : {}
+    for_each = local.managed_identities.system_assigned_user_assigned
 
     content {
-      type         = identity.value.system_assigned && length(identity.value.user_assigned_resource_ids) > 0 ? "SystemAssigned, UserAssigned" : length(identity.value.user_assigned_resource_ids) > 0 ? "UserAssigned" : "SystemAssigned"
+      type         = identity.value.type
       identity_ids = identity.value.user_assigned_resource_ids
     }
   }

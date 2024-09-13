@@ -1,18 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
-# terraform-azurerm-avm-recoveryservices-vault
+# Default example
 
-This terraform module is designed to deploy Azure Recovery Services Vault. It has support to create private link private endpoints to make the resource privately accessible via customer's private virtual networks and use a customer managed encryption key.
-
-## Features
-
-* Create an Azure recovery services vault resource with options such as immutability, soft delete, storage type, cross region restore, public network configuration, identity settings, and monitoring.
-* Supports enabling private endpoints for backups and site recovery.
-* Support customer's managed key for encryption (cmk)
-
-## Limitations and notes
-
-* Feature in preview: Using `user-assigned managed identities` still in preview. [reference](https://learn.microsoft.com/en-us/azure/backup/encryption-at-rest-with-cmk?tabs=portal#assign-a-user-assigned-managed-identity-to-the-vault-in-preview)
-  * Vaults that use `user-assigned managed identities` for CMK encryption don't support the use of private endpoints for backup. [reference](https://learn.microsoft.com/en-us/azure/backup/)
+* This deploys the module in its simplest form.
 
 <!-- markdownlint-disable MD033 -->
 ## Requirements
@@ -38,13 +27,25 @@ The following resources are used by this module:
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
 
-No required inputs.
+The following input variables are required:
+
+### <a name="input_recovery_vault_name"></a> [recovery\_vault\_name](#input\_recovery\_vault\_name)
+
+Description: recovery\_vault\_name: specify a recovery\_vault\_name for the Azure Recovery Services Vault. Upper/Lower case letters, numbers and hyphens. number of characters 2-50
+
+Type: `string`
+
+### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
+
+Description: The resource group where the resources will be deployed.
+
+Type: `string`
 
 ## Optional Inputs
 
 The following input variables are optional (have default values):
 
-### <a name="input_backups_config"></a> [backups\_config](#input\_backups\_config)
+### <a name="input_file_share_backup_policy"></a> [file\_share\_backup\_policy](#input\_file\_share\_backup\_policy)
 
 Description:     A map objects for backup and retation options.
 
@@ -52,10 +53,10 @@ Description:     A map objects for backup and retation options.
     - `role_assignments` - (Optional) A map of role assignments to create on the
 
     - `backup` - (required) backup options.
-        - `frequency` - (Required) Sets the backup frequency. Possible values are Hourly, Daily and Weekly.
+        - `frequency` - (Required) Sets the backup frequency. Possible values are hourly, Daily and Weekly.
         - `time` - (required) Specify time in a 24 hour format HH:MM. "22:00"
-        - `hour_interval` - (Optional) Interval in hour at which backup is triggered. Possible values are 4, 6, 8 and 12. This is used when frequency is Hourly. 6
-        - `hour_duration` -  (Optional) Duration of the backup window in hours. Possible values are between 4 and 24 This is used when frequency is Hourly. 12
+        - `hour_interval` - (Optional) Interval in hour at which backup is triggered. Possible values are 4, 6, 8 and 12. This is used when frequency is hourly. 6
+        - `hour_duration` -  (Optional) Duration of the backup window in hours. Possible values are between 4 and 24 This is used when frequency is hourly. 12
         - `weekdays` -  (Optional) The days of the week to perform backups on. Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday. This is used when frequency is Weekly. ["Tuesday", "Saturday"]
     - `retention_daily` - (Optional)
       - `count` -
@@ -80,7 +81,7 @@ Description:     A map objects for backup and retation options.
       retentions = {  
       rest1 = {  
         backup = {  
-          frequency     = "Hourly"  
+          frequency     = "hourly"  
           time          = "22:00"  
           hour\_interval = 6  
           hour\_duration = 12
@@ -113,10 +114,8 @@ Type:
 
 ```hcl
 object({
-    name                = string
-    resource_group_name = string
-    recovery_vault_name = string
-    timezone            = string
+    name     = string
+    timezone = string
 
     frequency = string
 

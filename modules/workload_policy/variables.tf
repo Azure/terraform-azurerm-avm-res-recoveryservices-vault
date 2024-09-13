@@ -1,9 +1,25 @@
-variable "workload_policy" {
+variable "recovery_vault_name" {
+  type        = string
+  description = "recovery_vault_name: specify a recovery_vault_name for the Azure Recovery Services Vault. Upper/Lower case letters, numbers and hyphens. number of characters 2-50"
+
+  validation {
+
+    error_message = "Naming error: follow this constrains. Upper/Lower case letters, numbers and hyphens. number of characters 2-50"
+
+    condition = can(regex("^[a-zA-Z0-9-]{2,50}$", var.recovery_vault_name))
+
+  }
+}
+
+variable "resource_group_name" {
+  type        = string
+  description = "The resource group where the resources will be deployed."
+}
+
+variable "workload_backup_policy" {
   type = object({
-    name                = string
-    resource_group_name = string
-    recovery_vault_name = string
-    workload_type       = string
+    name          = string
+    workload_type = string
     settings = object({
       time_zone           = string
       compression_enabled = bool

@@ -1,21 +1,41 @@
-variable "backups_config" {
-  type = object({
-    name                = string
-    resource_group_name = string
-    recovery_vault_name = string
-    timezone            = string
+variable "recovery_vault_name" {
+  type        = string
+  description = "recovery_vault_name: specify a recovery_vault_name for the Azure Recovery Services Vault. Upper/Lower case letters, numbers and hyphens. number of characters 2-50"
 
-    frequency = string
+  validation {
+
+    error_message = "Naming error: follow this constrains. Upper/Lower case letters, numbers and hyphens. number of characters 2-50"
+
+    condition = can(regex("^[a-zA-Z0-9-]{2,50}$", var.recovery_vault_name))
+
+  }
+}
+
+variable "resource_group_name" {
+  type        = string
+  description = "The resource group where the resources will be deployed."
+}
+
+variable "vm_backup_policy" {
+  type = object({
+    name                           = string
+    timezone                       = string
+    instant_restore_retention_days = optional(number, null)
+    instant_restore_resource_group = map(object({
+      prefix = optional(string, null)
+      suffix = optional(string, null)
+
+    }))
+    policy_type = string
+    frequency   = string
 
     retention_daily = optional(number, null)
 
     backup = object({
-      time = string
-      hourly = optional(object({
-        interval        = number
-        start_time      = string
-        window_duration = number
-      }))
+      time          = string
+      hour_interval = optional(number, null)
+      hour_duration = optional(number, null)
+      weekdays      = optional(list(string), [])
     })
 
     retention_weekly = optional(object({

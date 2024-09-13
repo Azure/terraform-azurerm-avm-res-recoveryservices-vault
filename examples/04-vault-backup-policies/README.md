@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
-# Private-endpoints example  
+# Default example
 
-* Example deploy Recovery services vault with private endpoints.
+* This deploys the module with backup custom policies file share, virtual machine, workload
 
 <!-- markdownlint-disable MD033 -->
 ## Requirements
@@ -26,19 +26,12 @@ The following providers are used by this module:
 
 The following resources are used by this module:
 
-- [azurerm_network_security_group.nsg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) (resource)
-- [azurerm_network_security_rule.no_internet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_rule) (resource)
-- [azurerm_private_dns_zone.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone) (resource)
-- [azurerm_private_dns_zone_virtual_network_link.private_links](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone_virtual_network_link) (resource)
+- [azurerm_resource_group.primary](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_resource_group.secondary](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_subnet.private](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_subnet_network_security_group_association.private](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_network_security_group_association) (resource)
 - [azurerm_user_assigned_identity.this_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
-- [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_string.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) (resource)
-- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
-- [azurerm_role_definition.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/role_definition) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -47,15 +40,7 @@ No required inputs.
 
 ## Optional Inputs
 
-The following input variables are optional (have default values):
-
-### <a name="input_bypass_ip_cidr"></a> [bypass\_ip\_cidr](#input\_bypass\_ip\_cidr)
-
-Description: value to bypass the IP CIDR on firewall rules
-
-Type: `string`
-
-Default: `null`
+No optional inputs.
 
 ## Outputs
 
@@ -77,12 +62,6 @@ Source: Azure/naming/azurerm
 
 Version: 0.4.0
 
-### <a name="module_public_ip"></a> [public\_ip](#module\_public\_ip)
-
-Source: lonegunmanb/public-ip/lonegunmanb
-
-Version: 0.1.0
-
 ### <a name="module_recovery_services_vault"></a> [recovery\_services\_vault](#module\_recovery\_services\_vault)
 
 Source: ../../
@@ -94,6 +73,12 @@ Version:
 Source: Azure/regions/azurerm
 
 Version: 0.5.2
+
+### <a name="module_this"></a> [this](#module\_this)
+
+Source: Azure/avm-res-storage-storageaccount/azurerm
+
+Version: 0.2.6
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

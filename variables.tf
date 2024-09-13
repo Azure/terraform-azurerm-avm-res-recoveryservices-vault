@@ -139,6 +139,113 @@ If it is set to false, then no telemetry will be collected.
 DESCRIPTION
 }
 
+variable "file_share_backup_policy" {
+  type = map(object({
+    name     = string
+    timezone = string
+
+    frequency = string
+
+    retention_daily = optional(number, null)
+
+    backup = object({
+      time = string
+      hourly = optional(object({
+        interval        = number
+        start_time      = string
+        window_duration = number
+      }))
+    })
+
+    retention_weekly = optional(object({
+      count    = optional(number, 7)
+      weekdays = optional(list(string), [])
+    }), {})
+
+    retention_monthly = optional(object({
+      count             = optional(number, 0)
+      weekdays          = optional(list(string), [])
+      weeks             = optional(list(string), [])
+      days              = optional(list(number), [])
+      include_last_days = optional(bool, false)
+    }), {})
+
+    retention_yearly = optional(object({
+      count             = optional(number, 0)
+      months            = optional(list(string), [])
+      weekdays          = optional(list(string), [])
+      weeks             = optional(list(string), [])
+      days              = optional(list(number), [])
+      include_last_days = optional(bool, false)
+    }), {})
+  }))
+  default     = null
+  description = <<DESCRIPTION
+    A map objects for backup and retation options.
+
+    - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
+    - `role_assignments` - (Optional) A map of role assignments to create on the 
+
+    - `backup` - (required) backup options.
+        - `frequency` - (Required) Sets the backup frequency. Possible values are hourly, Daily and Weekly.
+        - `time` - (required) Specify time in a 24 hour format HH:MM. "22:00"
+        - `hour_interval` - (Optional) Interval in hour at which backup is triggered. Possible values are 4, 6, 8 and 12. This is used when frequency is hourly. 6
+        - `hour_duration` -  (Optional) Duration of the backup window in hours. Possible values are between 4 and 24 This is used when frequency is hourly. 12
+        - `weekdays` -  (Optional) The days of the week to perform backups on. Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday. This is used when frequency is Weekly. ["Tuesday", "Saturday"]
+    - `retention_daily` - (Optional)
+      - `count` - 
+    - `retantion_weekly` -
+      - `count` -
+      - `weekdays` -
+    - `retantion_monthly` -
+      - `count` -  # (Required) The number of monthly backups to keep. Must be between 1 and 9999
+      - `weekdays` - (Optional) The weekday backups to retain . Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday.
+      - `weeks` -  # (Optional) The weeks of the month to retain backups of. Must be one of First, Second, Third, Fourth, Last.
+      - `days` -  # (Optional) The days of the month to retain backups of. Must be between 1 and 31.
+      - `include_last_days` -  # (Optional) Including the last day of the month, default to false.
+    - `retantion_yearly` -
+      - `months` - # (Required) The months of the year to retain backups of. Must be one of January, February, March, April, May, June, July, August, September, October, November and December.
+      - `count` -  # (Required) The number of monthly backups to keep. Must be between 1 and 9999
+      - `weekdays` - (Optional) The weekday backups to retain . Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday.
+      - `weeks` -  # (Optional) The weeks of the month to retain backups of. Must be one of First, Second, Third, Fourth, Last.
+      - `days` -  # (Optional) The days of the month to retain backups of. Must be between 1 and 31.
+      - `include_last_days` -  # (Optional) Including the last day of the month, default to false.
+
+    example:
+      retentions = {
+      rest1 = {
+        backup = {
+          frequency     = "hourly"
+          time          = "22:00"
+          hour_interval = 6
+          hour_duration = 12
+          # weekdays      = ["Tuesday", "Saturday"]
+        }
+        retention_daily = 7
+        retention_weekly = {
+          count    = 7
+          weekdays = ["Monday", "Wednesday"]
+
+        }
+        retention_monthly = {
+          count = 5
+          # weekdays =  ["Tuesday","Saturday"]
+          # weeks = ["First","Third"]
+          days = [3, 10, 20]
+        }
+        retention_yearly = {
+          count  = 5
+          months = []
+          # weekdays =  ["Tuesday","Saturday"]
+          # weeks = ["First","Third"]
+          days = [3, 10, 20]
+        }
+
+        }
+      }
+    DESCRIPTION
+}
+
 variable "immutability" {
   type        = string
   default     = "Disabled"
@@ -171,18 +278,11 @@ variable "managed_identities" {
   })
   default     = {}
   description = <<DESCRIPTION
-Managed identities to be created for the resource
-
-Example Input:
-
-```terraform
-managed_identities = {
-    system_assigned = "false"
-    user_assigned_resource_ids = ["user_assigned_resource_ids", "user_assigned_resource_ids]
-  }
-}
-```
-DESCRIPTION
+  Controls the Managed Identity configuration on this resource. The following properties can be specified:
+  
+  - `system_assigned` - (Optional) Specifies if the System Assigned Managed Identity should be enabled.
+  - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
+  DESCRIPTION
   nullable    = false
 }
 
@@ -305,4 +405,162 @@ variable "tags" {
   type        = map(string)
   default     = null
   description = "The map of tags to be applied to the resource"
+}
+
+variable "vm_backup_policy" {
+  type = map(object({
+    name                           = string
+    timezone                       = string
+    instant_restore_retention_days = optional(number, null)
+    instant_restore_resource_group = map(object({
+      prefix = optional(string, null)
+      suffix = optional(string, null)
+
+    }))
+    policy_type = string
+    frequency   = string
+
+    retention_daily = optional(number, null)
+
+    backup = object({
+      time          = string
+      hour_interval = optional(number, null)
+      hour_duration = optional(number, null)
+      weekdays      = optional(list(string), [])
+    })
+
+    retention_weekly = optional(object({
+      count    = optional(number, 7)
+      weekdays = optional(list(string), [])
+    }), {})
+
+    retention_monthly = optional(object({
+      count             = optional(number, 0)
+      weekdays          = optional(list(string), [])
+      weeks             = optional(list(string), [])
+      days              = optional(list(number), [])
+      include_last_days = optional(bool, false)
+    }), {})
+
+    retention_yearly = optional(object({
+      count             = optional(number, 0)
+      months            = optional(list(string), [])
+      weekdays          = optional(list(string), [])
+      weeks             = optional(list(string), [])
+      days              = optional(list(number), [])
+      include_last_days = optional(bool, false)
+    }), {})
+  }))
+  default     = null
+  description = <<DESCRIPTION
+    A map objects for backup and retation options.
+
+    - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
+    - `role_assignments` - (Optional) A map of role assignments to create on the 
+
+    - `backup` - (required) backup options.
+        - `frequency` - (Required) Sets the backup frequency. Possible values are Hourly, Daily and Weekly.
+        - `time` - (required) Specify time in a 24 hour format HH:MM. "22:00"
+        - `hour_interval` - (Optional) Interval in hour at which backup is triggered. Possible values are 4, 6, 8 and 12. This is used when frequency is Hourly. 6
+        - `hour_duration` -  (Optional) Duration of the backup window in hours. Possible values are between 4 and 24 This is used when frequency is Hourly. 12
+        - `weekdays` -  (Optional) The days of the week to perform backups on. Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday. This is used when frequency is Weekly. ["Tuesday", "Saturday"]
+    - `retention_daily` - (Optional)
+      - `count` - 
+    - `retantion_weekly` -
+      - `count` -
+      - `weekdays` -
+    - `retantion_monthly` -
+      - `count` -  # (Required) The number of monthly backups to keep. Must be between 1 and 9999
+      - `weekdays` - (Optional) The weekday backups to retain . Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday.
+      - `weeks` -  # (Optional) The weeks of the month to retain backups of. Must be one of First, Second, Third, Fourth, Last.
+      - `days` -  # (Optional) The days of the month to retain backups of. Must be between 1 and 31.
+      - `include_last_days` -  # (Optional) Including the last day of the month, default to false.
+    - `retantion_yearly` -
+      - `months` - # (Required) The months of the year to retain backups of. Must be one of January, February, March, April, May, June, July, August, September, October, November and December.
+      - `count` -  # (Required) The number of monthly backups to keep. Must be between 1 and 9999
+      - `weekdays` - (Optional) The weekday backups to retain . Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday.
+      - `weeks` -  # (Optional) The weeks of the month to retain backups of. Must be one of First, Second, Third, Fourth, Last.
+      - `days` -  # (Optional) The days of the month to retain backups of. Must be between 1 and 31.
+      - `include_last_days` -  # (Optional) Including the last day of the month, default to false.
+
+    example:
+      retentions = {
+      rest1 = {
+        backup = {
+          frequency     = "Hourly"
+          time          = "22:00"
+          hour_interval = 6
+          hour_duration = 12
+          # weekdays      = ["Tuesday", "Saturday"]
+        }
+        retention_daily = 7
+        retention_weekly = {
+          count    = 7
+          weekdays = ["Monday", "Wednesday"]
+
+        }
+        retention_monthly = {
+          count = 5
+          # weekdays =  ["Tuesday","Saturday"]
+          # weeks = ["First","Third"]
+          days = [3, 10, 20]
+        }
+        retention_yearly = {
+          count  = 5
+          months = []
+          # weekdays =  ["Tuesday","Saturday"]
+          # weeks = ["First","Third"]
+          days = [3, 10, 20]
+        }
+
+        }
+      }
+    DESCRIPTION
+}
+
+variable "workload_backup_policy" {
+  type = map(object({
+    name          = string
+    workload_type = string
+    settings = object({
+      time_zone           = string
+      compression_enabled = bool
+    })
+
+    backup_frequency = string
+    protection_policy = map(object({
+      policy_type           = string # description = "(required) Specify policy type. Full, Differential, Logs"
+      retention_daily_count = number
+      retention_weekly = optional(object({
+        count    = optional(number, null)
+        weekdays = optional(set(string), null)
+      }), null)
+      # retention_daily = optional(number, null) # (Required) The count that is used to count retention duration with duration type Days. Possible values are between 7 and 35.
+      backup = optional(object({
+        time                 = optional(string)
+        frequency_in_minutes = optional(number)
+        weekdays             = optional(set(string))
+      }), null)
+
+      retention_monthly = optional(object({
+        count             = optional(number, null)
+        weekdays          = optional(set(string), null)
+        weeks             = optional(set(string), null)
+        monthdays         = optional(set(number), null)
+        include_last_days = optional(bool, false)
+      }), null)
+
+      retention_yearly = optional(object({
+        count             = optional(number, null)
+        months            = optional(set(string), null)
+        weekdays          = optional(set(string), null)
+        weeks             = optional(set(string), null)
+        monthdays         = optional(set(number), null)
+        include_last_days = optional(bool, false)
+      }), null)
+
+    }))
+  }))
+  default     = null
+  description = "(Required)"
 }
