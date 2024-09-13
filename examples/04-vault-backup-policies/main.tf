@@ -19,17 +19,18 @@ module "naming" {
 }
 
 resource "azurerm_resource_group" "this" {
-  location = "westus3"          #local.test_regions[random_integer.region_index.result]
-  name     = "rg-westus3-vault" #module.naming.resource_group.name_unique
+  location = local.test_regions[random_integer.region_index.result]
+  name     = module.naming.resource_group.name_unique
 }
-resource "azurerm_resource_group" "primary" {
-  location = "westus2"
-  name     = "rg-vm-westus2-primary"
-}
-resource "azurerm_resource_group" "secondary" {
-  location = "centralus"
-  name     = "rg-vm-centralus-secondary"
-}
+
+# resource "azurerm_resource_group" "primary" {
+#   location = "westus2"
+#   name     = "rg-vm-westus2-primary"
+# }
+# resource "azurerm_resource_group" "secondary" {
+#   location = "centralus"
+#   name     = "rg-vm-centralus-secondary"
+# }
 locals {
   test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
@@ -53,13 +54,13 @@ resource "azurerm_user_assigned_identity" "this_identity" {
 }
 
 # must be located in the same region as the VM to be backed up
-resource "azurerm_storage_account" "primary" {
-  name                     = "rsvwestus32201"
-  location                 = azurerm_resource_group.primary.location
-  resource_group_name      = azurerm_resource_group.primary.name
-  account_tier             = "Standard"
-  account_replication_type = "ZRS"
-}
+# resource "azurerm_storage_account" "primary" {
+#   name                     = "rsvwestus32201"
+#   location                 = azurerm_resource_group.primary.location
+#   resource_group_name      = azurerm_resource_group.primary.name
+#   account_tier             = "Standard"
+#   account_replication_type = "ZRS"
+# }
 module "recovery_services_vault" {
   source = "../../"
 
