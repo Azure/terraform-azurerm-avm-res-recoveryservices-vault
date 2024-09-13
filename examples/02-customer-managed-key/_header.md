@@ -1,3 +1,3 @@
 # Customer-Managed-Key example  
 
-Example deploy Recovery services vault with customer managed key.
+* Example deploy Recovery services vault with customer managed key.

@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
 # Private-endpoints example  
 
-Example deploy Recovery services vault with private endpoints.
+* Example deploy Recovery services vault with private endpoints.
 
 <!-- markdownlint-disable MD033 -->
 ## Requirements

@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
 # Default example
 
-This deploys the module with backup custom policies file share, virtual machine, workload
+* This deploys the module with backup custom policies file share, virtual machine, workload
 
 <!-- markdownlint-disable MD033 -->
 ## Requirements
