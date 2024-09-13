@@ -26,6 +26,7 @@ resource "azurerm_recovery_services_vault" "this" {
   ## Resources supporting both SystemAssigned and UserAssigned
   dynamic "identity" {
     for_each = local.managed_identities.system_assigned_user_assigned
+
     content {
       type         = identity.value.type
       identity_ids = identity.value.user_assigned_resource_ids

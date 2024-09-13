@@ -28,7 +28,6 @@ resource "azurerm_resource_group" "primary" {
   name     = module.naming.resource_group.name_unique
 }
 resource "azurerm_resource_group" "secondary" {
-
   location = "South Central US"
   name     = module.naming.resource_group.name_unique
 }
@@ -56,11 +55,11 @@ resource "azurerm_user_assigned_identity" "this_identity" {
 
 # must be located in the same region as the VM to be backed up
 resource "azurerm_storage_account" "primary" {
-  name                     = module.naming.storage_account.name_unique
-  location                 = azurerm_resource_group.primary.location
-  resource_group_name      = azurerm_resource_group.primary.name
-  account_tier             = "Standard"
   account_replication_type = "ZRS"
+  account_tier             = "Standard"
+  location                 = azurerm_resource_group.primary.location
+  name                     = module.naming.storage_account.name_unique
+  resource_group_name      = azurerm_resource_group.primary.name
 }
 module "recovery_services_vault" {
   source = "../../"

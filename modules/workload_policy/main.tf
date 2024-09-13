@@ -35,6 +35,7 @@ resource "azurerm_backup_policy_vm_workload" "this" {
       }
       dynamic "retention_daily" {
         for_each = var.workload_backup_policy["backup_frequency"] != "Weekly" ? { this = protection_policy.value["retention_daily_count"] } : {}
+
         content {
           count = protection_policy.value["retention_daily_count"]
         }
@@ -52,6 +53,7 @@ resource "azurerm_backup_policy_vm_workload" "this" {
       }
       dynamic "retention_weekly" {
         for_each = var.workload_backup_policy["backup_frequency"] == "Weekly" ? { this = protection_policy.value["retention_weekly"] } : {}
+
         content {
           count    = retention_weekly.value.count
           weekdays = retention_weekly.value.weekdays
