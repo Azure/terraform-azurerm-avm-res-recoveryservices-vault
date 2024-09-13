@@ -1,6 +1,7 @@
 module "this" {
 
-  source = "https://github.com/Azure/terraform-azurerm-avm-res-storage-storageaccount"
+  source  = "Azure/avm-res-storage-storageaccount/azurerm"
+  version = "0.2.6"
 
   account_replication_type = "ZRS"
   account_tier             = "Standard"
@@ -32,7 +33,7 @@ module "this" {
   network_rules = {
     bypass                     = ["AzureServices"]
     default_action             = "Deny"
-    ip_rules                   = [try(module.public_ip[0].public_ip, var.bypass_ip_cidr)]
+    ip_rules                   = [] # [try(module.public_ip[0].public_ip, var.bypass_ip_cidr)]
     virtual_network_subnet_ids = toset([azurerm_subnet.private.id])
   }
   /*

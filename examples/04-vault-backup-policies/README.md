@@ -77,9 +77,9 @@ Version: 0.5.2
 
 ### <a name="module_this"></a> [this](#module\_this)
 
-Source: https://github.com/Azure/terraform-azurerm-avm-res-storage-storageaccount
+Source: Azure/avm-res-storage-storageaccount/azurerm
 
-Version:
+Version: 0.2.6
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
