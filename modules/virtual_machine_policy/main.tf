@@ -30,18 +30,18 @@ resource "azurerm_backup_policy_vm" "this" {
     }
   }
   retention_monthly {
-    count             = var.vm_backup_policy["retention_monthly"].count != 0 ? regex("^[1-9999]$", var.vm_backup_policy["retention_monthly"].count) : null
+    count             = var.vm_backup_policy["retention_monthly"].count != 0 ? regex("^[1-9][0-9]{0,3}$", var.vm_backup_policy["retention_monthly"].count) : null
     days              = var.vm_backup_policy["retention_monthly"].count != 0 && var.vm_backup_policy.frequency != "Weekly" ? var.vm_backup_policy["retention_monthly"].days : null
     include_last_days = var.vm_backup_policy["retention_monthly"].count != 0 && var.vm_backup_policy.frequency != "Weekly" ? var.vm_backup_policy["retention_monthly"].include_last_days != null ? var.vm_backup_policy["retention_monthly"].include_last_days : null : null
     weekdays          = var.vm_backup_policy["retention_monthly"].count != 0 && var.vm_backup_policy.frequency == "Weekly" ? length(var.vm_backup_policy["retention_monthly"].weekdays) != 0 ? var.vm_backup_policy["retention_monthly"].weekdays : null : null
     weeks             = var.vm_backup_policy["retention_monthly"].count != 0 && var.vm_backup_policy.frequency == "Weekly" ? length(var.vm_backup_policy["retention_monthly"].weeks) != 0 ? var.vm_backup_policy["retention_monthly"].weeks : null : null
   }
   retention_weekly {
-    count    = var.vm_backup_policy.frequency == "Weekly" || var.vm_backup_policy["retention_weekly"].count != 0 ? regex("^[1-9999]$", var.vm_backup_policy["retention_weekly"].count) : null # 20
+    count    = var.vm_backup_policy.frequency == "Weekly" || var.vm_backup_policy["retention_weekly"].count != 0 ? regex("^[1-9][0-9]{0,3}$", var.vm_backup_policy["retention_weekly"].count) : null # 20
     weekdays = var.vm_backup_policy["retention_weekly"].count != 0 && length(var.vm_backup_policy["retention_weekly"].weekdays) > 0 ? var.vm_backup_policy["retention_weekly"].weekdays : null
   }
   retention_yearly {
-    count             = var.vm_backup_policy["retention_yearly"].count != 0 && var.vm_backup_policy["retention_yearly"].count != 0 ? regex("^[1-9999]$", var.vm_backup_policy["retention_yearly"].count) : null
+    count             = var.vm_backup_policy["retention_yearly"].count != 0 && var.vm_backup_policy["retention_yearly"].count != 0 ? regex("^[1-9][0-9]{0,3}$", var.vm_backup_policy["retention_yearly"].count) : null
     months            = var.vm_backup_policy["retention_yearly"].count != 0 && (var.vm_backup_policy["retention_yearly"].count != 0 && length(var.vm_backup_policy["retention_yearly"].months) > 0) ? var.vm_backup_policy["retention_yearly"].months : []                # var.vm_backup_policy["retention_yearly"].months # 
     days              = var.vm_backup_policy["retention_yearly"].count != 0 && var.vm_backup_policy.frequency != "Weekly" ? var.vm_backup_policy["retention_yearly"].days : null                                                                                          # (Optional) The days of the month to retain backups of. Must be between 1 and 31.'
     include_last_days = var.vm_backup_policy["retention_yearly"].count != 0 && var.vm_backup_policy.frequency != "Weekly" ? var.vm_backup_policy["retention_yearly"].include_last_days != null ? var.vm_backup_policy["retention_yearly"].include_last_days : null : null # (Optional) Including the last day of the month, default to false.
