@@ -1,4 +1,4 @@
 # Default example
 
-* This deploys the module in its simplest form.
+* This deploys Azure recovery services vault with customer managed keys
 
