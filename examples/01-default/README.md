@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
 # Default example
 
-* This deploys the module in its simplest form.
+* This deploys Azure recovery services vault with basic option. simple form
 
 ```hcl
 
