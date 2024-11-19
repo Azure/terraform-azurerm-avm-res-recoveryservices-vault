@@ -59,18 +59,11 @@ resource "azurerm_user_assigned_identity" "this_identity" {
   resource_group_name = azurerm_resource_group.this.name
 }
 
-# must be located in the same region as the VM to be backed up
-# resource "azurerm_storage_account" "primary" {
-#   account_replication_type = "ZRS"
-#   account_tier             = "Standard"
-#   location                 = azurerm_resource_group.primary.location
-#   name                     = module.naming.storage_account.name_unique
-#   resource_group_name      = azurerm_resource_group.primary.name
-# }
+
 module "recovery_services_vault" {
   source = "../../"
 
-  name                                           = local.vault_name #"rsv-test-vault-001"
+  name                                           = local.vault_name
   location                                       = azurerm_resource_group.this.location
   resource_group_name                            = azurerm_resource_group.this.name
   cross_region_restore_enabled                   = false
