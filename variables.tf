@@ -248,7 +248,7 @@ variable "file_share_backup_policy" {
 
 variable "immutability" {
   type        = string
-  default     = "Disabled"
+  default     = "Unlocked"
   description = "(optional) Specify Immutability Setting of vault. Locked, Unlocked, Disabled (default)"
 }
 
@@ -276,7 +276,9 @@ variable "managed_identities" {
     system_assigned            = optional(bool, false)
     user_assigned_resource_ids = optional(set(string), [])
   })
-  default     = {}
+  default     = {
+    system_assigned = true
+  }
   description = <<DESCRIPTION
   Controls the Managed Identity configuration on this resource. The following properties can be specified:
   
