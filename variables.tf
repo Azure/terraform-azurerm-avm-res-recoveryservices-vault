@@ -1,6 +1,7 @@
 variable "cross_region_restore_enabled" {
   type        = bool
   description = "(optional) Specify Cross Region Restore. true, false (default). var.storage_mode_type must GeoRedundant when setting to true"
+  default = true
 }
 
 variable "location" {

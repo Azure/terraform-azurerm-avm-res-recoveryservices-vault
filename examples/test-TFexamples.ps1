@@ -1,5 +1,5 @@
 
-$sub_id = "d200e3b2-c0dc-4076-bd30-4ccccf05ffeb"
+$sub_id = ""
 $exampleFolders = Get-ChildItem -Directory
 
 foreach ($folder in $exampleFolders) {
