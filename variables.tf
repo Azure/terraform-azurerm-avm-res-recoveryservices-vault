@@ -1,9 +1,3 @@
-variable "cross_region_restore_enabled" {
-  type        = bool
-  description = "(optional) Specify Cross Region Restore. true, false (default). var.storage_mode_type must GeoRedundant when setting to true"
-  default = true
-}
-
 variable "location" {
   type        = string
   description = "Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location."
@@ -50,6 +44,12 @@ variable "classic_vmware_replication_enabled" {
   type        = bool
   default     = false
   description = "(option) Specify Setting for Classic VMWare Replication. true, false"
+}
+
+variable "cross_region_restore_enabled" {
+  type        = bool
+  default     = true
+  description = "(optional) Specify Cross Region Restore. true, false (default). var.storage_mode_type must GeoRedundant when setting to true"
 }
 
 variable "customer_managed_key" {
@@ -277,7 +277,7 @@ variable "managed_identities" {
     system_assigned            = optional(bool, false)
     user_assigned_resource_ids = optional(set(string), [])
   })
-  default     = {
+  default = {
     system_assigned = true
   }
   description = <<DESCRIPTION
