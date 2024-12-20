@@ -24,6 +24,10 @@ This terraform module is designed to deploy Azure Recovery Services Vault. It ha
 * Azure site recovery virtual machine replication
 * Azure site recovery plan
 
+## Data Collection
+
+The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the [repository](https://aka.ms/avm/telemetry). There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft’s privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
+
 <!-- markdownlint-disable MD033 -->
 ## Requirements
 
@@ -57,12 +61,6 @@ The following resources are used by this module:
 ## Required Inputs
 
 The following input variables are required:
-
-### <a name="input_cross_region_restore_enabled"></a> [cross\_region\_restore\_enabled](#input\_cross\_region\_restore\_enabled)
-
-Description: (optional) Specify Cross Region Restore. true, false (default). var.storage\_mode\_type must GeoRedundant when setting to true
-
-Type: `bool`
 
 ### <a name="input_location"></a> [location](#input\_location)
 
@@ -115,6 +113,14 @@ Description: (option) Specify Setting for Classic VMWare Replication. true, fals
 Type: `bool`
 
 Default: `false`
+
+### <a name="input_cross_region_restore_enabled"></a> [cross\_region\_restore\_enabled](#input\_cross\_region\_restore\_enabled)
+
+Description: (optional) Specify Cross Region Restore. true, false (default). var.storage\_mode\_type must GeoRedundant when setting to true
+
+Type: `bool`
+
+Default: `true`
 
 ### <a name="input_customer_managed_key"></a> [customer\_managed\_key](#input\_customer\_managed\_key)
 
@@ -313,7 +319,7 @@ Description: (optional) Specify Immutability Setting of vault. Locked, Unlocked,
 
 Type: `string`
 
-Default: `"Disabled"`
+Default: `"Unlocked"`
 
 ### <a name="input_lock"></a> [lock](#input\_lock)
 
@@ -349,7 +355,13 @@ object({
   })
 ```
 
-Default: `{}`
+Default:
+
+```json
+{
+  "system_assigned": true
+}
+```
 
 ### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
 
