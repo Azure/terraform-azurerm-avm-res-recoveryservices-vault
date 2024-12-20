@@ -355,13 +355,7 @@ object({
   })
 ```
 
-Default:
-
-```json
-{
-  "system_assigned": true
-}
-```
+Default: `{}`
 
 ### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
 
