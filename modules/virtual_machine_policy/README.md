@@ -125,11 +125,10 @@ object({
     name                           = string
     timezone                       = string
     instant_restore_retention_days = optional(number, null)
-    instant_restore_resource_group = map(object({
+    instant_restore_resource_group = optional(map(object({
       prefix = optional(string, null)
       suffix = optional(string, null)
-
-    }))
+    })), {})
     policy_type = string
     frequency   = string
 
