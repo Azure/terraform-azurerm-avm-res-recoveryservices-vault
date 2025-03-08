@@ -28,21 +28,6 @@ output "backup_protected_file_share" {
   value = module.backup_protected_file_share
 }
 
-# resource "azurerm_backup_container_storage_account" "this" {
-
-
-#   for_each = try(var.backup_protected_file_share != null ? var.backup_protected_file_share : {}) 
-
-#   resource_group_name       = azurerm_recovery_services_vault.this.resource_group_name
-#   recovery_vault_name       = azurerm_recovery_services_vault.this.name
-#   storage_account_id  = each.value.source_storage_account_id
-#   timeouts {
-#     create = "60m"
-#     delete = "60m"
-#     read   = "10m"
-#   }
-  
-# }
 module "backup_protected_vm" {
   source = "./modules/backup_protected_vm"
 
