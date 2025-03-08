@@ -1,6 +1,11 @@
-# Protected File Share Backup
+# Default example
 
-* This deploys the module in its simplest form.
+* This deploys the module with site recovery resources.
+
+* fabric and containers
+* replication policy
+* fabric mapping
+* network mapping
 
 ## Data Collection
 

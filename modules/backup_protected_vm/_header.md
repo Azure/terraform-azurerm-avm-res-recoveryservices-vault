@@ -1,4 +1,4 @@
-# Protected File Share Backup
+# Protected virtual machine Backup
 
 * This deploys the module in its simplest form.
 
