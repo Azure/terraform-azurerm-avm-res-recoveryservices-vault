@@ -1,0 +1,4 @@
+
+  git config --local user.email "LABREG0@me.com"
+  git config --local user.name "LABREG0"
+  
