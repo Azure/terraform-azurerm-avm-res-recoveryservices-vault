@@ -27,6 +27,6 @@ module "backup_protected_file_share" {
 
     }
 
-    depends_on = [ module.recovery_services_vault_file_share_policy, ] #azurerm_backup_container_storage_account.this ]
+    depends_on = [ module.recovery_services_vault_file_share_policy, ]
 
 }
