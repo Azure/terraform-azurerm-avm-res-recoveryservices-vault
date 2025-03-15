@@ -16,6 +16,6 @@ resource "azurerm_backup_protected_vm" "this" {
       read   = timeouts.value.read
     }
   }
-  
-  depends_on          = [time_sleep.wait_pre]
+
+  depends_on = [time_sleep.wait_pre]
 }

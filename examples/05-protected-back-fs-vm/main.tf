@@ -173,21 +173,21 @@ module "recovery_services_vault" {
   }
   backup_protected_file_share = {
     protect-share-s1 = {
-      source_storage_account_id = "${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Storage/storageAccounts/fsbk${azurerm_resource_group.primary_wus3.location}005" 
-                                                #"${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Storage/storageAccounts/fsbk${azurerm_resource_group.primary_wus3.location}005"
-      source_file_share_name    = azurerm_storage_share.this.name
-      backup_file_share_policy_name         = "pol-rsv-fileshare-vault-005"
-      sleep_timer               = "30s"
+      source_storage_account_id = "${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Storage/storageAccounts/fsbk${azurerm_resource_group.primary_wus3.location}005"
+      #"${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Storage/storageAccounts/fsbk${azurerm_resource_group.primary_wus3.location}005"
+      source_file_share_name        = azurerm_storage_share.this.name
+      backup_file_share_policy_name = "pol-rsv-fileshare-vault-005"
+      sleep_timer                   = "30s"
     }
   }
   backup_protected_vm = {
     vm-03 = {
       vm_backup_policy_name = "EnhancedPolicy"
-      source_vm_id     = "${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Compute/virtualMachines/vm-${azurerm_resource_group.primary_wus3.location}-005" 
+      source_vm_id          = "${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Compute/virtualMachines/vm-${azurerm_resource_group.primary_wus3.location}-005"
       # azurerm_windows_virtual_machine.vm_wus3.id # nes/vm"
     }
-    
+
   }
 
-depends_on = [ azurerm_storage_account.sa, azurerm_windows_virtual_machine.vm_wus3 ]
+  depends_on = [azurerm_storage_account.sa, azurerm_windows_virtual_machine.vm_wus3]
 }

@@ -1,23 +1,23 @@
 variable "backup_protected_file_share" {
   type = map(object({
-    source_storage_account_id              = string
-    backup_file_share_policy_name          = string
-    source_file_share_name          = string
-    disable_registration = optional(bool, false)
-    sleep_timer = optional(string, "60s")
+    source_storage_account_id     = string
+    backup_file_share_policy_name = string
+    source_file_share_name        = string
+    disable_registration          = optional(bool, false)
+    sleep_timer                   = optional(string, "60s")
 
   }))
-  default = null
+  default     = null
   description = "(optional)  Specify Protected File Share variables"
 }
 
 variable "backup_protected_vm" {
   type = map(object({
-    source_vm_id = string
+    source_vm_id          = string
     vm_backup_policy_name = string
-      sleep_timer = optional(string, "60s")
+    sleep_timer           = optional(string, "60s")
   }))
-  default = null
+  default     = null
   description = "(optional) Specify Protected VM variables"
 }
 

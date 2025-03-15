@@ -4,7 +4,7 @@ variable "backup_protected_vm" {
     backup_policy_id          = string
     vault_name                = string
     vault_resource_group_name = string
-    sleep_timer              = optional(string, "60s")
+    sleep_timer               = optional(string, "60s")
     timeouts = optional(object({
       create = optional(string, "60m")
       delete = optional(string, "60m")
