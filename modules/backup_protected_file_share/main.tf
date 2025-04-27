@@ -1,10 +1,9 @@
 
 resource "azurerm_backup_container_storage_account" "this" {
-
   count = var.backup_protected_file_share.disable_registration == true ? 0 : 1
 
-  resource_group_name = var.backup_protected_file_share.vault_resource_group_name
   recovery_vault_name = var.backup_protected_file_share.vault_name
+  resource_group_name = var.backup_protected_file_share.vault_resource_group_name
   storage_account_id  = var.backup_protected_file_share.source_storage_account_id
 
   dynamic "timeouts" {
@@ -16,7 +15,6 @@ resource "azurerm_backup_container_storage_account" "this" {
       read   = timeouts.value.read
     }
   }
-
 }
 
 resource "time_sleep" "wait_pre" {
@@ -25,11 +23,11 @@ resource "time_sleep" "wait_pre" {
   depends_on = [azurerm_backup_container_storage_account.this]
 }
 resource "azurerm_backup_protected_file_share" "this" {
-  resource_group_name       = var.backup_protected_file_share.vault_resource_group_name
-  recovery_vault_name       = var.backup_protected_file_share.vault_name
-  source_storage_account_id = var.backup_protected_file_share.source_storage_account_id
-  source_file_share_name    = var.backup_protected_file_share.source_file_share_name
   backup_policy_id          = var.backup_protected_file_share.backup_policy_id
+  recovery_vault_name       = var.backup_protected_file_share.vault_name
+  resource_group_name       = var.backup_protected_file_share.vault_resource_group_name
+  source_file_share_name    = var.backup_protected_file_share.source_file_share_name
+  source_storage_account_id = var.backup_protected_file_share.source_storage_account_id
 
   dynamic "timeouts" {
     for_each = var.backup_protected_file_share.timeouts == null ? [] : [var.backup_protected_file_share.timeouts]
@@ -42,5 +40,4 @@ resource "azurerm_backup_protected_file_share" "this" {
   }
 
   depends_on = [time_sleep.wait_pre]
-
 }

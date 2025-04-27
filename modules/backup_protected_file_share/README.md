@@ -24,7 +24,7 @@ The following providers are used by this module:
 
 The following resources are used by this module:
 
-- [azurerm_backup_container_storage_account.container](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_container_storage_account) (resource)
+- [azurerm_backup_container_storage_account.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_container_storage_account) (resource)
 - [azurerm_backup_protected_file_share.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_protected_file_share) (resource)
 - [time_sleep.wait_pre](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) (resource)
 - [azurerm_backup_policy_file_share.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/backup_policy_file_share) (data source)
@@ -53,6 +53,12 @@ object({
     vault_resource_group_name = string
     sleep_timer               = optional(string, "60s")
     disable_registration      = optional(bool, false)
+    timeouts = optional(object({
+      create = optional(string, "60m")
+      delete = optional(string, "60m")
+      read   = optional(string, "60m")
+      update = optional(string, "60m")
+    }))
 
   })
 ```

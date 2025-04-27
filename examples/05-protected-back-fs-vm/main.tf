@@ -69,39 +69,39 @@ module "azure_region" {
 }
 # must be located in the same region as the VM to be backed up
 resource "azurerm_storage_account" "primary_wus1" {
-  name                     = "srv${azurerm_resource_group.primary_wus1.location}005"
-  location                 = azurerm_resource_group.primary_wus1.location
-  resource_group_name      = azurerm_resource_group.primary_wus1.name
-  account_tier             = "Standard"
   account_replication_type = "LRS"
+  account_tier             = "Standard"
+  location                 = azurerm_resource_group.primary_wus1.location
+  name                     = "srv${azurerm_resource_group.primary_wus1.location}005"
+  resource_group_name      = azurerm_resource_group.primary_wus1.name
 }
 
 resource "azurerm_storage_account" "primary_wus2" {
-  name                     = "srv${azurerm_resource_group.primary_wus2.location}005"
-  location                 = azurerm_resource_group.primary_wus2.location
-  resource_group_name      = azurerm_resource_group.primary_wus2.name
-  account_tier             = "Standard"
   account_replication_type = "ZRS"
+  account_tier             = "Standard"
+  location                 = azurerm_resource_group.primary_wus2.location
+  name                     = "srv${azurerm_resource_group.primary_wus2.location}005"
+  resource_group_name      = azurerm_resource_group.primary_wus2.name
 }
 resource "azurerm_storage_account" "primary_wus3" {
-  name                     = "srv${azurerm_resource_group.primary_wus3.location}005"
-  location                 = azurerm_resource_group.primary_wus3.location
-  resource_group_name      = azurerm_resource_group.primary_wus3.name
-  account_tier             = "Standard"
   account_replication_type = "ZRS"
+  account_tier             = "Standard"
+  location                 = azurerm_resource_group.primary_wus3.location
+  name                     = "srv${azurerm_resource_group.primary_wus3.location}005"
+  resource_group_name      = azurerm_resource_group.primary_wus3.name
 }
 resource "azurerm_storage_account" "sa" {
-  name                     = "fsbk${azurerm_resource_group.primary_wus3.location}005"
-  location                 = azurerm_resource_group.primary_wus3.location
-  resource_group_name      = azurerm_resource_group.primary_wus3.name
-  account_tier             = "Standard"
   account_replication_type = "LRS"
+  account_tier             = "Standard"
+  location                 = azurerm_resource_group.primary_wus3.location
+  name                     = "fsbk${azurerm_resource_group.primary_wus3.location}005"
+  resource_group_name      = azurerm_resource_group.primary_wus3.name
 }
 
 resource "azurerm_storage_share" "this" {
   name               = "share1"
-  storage_account_id = azurerm_storage_account.sa.id
   quota              = 50
+  storage_account_id = azurerm_storage_account.sa.id
 }
 resource "azurerm_user_assigned_identity" "this" {
   location            = azurerm_resource_group.this.location
