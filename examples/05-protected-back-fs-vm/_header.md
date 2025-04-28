@@ -6,6 +6,7 @@
 * replication policy
 * fabric mapping
 * network mapping
+* fixes
 
 ## Data Collection
 
