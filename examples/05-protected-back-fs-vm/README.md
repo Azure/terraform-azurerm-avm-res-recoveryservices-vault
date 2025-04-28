@@ -84,7 +84,7 @@ module "azure_region" {
 }
 # must be located in the same region as the VM to be backed up
 resource "azurerm_storage_account" "primary_wus1" {
-  account_replication_type = "LRS"
+  account_replication_type = "GRS"
   account_tier             = "Standard"
   location                 = azurerm_resource_group.primary_wus1.location
   name                     = "srv${azurerm_resource_group.primary_wus1.location}005"
@@ -106,7 +106,7 @@ resource "azurerm_storage_account" "primary_wus3" {
   resource_group_name      = azurerm_resource_group.primary_wus3.name
 }
 resource "azurerm_storage_account" "sa" {
-  account_replication_type = "LRS"
+  account_replication_type = "GRS"
   account_tier             = "Standard"
   location                 = azurerm_resource_group.primary_wus3.location
   name                     = "fsbk${azurerm_resource_group.primary_wus3.location}005"
