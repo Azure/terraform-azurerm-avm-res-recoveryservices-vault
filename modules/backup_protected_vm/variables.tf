@@ -14,5 +14,6 @@ variable "backup_protected_vm" {
     })))
 
   })
-  default = null
+  default     = null
+  description = "values for backup_protected_vm module"
 }

@@ -16,5 +16,6 @@ variable "backup_protected_file_share" {
     })))
 
   })
-  default = null
+  default     = null
+  description = "values for backup_protected_file_share module"
 }
