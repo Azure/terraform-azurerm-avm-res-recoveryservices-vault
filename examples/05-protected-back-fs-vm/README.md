@@ -256,7 +256,6 @@ The following resources are used by this module:
 - [azurerm_windows_virtual_machine.vm_wus3](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/windows_virtual_machine) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_string.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) (resource)
-- [azurerm_managed_disk.vm_wus3_osdisk](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/managed_disk) (data source)
 - [azurerm_subscription.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/subscription) (data source)
 
 <!-- markdownlint-disable MD013 -->

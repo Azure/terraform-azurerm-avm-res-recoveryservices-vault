@@ -1,10 +1,7 @@
 
 
-data "azurerm_managed_disk" "vm_wus3_osdisk" {
-  ##Needed to use a data resource to retrieve the OS disk ID
-  name                = azurerm_windows_virtual_machine.vm_wus3.os_disk[0].name
-  resource_group_name = azurerm_windows_virtual_machine.vm_wus3.resource_group_name
-}
+# This file contains the configuration for the Windows Virtual Machine in the West US 3 region.
+# It includes the creation of a virtual machine, network interface, managed disk, and public IP address.
 resource "azurerm_windows_virtual_machine" "vm_wus3" {
   admin_password        = "P@$$w0rd1234!"
   admin_username        = "adminuser"
