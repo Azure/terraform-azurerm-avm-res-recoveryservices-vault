@@ -1,7 +1,5 @@
 
-data "azurerm_subscription" "this" {
-  subscription_id = var.subscription_id
-}
+data "azurerm_subscription" "this" {}
 # This ensures we have unique CAF compliant names for our resources.
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {

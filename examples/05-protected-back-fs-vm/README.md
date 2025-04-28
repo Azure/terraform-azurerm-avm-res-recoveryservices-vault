@@ -15,9 +15,7 @@ The software may collect information about you and your use of the software and 
 
 ```hcl
 
-data "azurerm_subscription" "this" {
-  subscription_id = var.subscription_id
-}
+data "azurerm_subscription" "this" {}
 # This ensures we have unique CAF compliant names for our resources.
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
@@ -266,15 +264,7 @@ No required inputs.
 
 ## Optional Inputs
 
-The following input variables are optional (have default values):
-
-### <a name="input_subscription_id"></a> [subscription\_id](#input\_subscription\_id)
-
-Description: n/a
-
-Type: `string`
-
-Default: `"6284f04c-ec26-45e3-a7a6-24c2ef4722e4"`
+No optional inputs.
 
 ## Outputs
 
