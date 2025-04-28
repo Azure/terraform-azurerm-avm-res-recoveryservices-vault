@@ -63,6 +63,7 @@ resource "azurerm_public_ip" "westus3" {
   name                = "vm-public-ip-${azurerm_resource_group.primary_wus3.location}"
   resource_group_name = azurerm_resource_group.primary_wus3.name
   sku                 = "Standard"
+  zones               = "1,2,3"
 }
 resource "azurerm_public_ip" "eastus2" {
   allocation_method   = "Static"
@@ -70,4 +71,5 @@ resource "azurerm_public_ip" "eastus2" {
   name                = "vm-public-ip-${azurerm_resource_group.secondary_eus2.location}2"
   resource_group_name = azurerm_resource_group.secondary_eus2.name
   sku                 = "Standard"
+  zones               = "1,2,3"
 }
