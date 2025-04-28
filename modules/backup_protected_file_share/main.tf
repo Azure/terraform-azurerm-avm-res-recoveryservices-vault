@@ -18,7 +18,7 @@ resource "azurerm_backup_container_storage_account" "this" {
 }
 
 resource "time_sleep" "wait_pre" {
-  create_duration = try(var.backup_protected_file_share.sleep_timer, "60s")
+  create_duration = var.backup_protected_file_share.sleep_timer
 
   depends_on = [azurerm_backup_container_storage_account.this]
 }
