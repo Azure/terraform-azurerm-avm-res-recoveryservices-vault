@@ -46,13 +46,13 @@ Type:
 
 ```hcl
 object({
-    source_storage_account_id = string
-    backup_policy_id          = string
-    source_file_share_name    = string
-    vault_name                = string
-    vault_resource_group_name = string
-    sleep_timer               = optional(string, "60s")
-    disable_registration      = optional(bool, false)
+    source_storage_account_id     = string
+    backup_file_share_policy_name = string
+    source_file_share_name        = string
+    vault_name                    = string
+    vault_resource_group_name     = string
+    sleep_timer                   = optional(string, "60s")
+    disable_registration          = optional(bool, false)
     timeouts = optional(object({
       create = optional(string, "60m")
       delete = optional(string, "60m")

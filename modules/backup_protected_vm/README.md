@@ -46,7 +46,7 @@ Type:
 ```hcl
 object({
     source_vm_id              = string
-    backup_policy_id          = string
+    vm_backup_policy_name     = string
     vault_name                = string
     vault_resource_group_name = string
     sleep_timer               = optional(string, "60s")

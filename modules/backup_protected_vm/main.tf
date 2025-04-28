@@ -4,7 +4,7 @@ resource "time_sleep" "wait_pre" {
 resource "azurerm_backup_protected_vm" "this" {
   recovery_vault_name = var.backup_protected_vm.vault_name
   resource_group_name = var.backup_protected_vm.vault_resource_group_name
-  backup_policy_id    = var.backup_protected_vm.backup_policy_id
+  backup_policy_id    = data.azurerm_backup_policy_vm.this.id
   source_vm_id        = var.backup_protected_vm.source_vm_id
 
   dynamic "timeouts" {
