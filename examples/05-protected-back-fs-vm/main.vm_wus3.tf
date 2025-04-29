@@ -9,7 +9,7 @@ resource "azurerm_windows_virtual_machine" "vm_wus3" {
   name                  = "vm-${azurerm_resource_group.primary_wus3.location}-005"
   network_interface_ids = [azurerm_network_interface.vm_wus3.id]
   resource_group_name   = azurerm_resource_group.primary_wus3.name
-  size                  = "Standard_D11_v2_Promo" # Standard_D11_v2_Promo 
+  size                  = "Standard_D4s_v5" # Standard_D11_v2_Promo 
 
   os_disk {
     caching              = "ReadWrite"
