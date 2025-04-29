@@ -1,0 +1,4 @@
+This example should be skipped, although working, it will always fail to destroy a recovery vault due to backup instances already part of the vault when a VM and file share starts to be backedup. The backups would need to be removed before deleting the RSV. 
+
+https://github.com/Azure/terraform-azurerm-avm-res-recoveryservices-vault/actions/runs/14721268129/job/41315558366
+
