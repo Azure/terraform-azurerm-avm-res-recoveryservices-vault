@@ -78,21 +78,21 @@ resource "azurerm_storage_account" "primary_wus2" {
   account_replication_type = "ZRS"
   account_tier             = "Standard"
   location                 = azurerm_resource_group.primary_wus2.location
-  name                     = "srv${azurerm_resource_group.primary_wus2.location}005"
+  name                     = "srv${azurerm_resource_group.primary_wus2.location}555"
   resource_group_name      = azurerm_resource_group.primary_wus2.name
 }
 resource "azurerm_storage_account" "primary_wus3" {
   account_replication_type = "ZRS"
   account_tier             = "Standard"
   location                 = azurerm_resource_group.primary_wus3.location
-  name                     = "srv${azurerm_resource_group.primary_wus3.location}005"
+  name                     = "srv${azurerm_resource_group.primary_wus3.location}555"
   resource_group_name      = azurerm_resource_group.primary_wus3.name
 }
 resource "azurerm_storage_account" "sa" {
   account_replication_type = "GRS"
   account_tier             = "Standard"
   location                 = azurerm_resource_group.primary_wus3.location
-  name                     = "fsbk${azurerm_resource_group.primary_wus3.location}005"
+  name                     = "fsbk${azurerm_resource_group.primary_wus3.location}555"
   resource_group_name      = azurerm_resource_group.primary_wus3.name
 }
 
