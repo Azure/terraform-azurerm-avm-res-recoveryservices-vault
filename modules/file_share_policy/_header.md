@@ -1,4 +1,4 @@
-# Default example
+# Protected File Share Backup
 
 * This deploys the module in its simplest form.
 
