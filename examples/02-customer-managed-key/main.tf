@@ -43,21 +43,14 @@ module "azure_region" {
 module "recovery_services_vault" {
   source = "../../"
 
-  name                                           = local.vault_name #"rsv-test-vault-001"
   location                                       = azurerm_resource_group.this.location
+  name                                           = local.vault_name #"rsv-test-vault-001"
   resource_group_name                            = azurerm_resource_group.this.name
-  cross_region_restore_enabled                   = false
+  sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
-  public_network_access_enabled                  = true
-  storage_mode_type                              = "GeoRedundant"
-  sku                                            = "RS0"
-
-  managed_identities = {
-    system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
-  }
+  cross_region_restore_enabled                   = false
   customer_managed_key = {
     key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
     key_name              = azurerm_key_vault_key.this.id
@@ -65,7 +58,12 @@ module "recovery_services_vault" {
       resource_id = azurerm_user_assigned_identity.this_identity.id
     }
   }
-
+  managed_identities = {
+    system_assigned            = true
+    user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
+  }
+  public_network_access_enabled = true
+  storage_mode_type             = "GeoRedundant"
   tags = {
     env   = "Prod"
     owner = "ABREG0"
@@ -103,16 +101,16 @@ resource "azurerm_key_vault_key" "this" {
 
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
-  source              = "Azure/avm-res-keyvault-vault/azurerm"
-  version             = "0.5.1"
-  tenant_id           = data.azurerm_client_config.current.tenant_id
+  source  = "Azure/avm-res-keyvault-vault/azurerm"
+  version = "0.5.1"
+
+  location            = azurerm_resource_group.this.location
   name                = "${module.naming.key_vault.name_unique}-002"
   resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
+  tenant_id           = data.azurerm_client_config.current.tenant_id
   network_acls = {
     default_action = "Allow"
   }
-
   role_assignments = {
     deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Administrator"
@@ -124,13 +122,11 @@ module "avm_res_keyvault_vault" {
       principal_id               = azurerm_user_assigned_identity.this_identity.principal_id
     }
   }
-
-
-  wait_for_rbac_before_secret_operations = {
-    create = "60s"
-  }
   tags = {
     Dep = "IT"
+  }
+  wait_for_rbac_before_secret_operations = {
+    create = "60s"
   }
 }
 

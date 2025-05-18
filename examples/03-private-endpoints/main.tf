@@ -47,22 +47,18 @@ locals {
 module "recovery_services_vault" {
   source = "../../"
 
-  name                                           = local.vault_name
   location                                       = azurerm_resource_group.this.location
+  name                                           = local.vault_name
   resource_group_name                            = azurerm_resource_group.this.name
-  cross_region_restore_enabled                   = false
+  sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
-  public_network_access_enabled                  = false
-  storage_mode_type                              = "GeoRedundant"
-  sku                                            = "RS0"
-
+  cross_region_restore_enabled                   = false
   managed_identities = {
     system_assigned            = true
     user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
   }
-
   #create a private endpoint for each endpoint type
   private_endpoints = {
     for endpoint in local.endpoints :
@@ -96,7 +92,8 @@ module "recovery_services_vault" {
 
 
   }
-
+  public_network_access_enabled = false
+  storage_mode_type             = "GeoRedundant"
 }
 
 resource "azurerm_virtual_network" "vnet" {
@@ -139,10 +136,9 @@ resource "azurerm_network_security_rule" "no_internet" {
 }
 
 module "public_ip" {
-  count = var.bypass_ip_cidr == null ? 1 : 0
-
   source  = "lonegunmanb/public-ip/lonegunmanb"
   version = "0.1.0"
+  count   = var.bypass_ip_cidr == null ? 1 : 0
 }
 
 resource "azurerm_private_dns_zone" "this" {
