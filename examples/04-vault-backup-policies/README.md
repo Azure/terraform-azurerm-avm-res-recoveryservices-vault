@@ -67,25 +67,102 @@ resource "azurerm_user_assigned_identity" "this_identity" {
 module "recovery_services_vault" {
   source = "../../"
 
-  name                                           = local.vault_name
   location                                       = azurerm_resource_group.this.location
+  name                                           = local.vault_name
   resource_group_name                            = azurerm_resource_group.this.name
-  cross_region_restore_enabled                   = false
+  sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
-  public_network_access_enabled                  = true
-  storage_mode_type                              = "GeoRedundant"
-  sku                                            = "RS0"
+  cross_region_restore_enabled                   = false
+  file_share_backup_policy = {
+    pol-rsv-fileshare-vault-001 = {
+      name     = "pol-rsv-fileshare-vault-001"
+      timezone = "Pacific Standard Time"
+
+      frequency = "Daily" # (Required) Sets the backup frequency. Possible values are hourly, Daily
+
+      backup = {
+        time = "22:00"
+        hourly = {
+          interval        = 6
+          start_time      = "13:00"
+          window_duration = "6"
+        }
+      }
+      retention_daily = 1 # 1-200
+      retention_weekly = {
+        count    = 7
+        weekdays = ["Tuesday", "Saturday"]
+      }
+      retention_monthly = {
+        count = 5
+        # weekdays =  ["Tuesday","Saturday"]
+        # weeks = ["First","Third"]
+        days              = [3, 10, 20]
+        include_last_days = false
+      }
+      retention_yearly = {
+        count    = 5
+        months   = ["January", "June"]
+        weekdays = ["Tuesday", "Saturday"]
+        weeks    = ["First", "Third"]
+        # days = [3, 10, 20]
+        # include_last_days = false
+      }
+    }
+  }
   managed_identities = {
     system_assigned            = true
     user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
   }
-
+  public_network_access_enabled = true
+  storage_mode_type             = "GeoRedundant"
   tags = {
     env   = "Prod"
     owner = "ABREG0"
     dept  = "IT"
+  }
+  vm_backup_policy = {
+    pol-rsv-vm-vault-001 = {
+      name                           = "pol-rsv-vm-vault-001"
+      timezone                       = "Pacific Standard Time"
+      instant_restore_retention_days = 5
+      policy_type                    = "V2"
+      frequency                      = "Weekly" # (Required) Sets the backup frequency. Possible values are Hourly, Daily and Weekly
+      instant_restore_resource_group = {
+        ps = { prefix = "prefix-"
+          suffix = null
+
+        }
+      }
+      backup = {
+        time          = "22:00"
+        hour_interval = 6
+        hour_duration = 12
+        weekdays      = ["Tuesday", "Saturday"]
+      }
+      retention_daily = 7 # 7-9999
+      retention_weekly = {
+        count    = 7
+        weekdays = ["Tuesday", "Saturday"]
+      }
+      retention_monthly = {
+        count             = 5
+        weekdays          = ["Tuesday", "Saturday"]
+        weeks             = ["First", "Third"]
+        days              = [3, 10, 20]
+        include_last_days = false
+      }
+      retention_yearly = {
+        count             = 5
+        months            = ["January", "June"]
+        weekdays          = ["Tuesday", "Saturday"]
+        weeks             = ["First", "Third"]
+        days              = [3, 10, 20]
+        include_last_days = false
+      }
+    }
   }
   workload_backup_policy = {
     "pol-rsv-SAPh-vault-002" = {
@@ -144,85 +221,6 @@ module "recovery_services_vault" {
       }
     }
   }
-  vm_backup_policy = {
-    pol-rsv-vm-vault-001 = {
-      name                           = "pol-rsv-vm-vault-001"
-      timezone                       = "Pacific Standard Time"
-      instant_restore_retention_days = 5
-      policy_type                    = "V2"
-      frequency                      = "Weekly" # (Required) Sets the backup frequency. Possible values are Hourly, Daily and Weekly
-      instant_restore_resource_group = {
-        ps = { prefix = "prefix-"
-          suffix = null
-
-        }
-      }
-      backup = {
-        time          = "22:00"
-        hour_interval = 6
-        hour_duration = 12
-        weekdays      = ["Tuesday", "Saturday"]
-      }
-      retention_daily = 7 # 7-9999
-      retention_weekly = {
-        count    = 7
-        weekdays = ["Tuesday", "Saturday"]
-      }
-      retention_monthly = {
-        count             = 5
-        weekdays          = ["Tuesday", "Saturday"]
-        weeks             = ["First", "Third"]
-        days              = [3, 10, 20]
-        include_last_days = false
-      }
-      retention_yearly = {
-        count             = 5
-        months            = ["January", "June"]
-        weekdays          = ["Tuesday", "Saturday"]
-        weeks             = ["First", "Third"]
-        days              = [3, 10, 20]
-        include_last_days = false
-      }
-    }
-  }
-  file_share_backup_policy = {
-    pol-rsv-fileshare-vault-001 = {
-      name     = "pol-rsv-fileshare-vault-001"
-      timezone = "Pacific Standard Time"
-
-      frequency = "Daily" # (Required) Sets the backup frequency. Possible values are hourly, Daily
-
-      backup = {
-        time = "22:00"
-        hourly = {
-          interval        = 6
-          start_time      = "13:00"
-          window_duration = "6"
-        }
-      }
-      retention_daily = 1 # 1-200
-      retention_weekly = {
-        count    = 7
-        weekdays = ["Tuesday", "Saturday"]
-      }
-      retention_monthly = {
-        count = 5
-        # weekdays =  ["Tuesday","Saturday"]
-        # weeks = ["First","Third"]
-        days              = [3, 10, 20]
-        include_last_days = false
-      }
-      retention_yearly = {
-        count    = 5
-        months   = ["January", "June"]
-        weekdays = ["Tuesday", "Saturday"]
-        weeks    = ["First", "Third"]
-        # days = [3, 10, 20]
-        # include_last_days = false
-      }
-    }
-  }
-
 }
 
 ```
@@ -234,7 +232,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.107.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.34.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
 
@@ -256,7 +254,15 @@ No required inputs.
 
 ## Optional Inputs
 
-No optional inputs.
+The following input variables are optional (have default values):
+
+### <a name="input_subscription_id"></a> [subscription\_id](#input\_subscription\_id)
+
+Description: The Azure subscription ID where the resources will be created.
+
+Type: `string`
+
+Default: `""`
 
 ## Outputs
 

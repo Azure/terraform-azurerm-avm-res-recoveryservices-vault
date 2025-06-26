@@ -53,23 +53,21 @@ module "azure_region" {
 module "recovery_services_vault" {
   source = "../../"
 
-  name                                           = local.vault_name #"rsv-test-vault-001"
   location                                       = azurerm_resource_group.this.location
+  name                                           = local.vault_name #"rsv-test-vault-001"
   resource_group_name                            = azurerm_resource_group.this.name
-  cross_region_restore_enabled                   = false
+  sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
+  cross_region_restore_enabled                   = false
   public_network_access_enabled                  = true
   storage_mode_type                              = "GeoRedundant"
-  sku                                            = "RS0"
-
   tags = {
     env   = "Prod"
     owner = "ABREG0"
     dept  = "IT"
   }
-
 }
 ```
 
@@ -80,7 +78,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.107.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.34.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
 
@@ -99,7 +97,15 @@ No required inputs.
 
 ## Optional Inputs
 
-No optional inputs.
+The following input variables are optional (have default values):
+
+### <a name="input_subscription_id"></a> [subscription\_id](#input\_subscription\_id)
+
+Description: The Azure subscription ID where the resources will be created.
+
+Type: `string`
+
+Default: `""`
 
 ## Outputs
 
