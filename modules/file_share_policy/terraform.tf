@@ -4,7 +4,7 @@ terraform {
     # TODO: Ensure all required providers are listed here.
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.107.0"
+      version = ">= 4.34.0"
     }
   }
 }
