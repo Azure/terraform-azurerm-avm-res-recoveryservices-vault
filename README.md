@@ -106,6 +106,41 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_backup_protected_file_share"></a> [backup\_protected\_file\_share](#input\_backup\_protected\_file\_share)
+
+Description: (optional)  Specify Protected File Share variables
+
+Type:
+
+```hcl
+map(object({
+    source_storage_account_id     = string
+    backup_file_share_policy_name = string
+    source_file_share_name        = string
+    disable_registration          = optional(bool, false)
+    sleep_timer                   = optional(string, "60s")
+
+  }))
+```
+
+Default: `null`
+
+### <a name="input_backup_protected_vm"></a> [backup\_protected\_vm](#input\_backup\_protected\_vm)
+
+Description: (optional) Specify Protected VM variables
+
+Type:
+
+```hcl
+map(object({
+    source_vm_id          = string
+    vm_backup_policy_name = string
+    sleep_timer           = optional(string, "60s")
+  }))
+```
+
+Default: `null`
+
 ### <a name="input_classic_vmware_replication_enabled"></a> [classic\_vmware\_replication\_enabled](#input\_classic\_vmware\_replication\_enabled)
 
 Description: (option) Specify Setting for Classic VMWare Replication. true, false
@@ -674,6 +709,18 @@ Description: resource Id output
 ## Modules
 
 The following Modules are called:
+
+### <a name="module_backup_protected_file_share"></a> [backup\_protected\_file\_share](#module\_backup\_protected\_file\_share)
+
+Source: ./modules/backup_protected_file_share
+
+Version:
+
+### <a name="module_backup_protected_vm"></a> [backup\_protected\_vm](#module\_backup\_protected\_vm)
+
+Source: ./modules/backup_protected_vm
+
+Version:
 
 ### <a name="module_recovery_services_vault_file_share_policy"></a> [recovery\_services\_vault\_file\_share\_policy](#module\_recovery\_services\_vault\_file\_share\_policy)
 
