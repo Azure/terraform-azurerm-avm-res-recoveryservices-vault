@@ -273,7 +273,7 @@ variable "file_share_backup_policy" {
 variable "immutability" {
   type        = string
   default     = "Unlocked"
-  description = "(optional) Specify Immutability Setting of vault. Locked, Unlocked, Disabled (default)"
+  description = "(optional) Specify Immutability Setting of vault. Locked, Unlocked (default), Disabled"
 }
 
 variable "lock" {
