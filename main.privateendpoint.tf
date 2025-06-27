@@ -67,13 +67,6 @@ resource "azurerm_private_endpoint" "this_unmanaged_dns_zone_groups" {
       subresource_name   = each.value.subresource_name
     }
   }
-  dynamic "private_dns_zone_group" {
-    for_each = length(each.value.private_dns_zone_resource_ids) > 0 ? ["this"] : []
-
-    content {
-      name                 = each.value.private_dns_zone_group_name
-      private_dns_zone_ids = each.value.private_dns_zone_resource_ids
-    }
   }
 
   lifecycle {
