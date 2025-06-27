@@ -254,15 +254,7 @@ No required inputs.
 
 ## Optional Inputs
 
-The following input variables are optional (have default values):
-
-### <a name="input_subscription_id"></a> [subscription\_id](#input\_subscription\_id)
-
-Description: The Azure subscription ID where the resources will be created.
-
-Type: `string`
-
-Default: `""`
+No optional inputs.
 
 ## Outputs
 

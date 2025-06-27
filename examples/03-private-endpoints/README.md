@@ -229,14 +229,6 @@ Type: `string`
 
 Default: `null`
 
-### <a name="input_subscription_id"></a> [subscription\_id](#input\_subscription\_id)
-
-Description: The Azure subscription ID where the resources will be created.
-
-Type: `string`
-
-Default: `""`
-
 ## Outputs
 
 No outputs.
