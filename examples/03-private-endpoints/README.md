@@ -221,6 +221,14 @@ No required inputs.
 
 The following input variables are optional (have default values):
 
+### <a name="input_bypass_ip_cidr"></a> [bypass\_ip\_cidr](#input\_bypass\_ip\_cidr)
+
+Description: value to bypass the IP CIDR on firewall rules
+
+Type: `string`
+
+Default: `null`
+
 ### <a name="input_subscription_id"></a> [subscription\_id](#input\_subscription\_id)
 
 Description: The Azure subscription ID where the resources will be created.
