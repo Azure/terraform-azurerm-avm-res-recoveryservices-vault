@@ -57,22 +57,18 @@ locals {
 module "recovery_services_vault" {
   source = "../../"
 
-  name                                           = local.vault_name
   location                                       = azurerm_resource_group.this.location
+  name                                           = local.vault_name
   resource_group_name                            = azurerm_resource_group.this.name
-  cross_region_restore_enabled                   = false
+  sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
-  public_network_access_enabled                  = false
-  storage_mode_type                              = "GeoRedundant"
-  sku                                            = "RS0"
-
+  cross_region_restore_enabled                   = false
   managed_identities = {
     system_assigned            = true
     user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
   }
-
   #create a private endpoint for each endpoint type
   private_endpoints = {
     for endpoint in local.endpoints :
@@ -106,14 +102,15 @@ module "recovery_services_vault" {
 
 
   }
-
+  public_network_access_enabled = false
+  storage_mode_type             = "GeoRedundant"
 }
 
 resource "azurerm_virtual_network" "vnet" {
-  address_space       = ["192.168.0.0/16"]
   location            = azurerm_resource_group.this.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.this.name
+  address_space       = ["192.168.0.0/16"]
 }
 
 resource "azurerm_subnet" "private" {
@@ -149,10 +146,9 @@ resource "azurerm_network_security_rule" "no_internet" {
 }
 
 module "public_ip" {
-  count = var.bypass_ip_cidr == null ? 1 : 0
-
   source  = "lonegunmanb/public-ip/lonegunmanb"
   version = "0.1.0"
+  count   = var.bypass_ip_cidr == null ? 1 : 0
 }
 
 resource "azurerm_private_dns_zone" "this" {
@@ -194,7 +190,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.107.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.34.0, < 5.0.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
 

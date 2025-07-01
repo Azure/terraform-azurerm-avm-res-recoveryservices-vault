@@ -124,30 +124,33 @@ resource "azurerm_user_assigned_identity" "this" {
 }
 
 module "recovery_services_vault" {
-
   source = "../../"
 
-  name                                           = local.vault_name #"srv-test-vault-005"
   location                                       = azurerm_resource_group.this.location
+  name                                           = local.vault_name #"srv-test-vault-005"
   resource_group_name                            = azurerm_resource_group.this.name
-  cross_region_restore_enabled                   = false
+  sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
-  classic_vmware_replication_enabled             = false
-  public_network_access_enabled                  = true
-  storage_mode_type                              = "GeoRedundant"
-  sku                                            = "RS0"
-  managed_identities = {
-    system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.this.id, ]
+  backup_protected_file_share = {
+    protect-share-s1 = {
+      source_storage_account_id = "${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Storage/storageAccounts/fsbk${azurerm_resource_group.primary_wus3.location}005"
+      #"${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Storage/storageAccounts/fsbk${azurerm_resource_group.primary_wus3.location}005"
+      source_file_share_name        = azurerm_storage_share.this.name
+      backup_file_share_policy_name = "pol-rsv-fileshare-vault-005"
+      sleep_timer                   = "30s"
+    }
   }
+  backup_protected_vm = {
+    vm-03 = {
+      vm_backup_policy_name = "EnhancedPolicy"
+      source_vm_id          = "${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Compute/virtualMachines/vm-${azurerm_resource_group.primary_wus3.location}-005"
+      # azurerm_windows_virtual_machine.vm_wus3.id # nes/vm"
+    }
 
-  tags = {
-    env   = "Prod"
-    owner = "ABREG0"
-    dept  = "IT"
   }
-
+  classic_vmware_replication_enabled = false
+  cross_region_restore_enabled       = false
   file_share_backup_policy = {
     fs_obj_key_pol_001 = {
       name     = "pol-rsv-fileshare-vault-005"
@@ -185,22 +188,16 @@ module "recovery_services_vault" {
       }
     }
   }
-  backup_protected_file_share = {
-    protect-share-s1 = {
-      source_storage_account_id = "${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Storage/storageAccounts/fsbk${azurerm_resource_group.primary_wus3.location}005"
-      #"${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Storage/storageAccounts/fsbk${azurerm_resource_group.primary_wus3.location}005"
-      source_file_share_name        = azurerm_storage_share.this.name
-      backup_file_share_policy_name = "pol-rsv-fileshare-vault-005"
-      sleep_timer                   = "30s"
-    }
+  managed_identities = {
+    system_assigned            = true
+    user_assigned_resource_ids = [azurerm_user_assigned_identity.this.id, ]
   }
-  backup_protected_vm = {
-    vm-03 = {
-      vm_backup_policy_name = "EnhancedPolicy"
-      source_vm_id          = "${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Compute/virtualMachines/vm-${azurerm_resource_group.primary_wus3.location}-005"
-      # azurerm_windows_virtual_machine.vm_wus3.id # nes/vm"
-    }
-
+  public_network_access_enabled = true
+  storage_mode_type             = "GeoRedundant"
+  tags = {
+    env   = "Prod"
+    owner = "ABREG0"
+    dept  = "IT"
   }
 
   depends_on = [azurerm_storage_account.sa, azurerm_windows_virtual_machine.vm_wus3]
