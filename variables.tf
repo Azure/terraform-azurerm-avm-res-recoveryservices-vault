@@ -37,7 +37,7 @@ variable "alerts_for_all_job_failures_enabled" {
 variable "alerts_for_critical_operation_failures_enabled" {
   type        = bool
   default     = true
-  description = "(optional) Specify Setting for Monitoring 'Alerts for Critical Operration Failures'. true (default), false"
+  description = "(optional) Specify Setting for Monitoring 'Alerts for Critical Operation Failures'. true (default), false"
 }
 
 variable "backup_protected_file_share" {
