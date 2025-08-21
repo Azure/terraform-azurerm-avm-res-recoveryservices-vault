@@ -67,3 +67,5 @@ Untitled-3.sql
 Untitled-4.ps1
 Untitled-5.yaml
 examples/*/policy
+*.mptfbackup
+.avm
