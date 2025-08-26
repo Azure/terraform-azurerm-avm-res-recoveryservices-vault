@@ -16,3 +16,29 @@ output "resource_id" {
   description = "resource Id output"
   value       = azurerm_recovery_services_vault.this.id
 }
+
+# child-module policy outputs
+output "recovery_services_vault_vm_policy" {
+  description = "recovery_services_vault_vm_policy"
+  value       = module.recovery_services_vault_vm_policy
+}
+
+output "recovery_services_vault_file_share_policy" {
+  description = "recovery_services_vault_file_share_policy"
+  value       = module.recovery_services_vault_file_share_policy
+}
+
+output "recovery_workload_policy" {
+  description = "recovery_workload_policy"
+  value       = module.recovery_workload_policy
+}
+
+output "backup_protected_vm" {
+  description = "backup_protected_vm"
+  value       = module.backup_protected_vm
+}
+
+output "backup_protected_file_share" {
+  description = "backup_protected_file_share"
+  value       = module.backup_protected_file_share
+}
