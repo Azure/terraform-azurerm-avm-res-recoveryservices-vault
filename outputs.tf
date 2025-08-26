@@ -1,3 +1,8 @@
+output "file_share_policy_resource_id" {
+  description = "Resource ID of the file share backup policy"
+  value       = module.file_share_policy.resource_id
+}
+
 output "private_endpoints" {
   description = <<DESCRIPTION
   A map of private endpoints. The map key is the supplied input to var.private_endpoints. The map value is the entire azurerm_private_endpoint resource."
@@ -17,17 +22,12 @@ output "resource_id" {
   value       = azurerm_recovery_services_vault.this.id
 }
 
-output "file_share_policy_resource_id" {
-  value = module.file_share_policy.resource_id
-  description = "Resource ID of the file share backup policy"
-}
-
 output "virtual_machine_policy_resource_id" {
-  value = module.virtual_machine_policy.resource_id
   description = "Resource ID of the VM backup policy"
+  value       = module.virtual_machine_policy.resource_id
 }
 
 output "workload_policy_resource_id" {
-  value = module.workload_policy.resource_id
   description = "Resource ID of the workload backup policy"
+  value       = module.workload_policy.resource_id
 }
