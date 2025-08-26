@@ -697,9 +697,29 @@ Default: `null`
 
 The following outputs are exported:
 
+### <a name="output_backup_protected_file_share"></a> [backup\_protected\_file\_share](#output\_backup\_protected\_file\_share)
+
+Description: backup\_protected\_file\_share
+
+### <a name="output_backup_protected_vm"></a> [backup\_protected\_vm](#output\_backup\_protected\_vm)
+
+Description: backup\_protected\_vm
+
 ### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
 
 Description:   A map of private endpoints. The map key is the supplied input to var.private\_endpoints. The map value is the entire azurerm\_private\_endpoint resource."
+
+### <a name="output_recovery_services_vault_file_share_policy"></a> [recovery\_services\_vault\_file\_share\_policy](#output\_recovery\_services\_vault\_file\_share\_policy)
+
+Description: recovery\_services\_vault\_file\_share\_policy
+
+### <a name="output_recovery_services_vault_vm_policy"></a> [recovery\_services\_vault\_vm\_policy](#output\_recovery\_services\_vault\_vm\_policy)
+
+Description: recovery\_services\_vault\_vm\_policy
+
+### <a name="output_recovery_workload_policy"></a> [recovery\_workload\_policy](#output\_recovery\_workload\_policy)
+
+Description: recovery\_workload\_policy
 
 ### <a name="output_resource"></a> [resource](#output\_resource)
 
