@@ -450,28 +450,28 @@ variable "vm_backup_policy" {
       time          = string
       hour_interval = optional(number, null)
       hour_duration = optional(number, null)
-      weekdays      = optional(list(string), [])
+      weekdays      = optional(list(string), null)
     })
 
     retention_weekly = optional(object({
       count    = optional(number, 7)
-      weekdays = optional(list(string), [])
+      weekdays = optional(list(string), null)
     }), {})
 
     retention_monthly = optional(object({
       count             = optional(number, 0)
-      weekdays          = optional(list(string), [])
-      weeks             = optional(list(string), [])
-      days              = optional(list(number), [])
+      weekdays          = optional(list(string), null)
+      weeks             = optional(list(string), null)
+      days              = optional(list(number), null)
       include_last_days = optional(bool, false)
     }), {})
 
     retention_yearly = optional(object({
       count             = optional(number, 0)
-      months            = optional(list(string), [])
-      weekdays          = optional(list(string), [])
-      weeks             = optional(list(string), [])
-      days              = optional(list(number), [])
+      months            = optional(list(string), null)
+      weekdays          = optional(list(string), null)
+      weeks             = optional(list(string), null)
+      days              = optional(list(number), null)
       include_last_days = optional(bool, false)
     }), {})
   }))
