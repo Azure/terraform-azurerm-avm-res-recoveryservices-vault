@@ -103,7 +103,7 @@ Default: `true`
 
 ### <a name="input_alerts_for_critical_operation_failures_enabled"></a> [alerts\_for\_critical\_operation\_failures\_enabled](#input\_alerts\_for\_critical\_operation\_failures\_enabled)
 
-Description: (optional) Specify Setting for Monitoring 'Alerts for Critical Operration Failures'. true (default), false
+Description: (optional) Specify Setting for Monitoring 'Alerts for Critical Operation Failures'. true (default), false
 
 Type: `bool`
 
