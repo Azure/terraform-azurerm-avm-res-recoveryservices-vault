@@ -52,19 +52,12 @@ resource "azurerm_backup_policy_vm" "this" {
     for_each = var.vm_backup_policy["retention_yearly"].count > 0 ? { this = var.vm_backup_policy["retention_yearly"] } : {}
 
     content {
-      count = var.vm_backup_policy["retention_yearly"].count != 0 && var.vm_backup_policy["retention_yearly"].count != 0 ? regex("^[1-9][0-9]{0,3}$", var.vm_backup_policy["retention_yearly"].count) : null
-
-      months = var.vm_backup_policy["retention_yearly"].months
-
-      days = (var.vm_backup_policy["retention_yearly"].count != 0 && contains(keys(var.vm_backup_policy["retention_yearly"]), "days") && var.vm_backup_policy["retention_yearly"].days != null && length(var.vm_backup_policy["retention_yearly"].days) > 0) ? var.vm_backup_policy["retention_yearly"].days : null
-
-
+      count             = var.vm_backup_policy["retention_yearly"].count != 0 && var.vm_backup_policy["retention_yearly"].count != 0 ? regex("^[1-9][0-9]{0,3}$", var.vm_backup_policy["retention_yearly"].count) : null
+      months            = var.vm_backup_policy["retention_yearly"].months
+      days              = (var.vm_backup_policy["retention_yearly"].count != 0 && contains(keys(var.vm_backup_policy["retention_yearly"]), "days") && var.vm_backup_policy["retention_yearly"].days != null && length(var.vm_backup_policy["retention_yearly"].days) > 0) ? var.vm_backup_policy["retention_yearly"].days : null
       include_last_days = (var.vm_backup_policy["retention_yearly"].count != 0 && contains(keys(var.vm_backup_policy["retention_yearly"]), "include_last_days") && var.vm_backup_policy["retention_yearly"].include_last_days == true && (!contains(keys(var.vm_backup_policy["retention_yearly"]), "weekdays") || length(var.vm_backup_policy["retention_yearly"].weekdays) == 0) && (!contains(keys(var.vm_backup_policy["retention_yearly"]), "weeks") || length(var.vm_backup_policy["retention_yearly"].weeks) == 0)) ? true : null
-
-      weekdays = (var.vm_backup_policy["retention_yearly"].count != 0 && contains(keys(var.vm_backup_policy["retention_yearly"]), "weekdays") && var.vm_backup_policy["retention_yearly"].weekdays != null && length(var.vm_backup_policy["retention_yearly"].weekdays) > 0 && (!contains(keys(var.vm_backup_policy["retention_yearly"]), "include_last_days") || var.vm_backup_policy["retention_yearly"].include_last_days == false)) ? var.vm_backup_policy["retention_yearly"].weekdays : null
-
-
-      weeks = (var.vm_backup_policy["retention_yearly"].count != 0 && contains(keys(var.vm_backup_policy["retention_yearly"]), "weeks") && var.vm_backup_policy["retention_yearly"].weeks != null && length(var.vm_backup_policy["retention_yearly"].weeks) > 0 && (!contains(keys(var.vm_backup_policy["retention_yearly"]), "include_last_days") || var.vm_backup_policy["retention_yearly"].include_last_days == false)) ? var.vm_backup_policy["retention_yearly"].weeks : null
+      weekdays          = (var.vm_backup_policy["retention_yearly"].count != 0 && contains(keys(var.vm_backup_policy["retention_yearly"]), "weekdays") && var.vm_backup_policy["retention_yearly"].weekdays != null && length(var.vm_backup_policy["retention_yearly"].weekdays) > 0 && (!contains(keys(var.vm_backup_policy["retention_yearly"]), "include_last_days") || var.vm_backup_policy["retention_yearly"].include_last_days == false)) ? var.vm_backup_policy["retention_yearly"].weekdays : null
+      weeks             = (var.vm_backup_policy["retention_yearly"].count != 0 && contains(keys(var.vm_backup_policy["retention_yearly"]), "weeks") && var.vm_backup_policy["retention_yearly"].weeks != null && length(var.vm_backup_policy["retention_yearly"].weeks) > 0 && (!contains(keys(var.vm_backup_policy["retention_yearly"]), "include_last_days") || var.vm_backup_policy["retention_yearly"].include_last_days == false)) ? var.vm_backup_policy["retention_yearly"].weeks : null
     }
   }
 }
