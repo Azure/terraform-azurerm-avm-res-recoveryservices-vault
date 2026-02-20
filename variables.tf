@@ -209,7 +209,7 @@ variable "file_share_backup_policy" {
     A map objects for backup and retation options.
 
     - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
-    - `role_assignments` - (Optional) A map of role assignments to create on the 
+    - `role_assignments` - (Optional) A map of role assignments to create on the
 
     - `backup` - (required) backup options.
         - `frequency` - (Required) Sets the backup frequency. Possible values are hourly, Daily and Weekly.
@@ -218,7 +218,7 @@ variable "file_share_backup_policy" {
         - `hour_duration` -  (Optional) Duration of the backup window in hours. Possible values are between 4 and 24 This is used when frequency is hourly. 12
         - `weekdays` -  (Optional) The days of the week to perform backups on. Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday. This is used when frequency is Weekly. ["Tuesday", "Saturday"]
     - `retention_daily` - (Optional)
-      - `count` - 
+      - `count` -
     - `retantion_weekly` -
       - `count` -
       - `weekdays` -
@@ -304,7 +304,7 @@ variable "managed_identities" {
   default     = {}
   description = <<DESCRIPTION
   Controls the Managed Identity configuration on this resource. The following properties can be specified:
-  
+
   - `system_assigned` - (Optional) Specifies if the System Assigned Managed Identity should be enabled.
   - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
   DESCRIPTION
@@ -477,68 +477,79 @@ variable "vm_backup_policy" {
   }))
   default     = null
   description = <<DESCRIPTION
-    A map objects for backup and retation options.
+    (Optional) A map of VM backup policy definitions.
 
-    - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
-    - `role_assignments` - (Optional) A map of role assignments to create on the 
+    - `name` - (Required) Backup policy name.
+    - `timezone` - (Required) Time zone used by schedule/retention operations (for example `UTC`).
+    - `policy_type` - (Required) Backup policy type.
+    - `frequency` - (Required) Frequency type for backup. Supported values include `Hourly`, `Daily`, and `Weekly`.
+    - `instant_restore_retention_days` - (Optional) Number of days to retain instant restore snapshots.
+    - `instant_restore_resource_group` - (Optional) Prefix/suffix settings for instant restore resource group naming.
+      - `prefix` - (Optional) Prefix for auto-generated instant restore resource group name.
+      - `suffix` - (Optional) Suffix for auto-generated instant restore resource group name.
 
-    - `backup` - (required) backup options.
-        - `frequency` - (Required) Sets the backup frequency. Possible values are Hourly, Daily and Weekly.
-        - `time` - (required) Specify time in a 24 hour format HH:MM. "22:00"
-        - `hour_interval` - (Optional) Interval in hour at which backup is triggered. Possible values are 4, 6, 8 and 12. This is used when frequency is Hourly. 6
-        - `hour_duration` -  (Optional) Duration of the backup window in hours. Possible values are between 4 and 24 This is used when frequency is Hourly. 12
-        - `weekdays` -  (Optional) The days of the week to perform backups on. Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday. This is used when frequency is Weekly. ["Tuesday", "Saturday"]
-    - `retention_daily` - (Optional)
-      - `count` - 
-    - `retantion_weekly` -
-      - `count` -
-      - `weekdays` -
-    - `retantion_monthly` -
-      - `count` -  # (Required) The number of monthly backups to keep. Must be between 1 and 9999
-      - `weekdays` - (Optional) The weekday backups to retain . Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday.
-      - `weeks` -  # (Optional) The weeks of the month to retain backups of. Must be one of First, Second, Third, Fourth, Last.
-      - `days` -  # (Optional) The days of the month to retain backups of. Must be between 1 and 31.
-      - `include_last_days` -  # (Optional) Including the last day of the month, default to false.
-    - `retantion_yearly` -
-      - `months` - # (Required) The months of the year to retain backups of. Must be one of January, February, March, April, May, June, July, August, September, October, November and December.
-      - `count` -  # (Required) The number of monthly backups to keep. Must be between 1 and 9999
-      - `weekdays` - (Optional) The weekday backups to retain . Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday.
-      - `weeks` -  # (Optional) The weeks of the month to retain backups of. Must be one of First, Second, Third, Fourth, Last.
-      - `days` -  # (Optional) The days of the month to retain backups of. Must be between 1 and 31.
-      - `include_last_days` -  # (Optional) Including the last day of the month, default to false.
+    - `backup` - (Required) Backup schedule configuration.
+      - `time` - (Required) Backup start time in `HH:MM` format (24-hour).
+      - `hour_interval` - (Optional) Interval in hours for `Hourly` frequency. Typical values are `4`, `6`, `8`, `12`.
+      - `hour_duration` - (Optional) Backup window duration in hours for `Hourly` frequency.
+      - `weekdays` - (Optional) Days of week used with `Weekly` frequency.
 
-    example:
-      retentions = {
-      rest1 = {
-        backup = {
-          frequency     = "Hourly"
-          time          = "22:00"
-          hour_interval = 6
-          hour_duration = 12
-          # weekdays      = ["Tuesday", "Saturday"]
+    - `retention_daily` - (Optional) Number of daily restore points to retain.
+    - `retention_weekly` - (Optional) Weekly retention configuration.
+      - `count` - (Optional) Number of weeks to retain.
+      - `weekdays` - (Optional) Weekdays to retain.
+    - `retention_monthly` - (Optional) Monthly retention configuration.
+      - `count` - (Optional) Number of months to retain.
+      - `weekdays` - (Optional) Weekdays to retain.
+      - `weeks` - (Optional) Weeks in month to retain (`First`, `Second`, `Third`, `Fourth`, `Last`).
+      - `days` - (Optional) Days of month to retain.
+      - `include_last_days` - (Optional) Include the last day of month.
+    - `retention_yearly` - (Optional) Yearly retention configuration.
+      - `count` - (Optional) Number of years to retain.
+      - `months` - (Optional) Months to retain.
+      - `weekdays` - (Optional) Weekdays to retain.
+      - `weeks` - (Optional) Weeks in month to retain.
+      - `days` - (Optional) Days of month to retain.
+      - `include_last_days` - (Optional) Include the last day of month.
+
+    Example input:
+    ```terraform
+    vm_backup_policy = {
+      policy01 = {
+        name                           = "vmpol-prod-daily"
+        timezone                       = "UTC"
+        policy_type                    = "V2"
+        frequency                      = "Daily"
+        instant_restore_retention_days = 2
+        instant_restore_resource_group = {
+          rg = {
+            prefix = "ir"
+            suffix = "prod"
+          }
         }
-        retention_daily = 7
-        retention_weekly = {
-          count    = 7
-          weekdays = ["Monday", "Wednesday"]
 
+        backup = {
+          time = "23:00"
+        }
+
+        retention_daily = 30
+        retention_weekly = {
+          count    = 8
+          weekdays = ["Sunday"]
         }
         retention_monthly = {
-          count = 5
-          # weekdays =  ["Tuesday","Saturday"]
-          # weeks = ["First","Third"]
-          days = [3, 10, 20]
+          count    = 12
+          weeks    = ["First"]
+          weekdays = ["Sunday"]
         }
         retention_yearly = {
-          count  = 5
-          months = []
-          # weekdays =  ["Tuesday","Saturday"]
-          # weeks = ["First","Third"]
-          days = [3, 10, 20]
-        }
-
+          count    = 5
+          months   = ["January"]
+          weeks    = ["First"]
+          weekdays = ["Sunday"]
         }
       }
+    }
     DESCRIPTION
 }
 
@@ -586,5 +597,71 @@ variable "workload_backup_policy" {
     }))
   }))
   default     = null
-  description = "(Required)"
+  description = <<DESCRIPTION
+(Optional) A map of workload backup policy definitions for workload-aware backups (for example SQL in Azure VM).
+
+- `name` - (Required) The backup policy name.
+- `workload_type` - (Required) The workload type. Example: `SQLDataBase`.
+- `settings` - (Required) Common policy settings.
+  - `time_zone` - (Required) Time zone used by the policy schedule, for example `UTC`.
+  - `compression_enabled` - (Required) Whether backup compression is enabled.
+- `backup_frequency` - (Required) Overall schedule type for the policy.
+- `protection_policy` - (Required) A map of protection policy blocks (for example `full`, `differential`, `log`).
+  - `policy_type` - (Required) Policy type. Supported values include `Full`, `Differential`, and `Log`.
+  - `retention_daily_count` - (Required) Number of daily recovery points to retain.
+  - `retention_weekly` - (Optional) Weekly retention settings.
+    - `count` - (Optional) Number of weeks to retain.
+    - `weekdays` - (Optional) Weekdays to retain.
+  - `backup` - (Optional) Backup schedule settings.
+    - `time` - (Optional) Time in `HH:MM` format.
+    - `frequency_in_minutes` - (Optional) Frequency in minutes (used for log backups).
+    - `weekdays` - (Optional) Weekdays to run backups.
+  - `retention_monthly` - (Optional) Monthly retention settings.
+    - `count` - (Optional) Number of months to retain.
+    - `weekdays` - (Optional) Weekdays to retain.
+    - `weeks` - (Optional) Weeks in month to retain (`First`, `Second`, `Third`, `Fourth`, `Last`).
+    - `monthdays` - (Optional) Days of month to retain.
+    - `include_last_days` - (Optional) Include the last day of month.
+  - `retention_yearly` - (Optional) Yearly retention settings.
+    - `count` - (Optional) Number of years to retain.
+    - `months` - (Optional) Months to retain.
+    - `weekdays` - (Optional) Weekdays to retain.
+    - `weeks` - (Optional) Weeks in month to retain.
+    - `monthdays` - (Optional) Days of month to retain.
+    - `include_last_days` - (Optional) Include the last day of month.
+
+Example input:
+```terraform
+workload_backup_policy = {
+  policy01 = {
+    name          = "wbp-sql-prod"
+    workload_type = "SQLDataBase"
+    settings = {
+      time_zone           = "UTC"
+      compression_enabled = true
+    }
+
+    backup_frequency = "Daily"
+    protection_policy = {
+      full = {
+        policy_type           = "Full"
+        retention_daily_count = 30
+        backup = {
+          time     = "23:00"
+          weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        }
+      }
+
+      log = {
+        policy_type           = "Log"
+        retention_daily_count = 15
+        backup = {
+          frequency_in_minutes = 60
+        }
+      }
+    }
+  }
+}
+```
+DESCRIPTION
 }
