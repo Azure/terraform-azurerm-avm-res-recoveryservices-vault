@@ -36,11 +36,3 @@ locals {
     } : {}
   }
 }
-
-locals {
-  private_endpoint_resource_ids = var.private_endpoints_manage_dns_zone_group ? {
-    for key, value in azurerm_private_endpoint.this_managed_dns_zone_groups : key => value.id
-    } : {
-    for key, value in azurerm_private_endpoint.this_unmanaged_dns_zone_groups : key => value.id
-  }
-}
