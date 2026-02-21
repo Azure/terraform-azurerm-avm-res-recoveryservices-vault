@@ -42,10 +42,10 @@ locals {
 
 locals {
   valid_module_source_regex = [
-    "registry.terraform.io/[Aa]zure/.+",
-    "registry.opentofu.io/[Aa]zure/.+",
-    "git::https://github\\.com/[Aa]zure/.+",
-    "git::ssh:://git@github\\.com/[Aa]zure/.+",
+    "registry.terraform.io/[A|a]zure/.+",
+    "registry.opentofu.io/[A|a]zure/.+",
+    "git::https://github\\.com/[A|a]zure/.+",
+    "git::ssh:://git@github\\.com/[A|a]zure/.+",
   ]
 }
 

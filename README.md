@@ -243,7 +243,7 @@ Description: A map of diagnostic settings to create on the Recovery Services Vau
 - `storage_account_resource_id` - (Optional) The resource ID of the storage account to send logs and metrics to.
 - `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
 - `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
-- `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
+- `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send diagnostic logs.
 
 Example Inputs:
 ```terraform
@@ -439,7 +439,7 @@ Default: `{}`
 
 ### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
 
-Description: A map of private endpoints to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description: A map of private endpoints to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
 - `role_assignments` - (Optional) A map of role assignments to create on the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time. See `var.role_assignments` for more information.
@@ -452,22 +452,10 @@ Description: A map of private endpoints to create on the Recovery Services Vault
 - `private_service_connection_name` - (Optional) The name of the private service connection. One will be generated if not set.
 - `network_interface_name` - (Optional) The name of the network interface. One will be generated if not set.
 - `location` - (Optional) The Azure location where the resources will be deployed. Defaults to the location of the resource group.
-- `resource_group_name` - (Optional) The resource group where the resources will be deployed. Defaults to the resource group of the Recovery Services Vault.
+- `resource_group_name` - (Optional) The resource group where the resources will be deployed. Defaults to the resource group of the Key Vault.
 - `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   - `name` - The name of the IP configuration.
   - `private_ip_address` - The private IP address of the IP configuration.
-
-Example Inputs:
-```terraform
-private_endpoints = {
-  backup = {
-    name                          = "pe-rsv-backup"
-    subnet_resource_id            = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-example/providers/Microsoft.Network/virtualNetworks/vnet-example/subnets/snet-endpoints"
-    subresource_name              = "AzureBackup"
-    private_dns_zone_resource_ids = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-dns/providers/Microsoft.Network/privateDnsZones/privatelink.backup.windowsazure.com"]
-  }
-}
-```
 
 Type:
 
