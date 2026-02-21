@@ -67,14 +67,6 @@ resource "azurerm_private_endpoint" "this_unmanaged_dns_zone_groups" {
       subresource_name   = each.value.subresource_name
     }
   }
-  dynamic "private_dns_zone_group" {
-    for_each = length(each.value.private_dns_zone_resource_ids) > 0 ? ["this"] : []
-
-    content {
-      name                 = each.value.private_dns_zone_group_name
-      private_dns_zone_ids = each.value.private_dns_zone_resource_ids
-    }
-  }
 
   lifecycle {
     ignore_changes = [private_dns_zone_group]
@@ -85,5 +77,5 @@ resource "azurerm_private_endpoint_application_security_group_association" "this
   for_each = local.private_endpoint_application_security_group_associations
 
   application_security_group_id = each.value.asg_resource_id
-  private_endpoint_id           = azurerm_private_endpoint.this_managed_dns_zone_groups[each.value.pe_key].id
+  private_endpoint_id           = local.private_endpoint_resource_ids[each.value.pe_key]
 }
