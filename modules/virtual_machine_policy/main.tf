@@ -1,63 +1,120 @@
+locals {
+  time_formatted = "1900-01-01T${var.vm_backup_policy["backup"].time}:00Z"
 
-resource "azurerm_backup_policy_vm" "this" {
-  name                           = var.vm_backup_policy.name                                                                                                                                                   # var.name
-  recovery_vault_name            = var.recovery_vault_name                                                                                                                                                     # var.recovery_vault_name
-  resource_group_name            = var.resource_group_name                                                                                                                                                     # var.resource_group_name
-  instant_restore_retention_days = var.vm_backup_policy.instant_restore_retention_days != null ? var.vm_backup_policy.policy_type == "Weekly" ? 5 : var.vm_backup_policy.instant_restore_retention_days : null # var.instant_restore_retention_days
-  policy_type                    = var.vm_backup_policy.policy_type                                                                                                                                            # var.policy_type
-  timezone                       = var.vm_backup_policy.timezone                                                                                                                                               # var.timezone
+  schedule_policy = var.vm_backup_policy.policy_type == "V2" ? (
+    var.vm_backup_policy.frequency == "Hourly" ? {
+      schedulePolicyType   = "SimpleSchedulePolicyV2"
+      scheduleRunFrequency = "Hourly"
+      hourlySchedule = {
+        interval                = var.vm_backup_policy["backup"].hour_interval
+        scheduleWindowStartTime = local.time_formatted
+        scheduleWindowDuration  = var.vm_backup_policy["backup"].hour_duration
+      }
+      } : var.vm_backup_policy.frequency == "Daily" ? {
+      schedulePolicyType   = "SimpleSchedulePolicyV2"
+      scheduleRunFrequency = "Daily"
+      dailySchedule = {
+        scheduleRunTimes = [local.time_formatted]
+      }
+      } : {
+      schedulePolicyType   = "SimpleSchedulePolicyV2"
+      scheduleRunFrequency = "Weekly"
+      weeklySchedule = {
+        scheduleRunDays  = var.vm_backup_policy["backup"].weekdays
+        scheduleRunTimes = [local.time_formatted]
+      }
+    }
+    ) : (
+    var.vm_backup_policy.frequency == "Weekly" ? {
+      schedulePolicyType   = "SimpleSchedulePolicy"
+      scheduleRunFrequency = "Weekly"
+      scheduleRunTimes     = [local.time_formatted]
+      scheduleRunDays      = var.vm_backup_policy["backup"].weekdays
+      } : {
+      schedulePolicyType   = "SimpleSchedulePolicy"
+      scheduleRunFrequency = "Daily"
+      scheduleRunTimes     = [local.time_formatted]
+    }
+  )
 
-  backup {
-    frequency     = var.vm_backup_policy.frequency != null ? regex("^Hourly|Daily|Weekly$", var.vm_backup_policy.frequency) : null
-    time          = var.vm_backup_policy["backup"].time != null ? var.vm_backup_policy["backup"].time : null
-    hour_duration = var.vm_backup_policy.frequency == "Hourly" && var.vm_backup_policy["backup"].hour_duration != null ? regex("/0[1-2]|1[0-2]-0[4-9]|1[1-9]|2[0-4]|3[0-1]|[1-2[4-8]/gm", var.vm_backup_policy["backup"].hour_duration) : null
-    hour_interval = var.vm_backup_policy.frequency == "Hourly" && var.vm_backup_policy["backup"].hour_interval != null ? regex("^4|6|8|12$", var.vm_backup_policy["backup"].hour_interval) : null
-    weekdays      = var.vm_backup_policy.frequency == "Weekly" && length(var.vm_backup_policy["backup"].weekdays) != null ? var.vm_backup_policy["backup"].weekdays : null
+  retention_policy = {
+    retentionPolicyType = "LongTermRetentionPolicy"
+    dailySchedule = var.vm_backup_policy.frequency != "Weekly" && var.vm_backup_policy.retention_daily != null ? {
+      retentionTimes = [local.time_formatted]
+      retentionDuration = {
+        count        = var.vm_backup_policy.retention_daily
+        durationType = "Days"
+      }
+    } : null
+    weeklySchedule = var.vm_backup_policy["retention_weekly"].count > 0 && length(var.vm_backup_policy["retention_weekly"].weekdays) > 0 ? {
+      daysOfTheWeek  = var.vm_backup_policy["retention_weekly"].weekdays
+      retentionTimes = [local.time_formatted]
+      retentionDuration = {
+        count        = var.vm_backup_policy["retention_weekly"].count
+        durationType = "Weeks"
+      }
+    } : null
+    monthlySchedule = var.vm_backup_policy["retention_monthly"].count > 0 ? {
+      retentionScheduleFormatType = (length(var.vm_backup_policy["retention_monthly"].days) > 0 || var.vm_backup_policy["retention_monthly"].include_last_days) ? "Daily" : "Weekly"
+      retentionScheduleDaily = (length(var.vm_backup_policy["retention_monthly"].days) > 0 || var.vm_backup_policy["retention_monthly"].include_last_days) ? {
+        daysOfTheMonth = length(var.vm_backup_policy["retention_monthly"].days) > 0 ? [
+          for d in var.vm_backup_policy["retention_monthly"].days : { date = d, isLast = false }
+        ] : null
+      } : null
+      retentionScheduleWeekly = !(length(var.vm_backup_policy["retention_monthly"].days) > 0 || var.vm_backup_policy["retention_monthly"].include_last_days) ? {
+        daysOfTheWeek   = var.vm_backup_policy["retention_monthly"].weekdays
+        weeksOfTheMonth = var.vm_backup_policy["retention_monthly"].weeks
+      } : null
+      retentionTimes = [local.time_formatted]
+      retentionDuration = {
+        count        = var.vm_backup_policy["retention_monthly"].count
+        durationType = "Months"
+      }
+    } : null
+    yearlySchedule = var.vm_backup_policy["retention_yearly"].count > 0 ? {
+      retentionScheduleFormatType = (length(var.vm_backup_policy["retention_yearly"].days) > 0 || var.vm_backup_policy["retention_yearly"].include_last_days) ? "Daily" : "Weekly"
+      retentionScheduleDaily = (length(var.vm_backup_policy["retention_yearly"].days) > 0 || var.vm_backup_policy["retention_yearly"].include_last_days) ? {
+        daysOfTheMonth = length(var.vm_backup_policy["retention_yearly"].days) > 0 ? [
+          for d in var.vm_backup_policy["retention_yearly"].days : { date = d, isLast = false }
+        ] : null
+      } : null
+      retentionScheduleWeekly = !(length(var.vm_backup_policy["retention_yearly"].days) > 0 || var.vm_backup_policy["retention_yearly"].include_last_days) ? {
+        daysOfTheWeek   = var.vm_backup_policy["retention_yearly"].weekdays
+        weeksOfTheMonth = var.vm_backup_policy["retention_yearly"].weeks
+      } : null
+      monthsOfYear   = var.vm_backup_policy["retention_yearly"].months
+      retentionTimes = [local.time_formatted]
+      retentionDuration = {
+        count        = var.vm_backup_policy["retention_yearly"].count
+        durationType = "Years"
+      }
+    } : null
   }
-  dynamic "instant_restore_resource_group" {
-    for_each = length(var.vm_backup_policy.instant_restore_resource_group) > 0 ? var.vm_backup_policy.instant_restore_resource_group : {}
+}
 
-    content {
-      prefix = instant_restore_resource_group.value["prefix"] != null ? instant_restore_resource_group.value["prefix"] : "prefix-"
-      suffix = instant_restore_resource_group.value["prefix"] != null && instant_restore_resource_group.value["suffix"] != null ? instant_restore_resource_group.value["suffix"] : null
+data "azapi_client_config" "current" {}
+
+resource "azapi_resource" "this" {
+  type      = "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01"
+  name      = var.vm_backup_policy.name
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.RecoveryServices/vaults/${var.recovery_vault_name}"
+
+  body = {
+    properties = {
+      backupManagementType = "AzureIaasVM"
+      policyType           = var.vm_backup_policy.policy_type
+      timeZone             = var.vm_backup_policy.timezone
+      instantRpRetentionRangeInDays = var.vm_backup_policy.instant_restore_retention_days != null ? (
+        var.vm_backup_policy.policy_type == "Weekly" ? 5 : var.vm_backup_policy.instant_restore_retention_days
+      ) : null
+      instantRPDetails = length(var.vm_backup_policy.instant_restore_resource_group) > 0 ? {
+        azureBackupRGNamePrefix = one(values(var.vm_backup_policy.instant_restore_resource_group)).prefix
+        azureBackupRGNameSuffix = one(values(var.vm_backup_policy.instant_restore_resource_group)).suffix
+      } : null
+      schedulePolicy  = local.schedule_policy
+      retentionPolicy = local.retention_policy
     }
   }
-  dynamic "retention_daily" {
-    for_each = var.vm_backup_policy.frequency != "Weekly" ? { this = var.vm_backup_policy["retention_daily"] } : {}
 
-    content {
-      count = var.vm_backup_policy.frequency != "Weekly" ? var.vm_backup_policy["retention_daily"] : null
-    }
-  }
-  dynamic "retention_monthly" {
-    for_each = var.vm_backup_policy["retention_monthly"].count > 0 ? { this = var.vm_backup_policy["retention_monthly"] } : {}
-
-    content {
-      count             = var.vm_backup_policy["retention_monthly"].count != 0 ? regex("^[1-9][0-9]{0,3}$", var.vm_backup_policy["retention_monthly"].count) : null
-      days              = (contains(keys(var.vm_backup_policy["retention_monthly"]), "days") && var.vm_backup_policy["retention_monthly"].days != null && length(var.vm_backup_policy["retention_monthly"].days) > 0) ? var.vm_backup_policy["retention_monthly"].days : null
-      include_last_days = (contains(keys(var.vm_backup_policy["retention_monthly"]), "days") && var.vm_backup_policy["retention_monthly"].days != null && length(var.vm_backup_policy["retention_monthly"].days) > 0 && contains(keys(var.vm_backup_policy["retention_monthly"]), "include_last_days")) ? var.vm_backup_policy["retention_monthly"].include_last_days : null
-      weekdays          = ((!contains(keys(var.vm_backup_policy["retention_monthly"]), "days") || var.vm_backup_policy["retention_monthly"].days == null || length(var.vm_backup_policy["retention_monthly"].days) == 0) && contains(keys(var.vm_backup_policy["retention_monthly"]), "weekdays") && length(var.vm_backup_policy["retention_monthly"].weekdays) > 0) ? var.vm_backup_policy["retention_monthly"].weekdays : null
-      weeks             = ((!contains(keys(var.vm_backup_policy["retention_monthly"]), "days") || var.vm_backup_policy["retention_monthly"].days == null || length(var.vm_backup_policy["retention_monthly"].days) == 0) && contains(keys(var.vm_backup_policy["retention_monthly"]), "weeks") && length(var.vm_backup_policy["retention_monthly"].weeks) > 0) ? var.vm_backup_policy["retention_monthly"].weeks : null
-    }
-  }
-  dynamic "retention_weekly" {
-    for_each = var.vm_backup_policy["retention_weekly"].count > 0 && length(var.vm_backup_policy["retention_weekly"].weekdays) > 0 ? { this = var.vm_backup_policy["retention_weekly"] } : {}
-
-    content {
-      count    = var.vm_backup_policy.frequency == "Weekly" || var.vm_backup_policy["retention_weekly"].count != 0 ? regex("^[1-9][0-9]{0,3}$", var.vm_backup_policy["retention_weekly"].count) : null # 20
-      weekdays = var.vm_backup_policy["retention_weekly"].count != 0 && length(var.vm_backup_policy["retention_weekly"].weekdays) > 0 ? var.vm_backup_policy["retention_weekly"].weekdays : null
-    }
-  }
-  dynamic "retention_yearly" {
-    for_each = var.vm_backup_policy["retention_yearly"].count > 0 ? { this = var.vm_backup_policy["retention_yearly"] } : {}
-
-    content {
-      count             = var.vm_backup_policy["retention_yearly"].count != 0 && var.vm_backup_policy["retention_yearly"].count != 0 ? regex("^[1-9][0-9]{0,3}$", var.vm_backup_policy["retention_yearly"].count) : null
-      months            = var.vm_backup_policy["retention_yearly"].months
-      days              = (var.vm_backup_policy["retention_yearly"].count != 0 && contains(keys(var.vm_backup_policy["retention_yearly"]), "days") && var.vm_backup_policy["retention_yearly"].days != null && length(var.vm_backup_policy["retention_yearly"].days) > 0) ? var.vm_backup_policy["retention_yearly"].days : null
-      include_last_days = (var.vm_backup_policy["retention_yearly"].count != 0 && contains(keys(var.vm_backup_policy["retention_yearly"]), "include_last_days") && var.vm_backup_policy["retention_yearly"].include_last_days == true && (!contains(keys(var.vm_backup_policy["retention_yearly"]), "weekdays") || length(var.vm_backup_policy["retention_yearly"].weekdays) == 0) && (!contains(keys(var.vm_backup_policy["retention_yearly"]), "weeks") || length(var.vm_backup_policy["retention_yearly"].weeks) == 0)) ? true : null
-      weekdays          = (var.vm_backup_policy["retention_yearly"].count != 0 && contains(keys(var.vm_backup_policy["retention_yearly"]), "weekdays") && var.vm_backup_policy["retention_yearly"].weekdays != null && length(var.vm_backup_policy["retention_yearly"].weekdays) > 0 && (!contains(keys(var.vm_backup_policy["retention_yearly"]), "include_last_days") || var.vm_backup_policy["retention_yearly"].include_last_days == false)) ? var.vm_backup_policy["retention_yearly"].weekdays : null
-      weeks             = (var.vm_backup_policy["retention_yearly"].count != 0 && contains(keys(var.vm_backup_policy["retention_yearly"]), "weeks") && var.vm_backup_policy["retention_yearly"].weeks != null && length(var.vm_backup_policy["retention_yearly"].weeks) > 0 && (!contains(keys(var.vm_backup_policy["retention_yearly"]), "include_last_days") || var.vm_backup_policy["retention_yearly"].include_last_days == false)) ? var.vm_backup_policy["retention_yearly"].weeks : null
-    }
-  }
+  response_export_values = ["*"]
 }

@@ -1,41 +1,63 @@
+data "azapi_client_config" "current" {}
 
-# create Recovery vault: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/recovery_services_vault
-resource "azurerm_recovery_services_vault" "this" {
-  location                           = var.location
-  name                               = var.name
-  resource_group_name                = var.resource_group_name
-  sku                                = var.sku
-  classic_vmware_replication_enabled = var.classic_vmware_replication_enabled
-  cross_region_restore_enabled       = var.cross_region_restore_enabled
-  immutability                       = var.immutability
-  public_network_access_enabled      = var.public_network_access_enabled
-  soft_delete_enabled                = var.soft_delete_enabled
-  storage_mode_type                  = var.storage_mode_type
-  tags                               = var.tags
+# create Recovery vault: https://learn.microsoft.com/en-us/rest/api/recoveryservices/vaults/create-or-update
+resource "azapi_resource" "this" {
+  type      = "Microsoft.RecoveryServices/vaults@2024-10-01"
+  name      = var.name
+  location  = var.location
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  tags      = var.tags
 
-  dynamic "encryption" {
-    for_each = var.customer_managed_key != null ? { this = var.customer_managed_key } : {}
-
-    content {
-      infrastructure_encryption_enabled = var.customer_managed_key["key_name"] != null ? true : false
-      key_id                            = encryption.value.key_name != null ? encryption.value.key_name : null
-      use_system_assigned_identity      = encryption.value["user_assigned_identity"] != null ? false : true
-      user_assigned_identity_id         = encryption.value["user_assigned_identity"] != null ? encryption.value["user_assigned_identity"].resource_id : null
+  body = {
+    sku = {
+      name = var.sku
+      tier = "Standard"
+    }
+    identity = length(local.managed_identities.system_assigned_user_assigned) > 0 ? {
+      type = one(values(local.managed_identities.system_assigned_user_assigned)).type
+      userAssignedIdentities = length(one(values(local.managed_identities.system_assigned_user_assigned)).user_assigned_resource_ids) > 0 ? {
+        for id in one(values(local.managed_identities.system_assigned_user_assigned)).user_assigned_resource_ids : id => {}
+      } : null
+    } : null
+    properties = {
+      publicNetworkAccess = var.public_network_access_enabled ? "Enabled" : "Disabled"
+      redundancySettings = {
+        standardTierStorageRedundancy = var.storage_mode_type
+        crossRegionRestore            = var.cross_region_restore_enabled ? "Enabled" : "Disabled"
+      }
+      securitySettings = {
+        immutabilitySettings = var.immutability != null ? {
+          state = var.immutability
+        } : null
+        softDeleteSettings = {
+          softDeleteState = var.soft_delete_enabled ? "AlwaysON" : "Disabled"
+        }
+      }
+      monitoringSettings = {
+        azureMonitorAlertSettings = {
+          alertsForAllJobFailures = var.alerts_for_all_job_failures_enabled ? "Enabled" : "Disabled"
+        }
+        classicAlertSettings = {
+          alertsForCriticalOperations = var.alerts_for_critical_operation_failures_enabled ? "Enabled" : "Disabled"
+        }
+      }
+      # Note: classic_vmware_replication_enabled is not directly settable via the vault properties ARM API
+      encryption = var.customer_managed_key != null ? {
+        keyVaultProperties = {
+          keyUri = var.customer_managed_key.key_name
+        }
+        kekIdentity = var.customer_managed_key["user_assigned_identity"] != null ? {
+          userAssignedIdentity      = var.customer_managed_key["user_assigned_identity"].resource_id
+          useSystemAssignedIdentity = false
+          } : {
+          useSystemAssignedIdentity = true
+        }
+        infrastructureEncryptionState = var.customer_managed_key["key_name"] != null ? "Enabled" : "Disabled"
+      } : null
     }
   }
-  ## Resources supporting both SystemAssigned and UserAssigned
-  dynamic "identity" {
-    for_each = local.managed_identities.system_assigned_user_assigned
 
-    content {
-      type         = identity.value.type
-      identity_ids = identity.value.user_assigned_resource_ids
-    }
-  }
-  monitoring {
-    alerts_for_all_job_failures_enabled            = var.alerts_for_all_job_failures_enabled
-    alerts_for_critical_operation_failures_enabled = var.alerts_for_critical_operation_failures_enabled
-  }
+  response_export_values = ["*"]
 
   lifecycle {}
 }
@@ -45,7 +67,7 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
   for_each = var.diagnostic_settings
 
   name                           = each.value.name != null ? each.value.name : "diag-${var.name}"
-  target_resource_id             = azurerm_recovery_services_vault.this.id
+  target_resource_id             = azapi_resource.this.id
   eventhub_authorization_rule_id = each.value.event_hub_authorization_rule_resource_id
   eventhub_name                  = each.value.event_hub_name
   log_analytics_destination_type = each.value.log_analytics_destination_type
@@ -82,7 +104,7 @@ resource "azurerm_management_lock" "this" {
 
   lock_level = var.lock.kind
   name       = coalesce(var.lock.name, "lock-${var.name}")
-  scope      = azurerm_recovery_services_vault.this.id
+  scope      = azapi_resource.this.id
 }
 
 # set rbac when defined
@@ -90,7 +112,7 @@ resource "azurerm_role_assignment" "this" {
   for_each = var.role_assignments
 
   principal_id                           = each.value.principal_id
-  scope                                  = azurerm_recovery_services_vault.this.id
+  scope                                  = azapi_resource.this.id
   condition                              = each.value.condition
   condition_version                      = each.value.condition_version
   delegated_managed_identity_resource_id = each.value.delegated_managed_identity_resource_id

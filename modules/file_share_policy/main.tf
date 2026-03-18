@@ -1,78 +1,95 @@
+locals {
+  daily_time_formatted = "1900-01-01T${var.file_share_backup_policy["backup"].time}:00Z"
+  hourly_start_time    = var.file_share_backup_policy.frequency == "Hourly" && var.file_share_backup_policy.backup.hourly != null ? "1900-01-01T${var.file_share_backup_policy.backup.hourly.start_time}:00Z" : null
+  retention_time       = var.file_share_backup_policy.frequency == "Hourly" ? local.hourly_start_time : local.daily_time_formatted
 
-# use try() to normalize and validate values for weekly, monthly, yearly retation
-# locals {
+  schedule_policy = var.file_share_backup_policy.frequency == "Hourly" ? {
+    schedulePolicyType   = "SimpleSchedulePolicyV2"
+    scheduleRunFrequency = "Hourly"
+    scheduleRunTimes     = null
+    hourlySchedule = {
+      interval                = var.file_share_backup_policy.backup.hourly.interval
+      scheduleWindowStartTime = local.hourly_start_time
+      scheduleWindowDuration  = var.file_share_backup_policy.backup.hourly.window_duration
+    }
+    } : {
+    schedulePolicyType   = "SimpleSchedulePolicy"
+    scheduleRunFrequency = "Daily"
+    scheduleRunTimes     = [local.daily_time_formatted]
+    hourlySchedule       = null
+  }
 
-#   backup = { for key_index, value in var.file_share_backup_policy.backup :
-#     "${key_index}" => value
-#   if key_index != "hourly" }
-#   log = { for key_index, value in var.file_share_backup_policy["retention_weekly"] :
-#     "${key_index}" => value
-#     # if key_index == "log"
-#   }
-#   full = { for key_index, value in var.file_share_backup_policy["retention_monthly"] :
-#     "${key_index}" => value
-#     # if key_index == "full"
-#   }
-#   # backup = merge(local.full, local.log, local.diff)
-
-# }
-
-resource "azurerm_backup_policy_file_share" "this" {
-  name                = var.file_share_backup_policy.name
-  recovery_vault_name = var.recovery_vault_name
-  resource_group_name = var.resource_group_name
-  timezone            = var.file_share_backup_policy.timezone
-
-  backup {
-    frequency = var.file_share_backup_policy.frequency != null ? regex("^Hourly|Daily$", var.file_share_backup_policy.frequency) : null
-    time      = var.file_share_backup_policy.frequency == "Daily" && var.file_share_backup_policy["backup"].time != null ? var.file_share_backup_policy["backup"].time : null
-
-    dynamic "hourly" {
-      for_each = var.file_share_backup_policy.frequency == "Hourly" ? { this = var.file_share_backup_policy.backup.hourly } : {}
-
-      content {
-        interval        = hourly.value.interval != null ? hourly.value.interval : null
-        start_time      = hourly.value.start_time != null ? hourly.value.start_time : null
-        window_duration = hourly.value.window_duration != null ? hourly.value.window_duration : null
+  retention_policy = {
+    retentionPolicyType = "LongTermRetentionPolicy"
+    dailySchedule = can(regex("^(?:[1-9][0-9]?|1[0-9]{2}|200)$", tostring(var.file_share_backup_policy["retention_daily"]))) ? {
+      retentionTimes = [local.retention_time]
+      retentionDuration = {
+        count        = var.file_share_backup_policy["retention_daily"]
+        durationType = "Days"
       }
-    }
+    } : null
+    weeklySchedule = var.file_share_backup_policy["retention_weekly"].count > 0 && length(var.file_share_backup_policy["retention_weekly"].weekdays) > 0 ? {
+      daysOfTheWeek  = var.file_share_backup_policy["retention_weekly"].weekdays
+      retentionTimes = [local.retention_time]
+      retentionDuration = {
+        count        = var.file_share_backup_policy["retention_weekly"].count
+        durationType = "Weeks"
+      }
+    } : null
+    monthlySchedule = var.file_share_backup_policy["retention_monthly"].count > 0 ? {
+      retentionScheduleFormatType = (length(var.file_share_backup_policy["retention_monthly"].days) > 0 || var.file_share_backup_policy["retention_monthly"].include_last_days) ? "Daily" : "Weekly"
+      retentionScheduleDaily = (length(var.file_share_backup_policy["retention_monthly"].days) > 0 || var.file_share_backup_policy["retention_monthly"].include_last_days) ? {
+        daysOfTheMonth = length(var.file_share_backup_policy["retention_monthly"].days) > 0 ? [
+          for d in var.file_share_backup_policy["retention_monthly"].days : { date = d, isLast = false }
+        ] : null
+      } : null
+      retentionScheduleWeekly = !(length(var.file_share_backup_policy["retention_monthly"].days) > 0 || var.file_share_backup_policy["retention_monthly"].include_last_days) ? {
+        daysOfTheWeek   = var.file_share_backup_policy["retention_monthly"].weekdays
+        weeksOfTheMonth = var.file_share_backup_policy["retention_monthly"].weeks
+      } : null
+      retentionTimes = [local.retention_time]
+      retentionDuration = {
+        count        = var.file_share_backup_policy["retention_monthly"].count
+        durationType = "Months"
+      }
+    } : null
+    yearlySchedule = var.file_share_backup_policy["retention_yearly"].count > 0 ? {
+      retentionScheduleFormatType = (length(var.file_share_backup_policy["retention_yearly"].days) > 0 || var.file_share_backup_policy["retention_yearly"].include_last_days) ? "Daily" : "Weekly"
+      retentionScheduleDaily = (length(var.file_share_backup_policy["retention_yearly"].days) > 0 || var.file_share_backup_policy["retention_yearly"].include_last_days) ? {
+        daysOfTheMonth = length(var.file_share_backup_policy["retention_yearly"].days) > 0 ? [
+          for d in var.file_share_backup_policy["retention_yearly"].days : { date = d, isLast = false }
+        ] : null
+      } : null
+      retentionScheduleWeekly = !(length(var.file_share_backup_policy["retention_yearly"].days) > 0 || var.file_share_backup_policy["retention_yearly"].include_last_days) ? {
+        daysOfTheWeek   = var.file_share_backup_policy["retention_yearly"].weekdays
+        weeksOfTheMonth = var.file_share_backup_policy["retention_yearly"].weeks
+      } : null
+      monthsOfYear   = var.file_share_backup_policy["retention_yearly"].months
+      retentionTimes = [local.retention_time]
+      retentionDuration = {
+        count        = var.file_share_backup_policy["retention_yearly"].count
+        durationType = "Years"
+      }
+    } : null
   }
-  dynamic "retention_daily" {
-    for_each = can(regex("^(?:[1-9][0-9]?|1[0-9]{2}|200)$", var.file_share_backup_policy["retention_daily"])) ? { this = var.file_share_backup_policy["retention_daily"] } : {}
+}
 
-    content {
-      count = regex("^(?:[1-9][0-9]?|1[0-9]{2}|200)$", var.file_share_backup_policy["retention_daily"])
-    }
-  }
-  dynamic "retention_monthly" {
-    for_each = var.file_share_backup_policy["retention_monthly"].count > 0 ? { this = var.file_share_backup_policy["retention_monthly"] } : {}
+data "azapi_client_config" "current" {}
 
-    content {
-      count             = var.file_share_backup_policy["retention_monthly"].count != 0 ? var.file_share_backup_policy["retention_monthly"].count : null
-      days              = var.file_share_backup_policy["retention_monthly"].count != 0 && (length(var.file_share_backup_policy["retention_monthly"].weekdays) == 0 || length(var.file_share_backup_policy["retention_monthly"].weekdays) == 0) ? var.file_share_backup_policy["retention_monthly"].days : null
-      include_last_days = var.file_share_backup_policy["retention_monthly"].count != 0 && (length(var.file_share_backup_policy["retention_monthly"].weekdays) == 0 || length(var.file_share_backup_policy["retention_monthly"].weekdays) == 0) ? var.file_share_backup_policy["retention_monthly"].include_last_days != null ? var.file_share_backup_policy["retention_monthly"].include_last_days : null : null
-      weekdays          = var.file_share_backup_policy["retention_monthly"].count != 0 && (length(var.file_share_backup_policy["retention_monthly"].days) == 0 || var.file_share_backup_policy["retention_monthly"].include_last_days != null) ? length(var.file_share_backup_policy["retention_monthly"].weekdays) != 0 ? var.file_share_backup_policy["retention_monthly"].weekdays : null : null
-      weeks             = var.file_share_backup_policy["retention_monthly"].count != 0 && (length(var.file_share_backup_policy["retention_monthly"].days) == 0 || var.file_share_backup_policy["retention_monthly"].include_last_days != null) ? length(var.file_share_backup_policy["retention_monthly"].weeks) != 0 ? var.file_share_backup_policy["retention_monthly"].weeks : null : null
-    }
-  }
-  dynamic "retention_weekly" {
-    for_each = var.file_share_backup_policy["retention_weekly"].count > 0 && length(var.file_share_backup_policy["retention_weekly"].weekdays) > 0 ? { this = var.file_share_backup_policy["retention_weekly"] } : {}
+resource "azapi_resource" "this" {
+  type      = "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01"
+  name      = var.file_share_backup_policy.name
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.RecoveryServices/vaults/${var.recovery_vault_name}"
 
-    content {
-      count    = var.file_share_backup_policy["retention_weekly"].count != 0 ? var.file_share_backup_policy["retention_weekly"].count : null # 20
-      weekdays = var.file_share_backup_policy["retention_weekly"].count != 0 && length(var.file_share_backup_policy["retention_weekly"].weekdays) > 0 ? var.file_share_backup_policy["retention_weekly"].weekdays : null
+  body = {
+    properties = {
+      backupManagementType = "AzureStorage"
+      workLoadType         = "AzureFileShare"
+      timeZone             = var.file_share_backup_policy.timezone
+      schedulePolicy       = local.schedule_policy
+      retentionPolicy      = local.retention_policy
     }
   }
-  dynamic "retention_yearly" {
-    for_each = var.file_share_backup_policy["retention_yearly"].count > 0 ? { this = var.file_share_backup_policy["retention_yearly"] } : {}
 
-    content {
-      count             = var.file_share_backup_policy["retention_yearly"].count != 0 && var.file_share_backup_policy["retention_yearly"].count != 0 ? var.file_share_backup_policy["retention_yearly"].count : null
-      months            = var.file_share_backup_policy["retention_yearly"].count != 0 && (var.file_share_backup_policy["retention_yearly"].count != 0 && length(var.file_share_backup_policy["retention_yearly"].months) > 0) ? var.file_share_backup_policy["retention_yearly"].months : []                                                                                                                # var.file_share_backup_policy["retention_yearly"].months #
-      days              = var.file_share_backup_policy["retention_yearly"].count != 0 && (length(var.file_share_backup_policy["retention_yearly"].weekdays) == 0 || length(var.file_share_backup_policy["retention_yearly"].weekdays) == 0) ? var.file_share_backup_policy["retention_yearly"].days : null                                                                                                  # (Optional) The days of the month to retain backups of. Must be between 1 and 31.'
-      include_last_days = var.file_share_backup_policy["retention_yearly"].count != 0 && (length(var.file_share_backup_policy["retention_yearly"].weekdays) == 0 || length(var.file_share_backup_policy["retention_yearly"].weekdays) == 0) ? var.file_share_backup_policy["retention_yearly"].include_last_days != null ? var.file_share_backup_policy["retention_yearly"].include_last_days : null : null # (Optional) Including the last day of the month, default to false.
-      weekdays          = var.file_share_backup_policy["retention_yearly"].count != 0 && (length(var.file_share_backup_policy["retention_yearly"].days) == 0 || var.file_share_backup_policy["retention_yearly"].include_last_days != null) ? length(var.file_share_backup_policy["retention_yearly"].weekdays) != 0 ? var.file_share_backup_policy["retention_yearly"].weekdays : null : null              #  (Optional) The weekday backups to retain . Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday.
-      weeks             = var.file_share_backup_policy["retention_yearly"].count != 0 && (length(var.file_share_backup_policy["retention_yearly"].days) == 0 || var.file_share_backup_policy["retention_yearly"].include_last_days != null) ? length(var.file_share_backup_policy["retention_yearly"].weeks) != 0 ? var.file_share_backup_policy["retention_yearly"].weeks : null : null                    #  (Optional) The weeks of the month to retain backups of. Must be one of First, Second, Third, Fourth, Last.
-    }
-  }
+  response_export_values = ["*"]
 }
