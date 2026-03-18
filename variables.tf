@@ -102,9 +102,13 @@ DESCRIPTION
 }
 
 variable "classic_vmware_replication_enabled" {
-  type        = bool
-  default     = false
-  description = "(option) Specify Setting for Classic VMWare Replication. true, false"
+  type    = bool
+  default = false
+  description = <<DESCRIPTION
+(option) Specify Setting for Classic VMWare Replication. true, false.
+
+> **Note:** This variable is not directly settable via the Recovery Services Vault ARM API properties when using the AzAPI provider. The classic VMware replication setting is managed at the site recovery fabric/container level rather than the vault level. This variable is retained for backward compatibility but has no effect in the current AzAPI-based implementation.
+DESCRIPTION
 }
 
 variable "cross_region_restore_enabled" {

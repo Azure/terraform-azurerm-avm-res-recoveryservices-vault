@@ -8,3 +8,4 @@ provider "azurerm" {
 
 
 }
+provider "azapi" {}

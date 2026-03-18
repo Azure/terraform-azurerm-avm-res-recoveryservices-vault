@@ -108,8 +108,8 @@ resource "azapi_resource" "this" {
         var.vm_backup_policy.policy_type == "Weekly" ? 5 : var.vm_backup_policy.instant_restore_retention_days
       ) : null
       instantRPDetails = length(var.vm_backup_policy.instant_restore_resource_group) > 0 ? {
-        azureBackupRGNamePrefix = one(values(var.vm_backup_policy.instant_restore_resource_group)).prefix
-        azureBackupRGNameSuffix = one(values(var.vm_backup_policy.instant_restore_resource_group)).suffix
+        azureBackupRGNamePrefix = values(var.vm_backup_policy.instant_restore_resource_group)[0].prefix
+        azureBackupRGNameSuffix = values(var.vm_backup_policy.instant_restore_resource_group)[0].suffix
       } : null
       schedulePolicy  = local.schedule_policy
       retentionPolicy = local.retention_policy

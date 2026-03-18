@@ -1,17 +1,17 @@
 locals {
   daily_time_formatted = "1900-01-01T${var.file_share_backup_policy["backup"].time}:00Z"
   hourly_start_time    = var.file_share_backup_policy.frequency == "Hourly" && var.file_share_backup_policy.backup.hourly != null ? "1900-01-01T${var.file_share_backup_policy.backup.hourly.start_time}:00Z" : null
-  retention_time       = var.file_share_backup_policy.frequency == "Hourly" ? local.hourly_start_time : local.daily_time_formatted
+  retention_time       = var.file_share_backup_policy.frequency == "Hourly" && local.hourly_start_time != null ? local.hourly_start_time : local.daily_time_formatted
 
   schedule_policy = var.file_share_backup_policy.frequency == "Hourly" ? {
     schedulePolicyType   = "SimpleSchedulePolicyV2"
     scheduleRunFrequency = "Hourly"
     scheduleRunTimes     = null
-    hourlySchedule = {
+    hourlySchedule = var.file_share_backup_policy.backup.hourly != null ? {
       interval                = var.file_share_backup_policy.backup.hourly.interval
       scheduleWindowStartTime = local.hourly_start_time
       scheduleWindowDuration  = var.file_share_backup_policy.backup.hourly.window_duration
-    }
+    } : null
     } : {
     schedulePolicyType   = "SimpleSchedulePolicy"
     scheduleRunFrequency = "Daily"
