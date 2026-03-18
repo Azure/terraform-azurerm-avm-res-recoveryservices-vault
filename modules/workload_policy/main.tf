@@ -118,7 +118,7 @@ resource "azapi_resource" "this" {
             schedulePolicyType   = "SimpleSchedulePolicy"
             scheduleRunFrequency = var.workload_backup_policy["backup_frequency"]
             scheduleRunTimes     = v.backup != null ? ["1900-01-01T${v.backup.time}:00Z"] : null
-            scheduleRunDays      = v.backup != null ? v.backup.weekdays : null
+            scheduleRunDays = var.workload_backup_policy["backup_frequency"] == "Weekly" && v.backup != null ? v.backup.weekdays : null
           }
           retentionPolicy = {
             retentionPolicyType = "SimpleRetentionPolicy"
