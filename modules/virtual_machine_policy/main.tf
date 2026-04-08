@@ -61,12 +61,16 @@ locals {
         scheduleWindowStartTime = local.time_formatted
         scheduleWindowDuration  = var.vm_backup_policy["backup"].hour_duration
       }
+      dailySchedule  = null
+      weeklySchedule = null
       } : var.vm_backup_policy.frequency == "Daily" ? {
       schedulePolicyType   = "SimpleSchedulePolicyV2"
       scheduleRunFrequency = "Daily"
       dailySchedule = {
         scheduleRunTimes = [local.time_formatted]
       }
+      hourlySchedule = null
+      weeklySchedule = null
       } : {
       schedulePolicyType   = "SimpleSchedulePolicyV2"
       scheduleRunFrequency = "Weekly"
@@ -74,6 +78,8 @@ locals {
         scheduleRunDays  = var.vm_backup_policy["backup"].weekdays
         scheduleRunTimes = [local.time_formatted]
       }
+      hourlySchedule = null
+      dailySchedule  = null
     }
     ) : (
     var.vm_backup_policy.frequency == "Weekly" ? {
@@ -85,6 +91,7 @@ locals {
       schedulePolicyType   = "SimpleSchedulePolicy"
       scheduleRunFrequency = "Daily"
       scheduleRunTimes     = [local.time_formatted]
+      scheduleRunDays      = null
     }
   )
   time_formatted = "1900-01-01T${var.vm_backup_policy["backup"].time}:00Z"
