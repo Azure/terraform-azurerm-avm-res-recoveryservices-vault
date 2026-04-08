@@ -1,42 +1,4 @@
 locals {
-  time_formatted = "1900-01-01T${var.vm_backup_policy["backup"].time}:00Z"
-
-  schedule_policy = var.vm_backup_policy.policy_type == "V2" ? (
-    var.vm_backup_policy.frequency == "Hourly" ? {
-      schedulePolicyType   = "SimpleSchedulePolicyV2"
-      scheduleRunFrequency = "Hourly"
-      hourlySchedule = {
-        interval                = var.vm_backup_policy["backup"].hour_interval
-        scheduleWindowStartTime = local.time_formatted
-        scheduleWindowDuration  = var.vm_backup_policy["backup"].hour_duration
-      }
-      } : var.vm_backup_policy.frequency == "Daily" ? {
-      schedulePolicyType   = "SimpleSchedulePolicyV2"
-      scheduleRunFrequency = "Daily"
-      dailySchedule = {
-        scheduleRunTimes = [local.time_formatted]
-      }
-      } : {
-      schedulePolicyType   = "SimpleSchedulePolicyV2"
-      scheduleRunFrequency = "Weekly"
-      weeklySchedule = {
-        scheduleRunDays  = var.vm_backup_policy["backup"].weekdays
-        scheduleRunTimes = [local.time_formatted]
-      }
-    }
-    ) : (
-    var.vm_backup_policy.frequency == "Weekly" ? {
-      schedulePolicyType   = "SimpleSchedulePolicy"
-      scheduleRunFrequency = "Weekly"
-      scheduleRunTimes     = [local.time_formatted]
-      scheduleRunDays      = var.vm_backup_policy["backup"].weekdays
-      } : {
-      schedulePolicyType   = "SimpleSchedulePolicy"
-      scheduleRunFrequency = "Daily"
-      scheduleRunTimes     = [local.time_formatted]
-    }
-  )
-
   retention_policy = {
     retentionPolicyType = "LongTermRetentionPolicy"
     dailySchedule = var.vm_backup_policy.frequency != "Weekly" && var.vm_backup_policy.retention_daily != null ? {
@@ -90,15 +52,50 @@ locals {
       }
     } : null
   }
+  schedule_policy = var.vm_backup_policy.policy_type == "V2" ? (
+    var.vm_backup_policy.frequency == "Hourly" ? {
+      schedulePolicyType   = "SimpleSchedulePolicyV2"
+      scheduleRunFrequency = "Hourly"
+      hourlySchedule = {
+        interval                = var.vm_backup_policy["backup"].hour_interval
+        scheduleWindowStartTime = local.time_formatted
+        scheduleWindowDuration  = var.vm_backup_policy["backup"].hour_duration
+      }
+      } : var.vm_backup_policy.frequency == "Daily" ? {
+      schedulePolicyType   = "SimpleSchedulePolicyV2"
+      scheduleRunFrequency = "Daily"
+      dailySchedule = {
+        scheduleRunTimes = [local.time_formatted]
+      }
+      } : {
+      schedulePolicyType   = "SimpleSchedulePolicyV2"
+      scheduleRunFrequency = "Weekly"
+      weeklySchedule = {
+        scheduleRunDays  = var.vm_backup_policy["backup"].weekdays
+        scheduleRunTimes = [local.time_formatted]
+      }
+    }
+    ) : (
+    var.vm_backup_policy.frequency == "Weekly" ? {
+      schedulePolicyType   = "SimpleSchedulePolicy"
+      scheduleRunFrequency = "Weekly"
+      scheduleRunTimes     = [local.time_formatted]
+      scheduleRunDays      = var.vm_backup_policy["backup"].weekdays
+      } : {
+      schedulePolicyType   = "SimpleSchedulePolicy"
+      scheduleRunFrequency = "Daily"
+      scheduleRunTimes     = [local.time_formatted]
+    }
+  )
+  time_formatted = "1900-01-01T${var.vm_backup_policy["backup"].time}:00Z"
 }
 
 data "azapi_client_config" "current" {}
 
 resource "azapi_resource" "this" {
-  type      = "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01"
   name      = var.vm_backup_policy.name
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.RecoveryServices/vaults/${var.recovery_vault_name}"
-
+  type      = "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01"
   body = {
     properties = {
       backupManagementType = "AzureIaasVM"
@@ -115,6 +112,5 @@ resource "azapi_resource" "this" {
       retentionPolicy = local.retention_policy
     }
   }
-
   response_export_values = ["*"]
 }

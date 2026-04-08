@@ -101,9 +101,10 @@ backup_protected_vm = {
 DESCRIPTION
 }
 
+# tflint-ignore: terraform_unused_declarations
 variable "classic_vmware_replication_enabled" {
-  type    = bool
-  default = false
+  type        = bool
+  default     = false
   description = <<DESCRIPTION
 (option) Specify Setting for Classic VMWare Replication. true, false.
 

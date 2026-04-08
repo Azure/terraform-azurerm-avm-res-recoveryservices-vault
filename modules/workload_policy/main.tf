@@ -19,10 +19,9 @@ data "azapi_client_config" "current" {}
 resource "azapi_resource" "this" {
   count = var.workload_backup_policy == null ? 0 : 1
 
-  type      = "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01"
   name      = var.workload_backup_policy.name
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.RecoveryServices/vaults/${var.recovery_vault_name}"
-
+  type      = "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01"
   body = {
     properties = {
       backupManagementType = "AzureWorkload"
@@ -118,7 +117,7 @@ resource "azapi_resource" "this" {
             schedulePolicyType   = "SimpleSchedulePolicy"
             scheduleRunFrequency = var.workload_backup_policy["backup_frequency"]
             scheduleRunTimes     = v.backup != null ? ["1900-01-01T${v.backup.time}:00Z"] : null
-            scheduleRunDays = var.workload_backup_policy["backup_frequency"] == "Weekly" && v.backup != null ? v.backup.weekdays : null
+            scheduleRunDays      = var.workload_backup_policy["backup_frequency"] == "Weekly" && v.backup != null ? v.backup.weekdays : null
           }
           retentionPolicy = {
             retentionPolicyType = "SimpleRetentionPolicy"
@@ -131,6 +130,5 @@ resource "azapi_resource" "this" {
       )
     }
   }
-
   response_export_values = ["*"]
 }

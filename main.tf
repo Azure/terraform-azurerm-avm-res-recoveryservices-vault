@@ -2,12 +2,10 @@ data "azapi_client_config" "current" {}
 
 # create Recovery vault: https://learn.microsoft.com/en-us/rest/api/recoveryservices/vaults/create-or-update
 resource "azapi_resource" "this" {
-  type      = "Microsoft.RecoveryServices/vaults@2024-10-01"
-  name      = var.name
   location  = var.location
+  name      = var.name
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}"
-  tags      = var.tags
-
+  type      = "Microsoft.RecoveryServices/vaults@2024-10-01"
   body = {
     sku = {
       name = var.sku
@@ -35,10 +33,13 @@ resource "azapi_resource" "this" {
       }
       monitoringSettings = {
         azureMonitorAlertSettings = {
-          alertsForAllJobFailures = var.alerts_for_all_job_failures_enabled ? "Enabled" : "Disabled"
+          alertsForAllJobFailures       = var.alerts_for_all_job_failures_enabled ? "Enabled" : "Disabled"
+          alertsForAllReplicationIssues = "Disabled"
+          alertsForAllFailoverIssues    = "Disabled"
         }
         classicAlertSettings = {
-          alertsForCriticalOperations = var.alerts_for_critical_operation_failures_enabled ? "Enabled" : "Disabled"
+          alertsForCriticalOperations       = var.alerts_for_critical_operation_failures_enabled ? "Enabled" : "Disabled"
+          emailNotificationsForSiteRecovery = "Disabled"
         }
       }
       # Note: classic_vmware_replication_enabled is not directly settable via the vault properties ARM API
@@ -52,12 +53,16 @@ resource "azapi_resource" "this" {
           } : {
           useSystemAssignedIdentity = true
         }
-        infrastructureEncryptionState = var.customer_managed_key["key_name"] != null ? "Enabled" : "Disabled"
+        infrastructureEncryption = var.customer_managed_key["key_name"] != null ? "Enabled" : "Disabled"
       } : null
     }
   }
-
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = ["*"]
+  tags                   = var.tags
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   lifecycle {}
 }
