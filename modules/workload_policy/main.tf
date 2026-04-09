@@ -42,6 +42,7 @@ resource "azapi_resource" "this" {
             schedulePolicyType   = "SimpleSchedulePolicy"
             scheduleRunFrequency = "Daily"
             scheduleRunTimes     = v.backup != null ? ["1900-01-01T${v.backup.time}:00Z"] : null
+            scheduleRunDays      = null
           }
           retentionPolicy = {
             retentionPolicyType = "LongTermRetentionPolicy"
