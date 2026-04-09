@@ -105,10 +105,10 @@ resource "azapi_resource" "this" {
   type      = "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01"
   body = {
     properties = {
-      backupManagementType = "AzureIaasVM"
-      policyType           = var.vm_backup_policy.policy_type
-      timeZone             = var.vm_backup_policy.timezone
-      instantRpRetentionRangeInDays = var.vm_backup_policy.instant_restore_retention_days != null ? ( var.vm_backup_policy.policy_type == "Weekly" ? 5 : var.vm_backup_policy.instant_restore_retention_days) : null
+      backupManagementType          = "AzureIaasVM"
+      policyType                    = var.vm_backup_policy.policy_type
+      timeZone                      = var.vm_backup_policy.timezone
+      instantRpRetentionRangeInDays = var.vm_backup_policy.instant_restore_retention_days != null ? (var.vm_backup_policy.policy_type == "Weekly" ? 5 : var.vm_backup_policy.instant_restore_retention_days) : null
       instantRPDetails = length(var.vm_backup_policy.instant_restore_resource_group) > 0 ? {
         azureBackupRGNamePrefix = values(var.vm_backup_policy.instant_restore_resource_group)[0].prefix
         azureBackupRGNameSuffix = values(var.vm_backup_policy.instant_restore_resource_group)[0].suffix
