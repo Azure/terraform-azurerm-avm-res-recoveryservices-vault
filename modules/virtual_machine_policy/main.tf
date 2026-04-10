@@ -52,60 +52,39 @@ locals {
       }
     } : null
   }
-  schedule_policy = var.vm_backup_policy.policy_type == "V2" ? (
-    var.vm_backup_policy.frequency == "Hourly" ? {
+  schedule_policy = var.vm_backup_policy.policy_type == "V2" ? tomap(merge(
+    {
       schedulePolicyType   = "SimpleSchedulePolicyV2"
-      scheduleRunFrequency = "Hourly"
-      scheduleRunTimes     = null
-      scheduleRunDays      = null
+      scheduleRunFrequency = var.vm_backup_policy.frequency
+    },
+    var.vm_backup_policy.frequency == "Hourly" ? {
       hourlySchedule = {
         interval                = var.vm_backup_policy["backup"].hour_interval
         scheduleWindowStartTime = local.time_formatted
         scheduleWindowDuration  = var.vm_backup_policy["backup"].hour_duration
       }
-      dailySchedule  = null
-      weeklySchedule = null
-      } : var.vm_backup_policy.frequency == "Daily" ? {
-      schedulePolicyType   = "SimpleSchedulePolicyV2"
-      scheduleRunFrequency = "Daily"
-      scheduleRunTimes     = null
-      scheduleRunDays      = null
+    } : {},
+    var.vm_backup_policy.frequency == "Daily" ? {
       dailySchedule = {
         scheduleRunTimes = [local.time_formatted]
       }
-      hourlySchedule = null
-      weeklySchedule = null
-      } : {
-      schedulePolicyType   = "SimpleSchedulePolicyV2"
-      scheduleRunFrequency = "Weekly"
-      scheduleRunTimes     = null
-      scheduleRunDays      = null
+    } : {},
+    var.vm_backup_policy.frequency == "Weekly" ? {
       weeklySchedule = {
         scheduleRunDays  = var.vm_backup_policy["backup"].weekdays
         scheduleRunTimes = [local.time_formatted]
       }
-      hourlySchedule = null
-      dailySchedule  = null
-    }
-    ) : (
+    } : {}
+    )) : tomap(merge(
+    {
+      schedulePolicyType   = "SimpleSchedulePolicy"
+      scheduleRunFrequency = var.vm_backup_policy.frequency
+      scheduleRunTimes     = [local.time_formatted]
+    },
     var.vm_backup_policy.frequency == "Weekly" ? {
-      schedulePolicyType   = "SimpleSchedulePolicy"
-      scheduleRunFrequency = "Weekly"
-      scheduleRunTimes     = [local.time_formatted]
-      scheduleRunDays      = var.vm_backup_policy["backup"].weekdays
-      hourlySchedule       = null
-      dailySchedule        = null
-      weeklySchedule       = null
-      } : {
-      schedulePolicyType   = "SimpleSchedulePolicy"
-      scheduleRunFrequency = "Daily"
-      scheduleRunTimes     = [local.time_formatted]
-      scheduleRunDays      = null
-      hourlySchedule       = null
-      dailySchedule        = null
-      weeklySchedule       = null
-    }
-  )
+      scheduleRunDays = var.vm_backup_policy["backup"].weekdays
+    } : {}
+  ))
   time_formatted = "1900-01-01T${var.vm_backup_policy["backup"].time}:00Z"
 }
 
