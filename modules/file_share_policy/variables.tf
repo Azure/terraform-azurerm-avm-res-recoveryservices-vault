@@ -23,6 +23,9 @@ variable "file_share_backup_policy" {
 
     frequency = string
 
+    backup_tier                = optional(string, "snapshot")
+    snapshot_retention_in_days = optional(number, 0)
+
     retention_daily = optional(number, null)
 
     backup = object({
@@ -69,6 +72,8 @@ variable "file_share_backup_policy" {
         - `hour_interval` - (Optional) Interval in hour at which backup is triggered. Possible values are 4, 6, 8 and 12. This is used when frequency is hourly. 6
         - `hour_duration` -  (Optional) Duration of the backup window in hours. Possible values are between 4 and 24 This is used when frequency is hourly. 12
         - `weekdays` -  (Optional) The days of the week to perform backups on. Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday. This is used when frequency is Weekly. ["Tuesday", "Saturday"]
+    - `backup_tier` - (Optional) The backup tier. Possible values are `snapshot` and `vault-standard`. Defaults to `snapshot`. When set to `vault-standard`, backups are stored in the Recovery Services vault. When set to `snapshot`, backups are stored as snapshots.
+    - `snapshot_retention_in_days` - (Optional) The number of days to retain snapshots when `backup_tier` is `vault-standard`. Must be less than `retention_daily` count. Defaults to `0`.
     - `retention_daily` - (Optional)
       - `count` - 
     - `retantion_weekly` -

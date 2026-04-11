@@ -70,6 +70,7 @@ locals {
     scheduleRunTimes     = [local.daily_time_formatted]
     hourlySchedule       = null
   }
+  use_vault_standard = lower(var.file_share_backup_policy.backup_tier) == "vault-standard"
 }
 
 data "azapi_client_config" "current" {}
@@ -84,7 +85,11 @@ resource "azapi_resource" "this" {
       workLoadType         = "AzureFileShare"
       timeZone             = var.file_share_backup_policy.timezone
       schedulePolicy       = local.schedule_policy
-      retentionPolicy      = local.retention_policy
+      retentionPolicy      = local.use_vault_standard ? null : local.retention_policy
+      vaultRetentionPolicy = local.use_vault_standard ? {
+        snapshotRetentionInDays = var.file_share_backup_policy.snapshot_retention_in_days
+        vaultRetention          = local.retention_policy
+      } : null
     }
   }
   response_export_values = ["*"]
