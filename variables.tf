@@ -262,7 +262,21 @@ variable "file_share_backup_policy" {
       include_last_days = optional(bool, false)
     }), {})
   }))
-  default     = null
+  default = null
+  validation {
+    condition = var.file_share_backup_policy == null || alltrue([
+      for k, v in var.file_share_backup_policy : contains(["snapshot", "vault-standard"], lower(v.backup_tier))
+    ])
+    error_message = "backup_tier must be one of 'snapshot' or 'vault-standard'."
+  }
+  validation {
+    condition = var.file_share_backup_policy == null || alltrue([
+      for k, v in var.file_share_backup_policy : (
+        lower(v.backup_tier) != "vault-standard" || v.retention_daily == null || v.snapshot_retention_in_days < v.retention_daily
+      )
+    ])
+    error_message = "snapshot_retention_in_days must be less than retention_daily count when backup_tier is 'vault-standard'."
+  }
   description = <<DESCRIPTION
 A map of file share backup policies to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 

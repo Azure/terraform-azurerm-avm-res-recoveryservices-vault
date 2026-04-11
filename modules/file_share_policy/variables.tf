@@ -59,7 +59,15 @@ variable "file_share_backup_policy" {
       include_last_days = optional(bool, false)
     }), {})
   })
-  default     = null
+  default = null
+  validation {
+    condition     = var.file_share_backup_policy == null || contains(["snapshot", "vault-standard"], lower(var.file_share_backup_policy.backup_tier))
+    error_message = "backup_tier must be one of 'snapshot' or 'vault-standard'."
+  }
+  validation {
+    condition     = var.file_share_backup_policy == null || lower(var.file_share_backup_policy.backup_tier) != "vault-standard" || var.file_share_backup_policy.retention_daily == null || var.file_share_backup_policy.snapshot_retention_in_days < var.file_share_backup_policy.retention_daily
+    error_message = "snapshot_retention_in_days must be less than retention_daily count when backup_tier is 'vault-standard'."
+  }
   description = <<DESCRIPTION
     A map objects for backup and retation options.
 
