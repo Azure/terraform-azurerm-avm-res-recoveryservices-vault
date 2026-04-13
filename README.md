@@ -296,6 +296,8 @@ Description: A map of file share backup policies to create on the Recovery Servi
 - `name` - (Required) The name of the file share backup policy.
 - `timezone` - (Required) Specifies the timezone. [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-supported-by-azure/).
 - `frequency` - (Required) Sets the backup frequency. Possible values are `Daily` and `Hourly`.
+- `backup_tier` - (Optional) The backup tier. Possible values are `snapshot` and `vault-standard`. Defaults to `snapshot`. When set to `vault-standard`, backups are stored in the Recovery Services vault instead of as snapshots.
+- `snapshot_retention_in_days` - (Optional) The number of days to retain snapshots when `backup_tier` is `vault-standard`. Must be less than `retention_daily` count. Defaults to `0`.
 - `retention_daily` - (Optional) The number of daily backups to keep. Must be between 1 and 200.
 - `backup` - (Required) Backup schedule configuration.
   - `time` - (Required) The time of day to perform the backup in 24-hour format `HH:MM`.
@@ -358,6 +360,9 @@ map(object({
     timezone = string
 
     frequency = string
+
+    backup_tier                = optional(string, "snapshot")
+    snapshot_retention_in_days = optional(number, 0)
 
     retention_daily = optional(number, null)
 
