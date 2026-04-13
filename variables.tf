@@ -226,6 +226,9 @@ variable "file_share_backup_policy" {
 
     frequency = string
 
+    backup_tier                = optional(string, "snapshot")
+    snapshot_retention_in_days = optional(number, 0)
+
     retention_daily = optional(number, null)
 
     backup = object({
@@ -259,13 +262,29 @@ variable "file_share_backup_policy" {
       include_last_days = optional(bool, false)
     }), {})
   }))
-  default     = null
+  default = null
+  validation {
+    condition = var.file_share_backup_policy == null || alltrue([
+      for k, v in var.file_share_backup_policy : contains(["snapshot", "vault-standard"], lower(v.backup_tier))
+    ])
+    error_message = "backup_tier must be one of 'snapshot' or 'vault-standard'."
+  }
+  validation {
+    condition = var.file_share_backup_policy == null || alltrue([
+      for k, v in var.file_share_backup_policy : (
+        lower(v.backup_tier) != "vault-standard" || v.retention_daily == null || v.snapshot_retention_in_days < v.retention_daily
+      )
+    ])
+    error_message = "snapshot_retention_in_days must be less than retention_daily count when backup_tier is 'vault-standard'."
+  }
   description = <<DESCRIPTION
 A map of file share backup policies to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `name` - (Required) The name of the file share backup policy.
 - `timezone` - (Required) Specifies the timezone. [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-supported-by-azure/).
 - `frequency` - (Required) Sets the backup frequency. Possible values are `Daily` and `Hourly`.
+- `backup_tier` - (Optional) The backup tier. Possible values are `snapshot` and `vault-standard`. Defaults to `snapshot`. When set to `vault-standard`, backups are stored in the Recovery Services vault instead of as snapshots.
+- `snapshot_retention_in_days` - (Optional) The number of days to retain snapshots when `backup_tier` is `vault-standard`. Must be less than `retention_daily` count. Defaults to `0`.
 - `retention_daily` - (Optional) The number of daily backups to keep. Must be between 1 and 200.
 - `backup` - (Required) Backup schedule configuration.
   - `time` - (Required) The time of day to perform the backup in 24-hour format `HH:MM`.
