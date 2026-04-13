@@ -112,6 +112,32 @@ module "recovery_services_vault" {
         # include_last_days = false
       }
     }
+    pol-rsv-fileshare-vault-002 = {
+      name                       = "pol-rsv-fileshare-vault-002"
+      timezone                   = "Pacific Standard Time"
+      frequency                  = "Daily"
+      backup_tier                = "vault-standard"
+      snapshot_retention_in_days = 5
+      backup = {
+        time = "22:00"
+      }
+      retention_daily = 7 # must be greater than snapshot_retention_in_days when backup_tier is vault-standard
+      retention_weekly = {
+        count    = 7
+        weekdays = ["Tuesday", "Saturday"]
+      }
+      retention_monthly = {
+        count    = 5
+        weekdays = ["Tuesday", "Saturday"]
+        weeks    = ["First", "Third"]
+      }
+      retention_yearly = {
+        count    = 5
+        months   = ["January", "June"]
+        weekdays = ["Tuesday", "Saturday"]
+        weeks    = ["First", "Third"]
+      }
+    }
   }
   managed_identities = {
     system_assigned            = true
