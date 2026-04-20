@@ -22,6 +22,9 @@ resource "azapi_resource" "this" {
   name      = var.workload_backup_policy.name
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.RecoveryServices/vaults/${var.recovery_vault_name}"
   type      = "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01"
+  read_query_parameters = {
+    "api-version" = ["2024-10-01"]
+  }
   body = {
     properties = {
       backupManagementType = "AzureWorkload"
