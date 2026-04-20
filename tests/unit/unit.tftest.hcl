@@ -9,7 +9,8 @@
 # 2. Key optional features (locks, role assignments, diagnostic settings) are
 #    conditionally created or omitted as expected.
 #
-# To run:
+# To run (using the ./avm wrapper script at the repository root, which runs
+# commands inside the AVM-managed container):
 #   PORCH_NO_TUI=1 ./avm tf-test-unit
 
 mock_provider "azapi" {
