@@ -327,17 +327,11 @@ file_share_backup_policy = {
     DESCRIPTION
 
   validation {
-    condition = var.file_share_backup_policy == null || alltrue([
-      for k, v in var.file_share_backup_policy : contains(["snapshot", "vault-standard"], lower(v.backup_tier))
-    ])
+    condition     = var.file_share_backup_policy == null ? true : alltrue([for k, v in var.file_share_backup_policy : contains(["snapshot", "vault-standard"], lower(v.backup_tier))])
     error_message = "backup_tier must be one of 'snapshot' or 'vault-standard'."
   }
   validation {
-    condition = var.file_share_backup_policy == null || alltrue([
-      for k, v in var.file_share_backup_policy : (
-        lower(v.backup_tier) != "vault-standard" || v.retention_daily == null || v.snapshot_retention_in_days < v.retention_daily
-      )
-    ])
+    condition     = var.file_share_backup_policy == null ? true : alltrue([for k, v in var.file_share_backup_policy : (lower(v.backup_tier) != "vault-standard" || v.retention_daily == null || v.snapshot_retention_in_days < v.retention_daily)])
     error_message = "snapshot_retention_in_days must be less than retention_daily count when backup_tier is 'vault-standard'."
   }
 }
