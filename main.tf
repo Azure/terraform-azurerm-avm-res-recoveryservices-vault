@@ -1,5 +1,12 @@
 data "azapi_client_config" "current" {}
 
+# Keep existing state from v0.x releases where the vault was managed as
+# azurerm_recovery_services_vault.this.
+moved {
+  from = azurerm_recovery_services_vault.this
+  to   = azapi_resource.this
+}
+
 # create Recovery vault: https://learn.microsoft.com/en-us/rest/api/recoveryservices/vaults/create-or-update
 resource "azapi_resource" "this" {
   location  = var.location
