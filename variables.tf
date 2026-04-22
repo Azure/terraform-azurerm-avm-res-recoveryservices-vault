@@ -134,7 +134,7 @@ An object type defines a customer managed key to use for encryption.
 - `key_vault_resource_id` - (Required) - The full Azure Resource ID of the key_vault where the customer managed key will be referenced from.
 - `key_name` - (Required) - The full Azur Resource ID of the customer managed Key stored in the key vault
 - `key_version` - (Optional) - Customer managed key version
-- `user_assigned_identity` - (Optional) - The user assigned identity to use when access the encryption key saved in a key vault
+- `user_assigned_identity` - (Required) - The user assigned identity to use when accessing the encryption key saved in a key vault. A matching user-assigned identity must also be present in `var.managed_identities.user_assigned_resource_ids`.
 
 
 Example Inputs:
@@ -149,6 +149,11 @@ key_vault_resource_id = {
 }
 ```
 DESCRIPTION
+
+  validation {
+    condition     = var.customer_managed_key == null || var.customer_managed_key.user_assigned_identity != null
+    error_message = "CMK encryption requires a user-assigned managed identity. Set customer_managed_key.user_assigned_identity, and ensure the same identity is included in var.managed_identities.user_assigned_resource_ids. Omitting a managed identity causes a ManagedIdentityDetailsNotPresent error from the Recovery Services API."
+  }
 }
 
 variable "diagnostic_settings" {

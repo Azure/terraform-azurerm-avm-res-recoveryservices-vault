@@ -137,3 +137,23 @@ run "telemetry_enabled_by_default" {
     error_message = "Telemetry resource should be created when enable_telemetry is true (default)."
   }
 }
+
+# ---------------------------------------------------------------------------
+# run: cmk_requires_matching_managed_identity
+#
+# CMK encryption requires the vault PUT body to include a matching managed
+# identity configuration. Reject inputs that would otherwise defer this to a
+# service-side 400 ManagedIdentityDetailsNotPresent error.
+# ---------------------------------------------------------------------------
+run "cmk_requires_matching_managed_identity" {
+  command = plan
+
+  variables {
+    customer_managed_key = {
+      key_vault_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.KeyVault/vaults/kv-test"
+      key_name              = "https://kv-test.vault.azure.net/keys/key1/00000000000000000000000000000000"
+    }
+  }
+
+  expect_failures = [var.customer_managed_key]
+}
