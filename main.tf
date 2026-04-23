@@ -54,11 +54,9 @@ resource "azapi_resource" "this" {
         keyVaultProperties = {
           keyUri = var.customer_managed_key.key_name
         }
-        kekIdentity = var.customer_managed_key["user_assigned_identity"] != null ? {
-          userAssignedIdentity      = var.customer_managed_key["user_assigned_identity"].resource_id
-          useSystemAssignedIdentity = false
-          } : {
-          useSystemAssignedIdentity = true
+        kekIdentity = {
+          userAssignedIdentity      = var.customer_managed_key["user_assigned_identity"] != null ? var.customer_managed_key["user_assigned_identity"].resource_id : null
+          useSystemAssignedIdentity = var.customer_managed_key["user_assigned_identity"] == null
         }
         infrastructureEncryption = var.customer_managed_key["key_name"] != null ? "Enabled" : "Disabled"
       } : null
