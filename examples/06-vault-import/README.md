@@ -105,7 +105,6 @@ No inputs.
 | <a name="module_azure_region"></a> [azure\_region](#module\_azure\_region) | claranet/regions/azurerm | 7.1.1 |
 | <a name="module_naming"></a> [naming](#module\_naming) | Azure/naming/azurerm | 0.4.0 |
 | <a name="module_recovery_services_vault_imported"></a> [recovery\_services\_vault\_imported](#module\_recovery\_services\_vault\_imported) | ../../ | n/a |
-| <a name="module_regions"></a> [regions](#module\_regions) | Azure/regions/azurerm | 0.5.2 |
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

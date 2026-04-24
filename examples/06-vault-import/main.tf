@@ -27,15 +27,12 @@ locals {
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-006"
 }
 
-module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "0.5.2"
-}
-
 module "azure_region" {
   source  = "claranet/regions/azurerm"
   version = "7.1.1"
 
+  # Used to generate a region-short suffix for the vault name. The actual
+  # deployed region is determined by local.test_regions above.
   azure_region = "westus3"
 }
 
@@ -99,6 +96,10 @@ resource "azapi_resource" "vault_existing" {
 #   1. Create (or confirm) the vault via azapi_resource.vault_existing
 #   2. Import it into module.recovery_services_vault_imported.azapi_resource.this
 #   3. Reconcile any configuration drift
+#
+# The target address `module.recovery_services_vault_imported.azapi_resource.this`
+# refers to the internal `azapi_resource` named "this" that this module uses to
+# manage the vault. This is a stable implementation detail of the module.
 #
 # After the first apply completes successfully, run:
 #   terraform state rm 'azapi_resource.vault_existing'
