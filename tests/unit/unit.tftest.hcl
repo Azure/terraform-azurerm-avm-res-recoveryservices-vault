@@ -157,3 +157,23 @@ run "cmk_requires_matching_managed_identity" {
 
   expect_failures = [var.customer_managed_key]
 }
+
+# ---------------------------------------------------------------------------
+# run: import_null_identity_ignored
+#
+# Verifies that the vault resource sets ignore_null_property = true so that
+# a null `identity` in the body (when no managed identity is configured) is
+# not treated as "remove identity" during plan/apply.
+#
+# Without this setting, importing a vault whose identity was set or
+# auto-assigned by Azure would produce a PUT body without the identity field,
+# causing a 400 ManagedIdentityDetailsNotPresent error from the Azure API.
+# ---------------------------------------------------------------------------
+run "import_null_identity_ignored" {
+  command = apply
+
+  assert {
+    condition     = azapi_resource.this.ignore_null_property == true
+    error_message = "ignore_null_property must be true so that a null identity body property is not treated as a request to remove Azure-assigned identities. Without this, importing a vault causes a 400 ManagedIdentityDetailsNotPresent error."
+  }
+}
