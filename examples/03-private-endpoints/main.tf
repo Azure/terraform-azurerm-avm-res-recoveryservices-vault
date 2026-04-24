@@ -135,12 +135,6 @@ resource "azurerm_network_security_rule" "no_internet" {
   source_port_range           = "*"
 }
 
-module "public_ip" {
-  source  = "lonegunmanb/public-ip/lonegunmanb"
-  version = "0.1.0"
-  count   = var.bypass_ip_cidr == null ? 1 : 0
-}
-
 resource "azurerm_private_dns_zone" "this" {
   for_each = local.endpoints_dns_zones
 

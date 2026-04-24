@@ -92,5 +92,8 @@ resource "azapi_resource" "this" {
       } : null
     }
   }
+  read_query_parameters = {
+    "api-version" = ["2024-10-01"]
+  }
   response_export_values = ["*"]
 }

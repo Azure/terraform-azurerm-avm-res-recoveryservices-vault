@@ -146,12 +146,6 @@ resource "azurerm_network_security_rule" "no_internet" {
   source_port_range           = "*"
 }
 
-module "public_ip" {
-  source  = "lonegunmanb/public-ip/lonegunmanb"
-  version = "0.1.0"
-  count   = var.bypass_ip_cidr == null ? 1 : 0
-}
-
 resource "azurerm_private_dns_zone" "this" {
   for_each = local.endpoints_dns_zones
 
@@ -222,15 +216,7 @@ No required inputs.
 
 ## Optional Inputs
 
-The following input variables are optional (have default values):
-
-### <a name="input_bypass_ip_cidr"></a> [bypass\_ip\_cidr](#input\_bypass\_ip\_cidr)
-
-Description: value to bypass the IP CIDR on firewall rules
-
-Type: `string`
-
-Default: `null`
+No optional inputs.
 
 ## Outputs
 
@@ -251,12 +237,6 @@ Version: 7.1.1
 Source: Azure/naming/azurerm
 
 Version: 0.4.0
-
-### <a name="module_public_ip"></a> [public\_ip](#module\_public\_ip)
-
-Source: lonegunmanb/public-ip/lonegunmanb
-
-Version: 0.1.0
 
 ### <a name="module_recovery_services_vault"></a> [recovery\_services\_vault](#module\_recovery\_services\_vault)
 

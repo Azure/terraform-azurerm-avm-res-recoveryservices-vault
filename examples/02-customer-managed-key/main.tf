@@ -54,7 +54,7 @@ module "recovery_services_vault" {
   customer_managed_key = {
     key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
     key_name              = azurerm_key_vault_key.this.id
-    user_assigned_identity_resource_id = {
+    user_assigned_identity = {
       resource_id = azurerm_user_assigned_identity.this_identity.id
     }
   }
@@ -81,6 +81,13 @@ resource "azurerm_user_assigned_identity" "this_identity" {
   resource_group_name = azurerm_resource_group.this.name
 }
 
+# Wait for Key Vault network settings to take effect before creating the key.
+resource "time_sleep" "wait_for_kv" {
+  create_duration = "3m"
+
+  depends_on = [module.avm_res_keyvault_vault]
+}
+
 #Create a Customer Managed Key for a Resovery Services Vautl.
 resource "azurerm_key_vault_key" "this" {
   key_opts = [
@@ -96,7 +103,7 @@ resource "azurerm_key_vault_key" "this" {
   name         = module.naming.key_vault_key.name_unique
   key_size     = 2048
 
-  depends_on = [module.avm_res_keyvault_vault]
+  depends_on = [time_sleep.wait_for_kv]
 }
 
 #create a keyvault for storing the credential with RBAC for the deployment user
@@ -108,9 +115,6 @@ module "avm_res_keyvault_vault" {
   name                = "${module.naming.key_vault.name_unique}-002"
   resource_group_name = azurerm_resource_group.this.name
   tenant_id           = data.azurerm_client_config.current.tenant_id
-  network_acls = {
-    default_action = "Allow"
-  }
   role_assignments = {
     deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Administrator"
@@ -125,6 +129,7 @@ module "avm_res_keyvault_vault" {
   tags = {
     Dep = "IT"
   }
+  network_acls = null
   wait_for_rbac_before_secret_operations = {
     create = "60s"
   }
