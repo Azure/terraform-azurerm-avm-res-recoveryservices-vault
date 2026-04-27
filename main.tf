@@ -62,19 +62,18 @@ resource "azapi_resource" "this" {
       } : null
     }
   }
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  response_export_values = ["*"]
-  tags                   = var.tags
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   # Ignore null body properties (e.g. `identity = null` when no managed identity is
   # configured) so they are not treated as "remove this field" during plan/apply.
   # Without this flag, importing a vault that Azure has auto-assigned an identity to
   # would produce a PUT body without the identity field, causing a 400
   # ManagedIdentityDetailsNotPresent error from the Recovery Services API.
-  ignore_null_property = true
+  ignore_null_property   = true
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  response_export_values = ["*"]
+  tags                   = var.tags
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   lifecycle {}
 }
