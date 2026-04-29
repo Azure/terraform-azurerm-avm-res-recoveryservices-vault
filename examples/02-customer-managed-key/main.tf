@@ -115,6 +115,7 @@ module "avm_res_keyvault_vault" {
   name                = "${module.naming.key_vault.name_unique}-002"
   resource_group_name = azurerm_resource_group.this.name
   tenant_id           = data.azurerm_client_config.current.tenant_id
+  network_acls        = null
   role_assignments = {
     deployment_user_secrets = {
       role_definition_id_or_name = "Key Vault Administrator"
@@ -129,7 +130,6 @@ module "avm_res_keyvault_vault" {
   tags = {
     Dep = "IT"
   }
-  network_acls = null
   wait_for_rbac_before_secret_operations = {
     create = "60s"
   }
