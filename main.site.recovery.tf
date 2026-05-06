@@ -9,6 +9,8 @@ module "backup_protected_vm" {
     vault_name                = azapi_resource.this.name
     vault_resource_group_name = var.resource_group_name
   }
+
+  depends_on = [module.recovery_services_vault_vm_policy]
 }
 
 module "backup_protected_file_share" {
