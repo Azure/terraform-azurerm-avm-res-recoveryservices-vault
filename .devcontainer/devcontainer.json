@@ -14,7 +14,8 @@
   "mounts": [
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
   ],
-  "onCreateCommand": "git config core.hooksPath .githooks && chmod +x .githooks/pre-commit && terraform version",
+  "onCreateCommand": "terraform version",
+  "postCreateCommand": "git config core.hooksPath .githooks && chmod +x .githooks/pre-commit",
   "customizations": {
     "vscode": {
       "settings": {
