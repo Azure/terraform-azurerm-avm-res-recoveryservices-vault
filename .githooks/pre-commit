@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "Running AVM pre-commit checks..."
+PORCH_NO_TUI=1 ./avm pre-commit
+
+echo "Running AVM PR checks..."
+PORCH_NO_TUI=1 ./avm pr-check
