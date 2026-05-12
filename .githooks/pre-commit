@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [ ! -x "./avm" ]; then
+  echo "Error: ./avm script not found or not executable. Cannot run required AVM checks."
+  exit 1
+fi
+
+echo "Running AVM pre-commit checks..."
+PORCH_NO_TUI=1 ./avm pre-commit
+
+echo "Running AVM PR checks..."
+PORCH_NO_TUI=1 ./avm pr-check
