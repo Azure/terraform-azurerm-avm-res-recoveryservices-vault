@@ -54,24 +54,36 @@ locals {
       }
     } : null
   }
-  retention_time = var.file_share_backup_policy.frequency == "Hourly" && local.hourly_start_time != null ? local.hourly_start_time : local.daily_time_formatted
-  schedule_policy = var.file_share_backup_policy.frequency == "Hourly" ? {
-    schedulePolicyType   = "SimpleSchedulePolicyV2"
-    scheduleRunFrequency = "Hourly"
-    scheduleRunTimes     = null
-    hourlySchedule = var.file_share_backup_policy.backup.hourly != null ? {
-      interval                = var.file_share_backup_policy.backup.hourly.interval
-      scheduleWindowStartTime = local.hourly_start_time
-      scheduleWindowDuration  = var.file_share_backup_policy.backup.hourly.window_duration
-    } : null
-    } : {
-    schedulePolicyType   = "SimpleSchedulePolicy"
-    scheduleRunFrequency = "Daily"
-    scheduleRunTimes     = [local.daily_time_formatted]
-    hourlySchedule       = null
-  }
+
+
+  is_hourly = lower(var.file_share_backup_policy.frequency) == "hourly"
+
+  retention_time = (
+    local.is_hourly && local.hourly_start_time != null
+  ) ? local.hourly_start_time : local.daily_time_formatted
+
+  schedule_policy = jsondecode(
+    local.is_hourly ? jsonencode({
+      schedulePolicyType   = "SimpleSchedulePolicy"
+      scheduleRunFrequency = "Hourly"
+      scheduleRunTimes     = [local.hourly_start_time]
+
+      hourlySchedule = {
+        interval                = var.file_share_backup_policy.backup.hourly.interval
+        scheduleWindowStartTime = local.hourly_start_time
+        scheduleWindowDuration  = var.file_share_backup_policy.backup.hourly.window_duration
+      }
+      }) : jsonencode({
+      schedulePolicyType   = "SimpleSchedulePolicy"
+      scheduleRunFrequency = "Daily"
+      scheduleRunTimes     = [local.daily_time_formatted]
+    })
+  )
+
+
   use_vault_standard = lower(var.file_share_backup_policy.backup_tier) == "vault-standard"
 }
+
 
 data "azapi_client_config" "current" {}
 
