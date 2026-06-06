@@ -9,3 +9,8 @@ output "resource_id" {
   description = "resource Id output"
   value       = azurerm_backup_protected_file_share.this.id
 }
+
+output "storage_account_registration_resource_id" {
+  description = "The storage account registration resource ID when automatic registration is enabled, otherwise null."
+  value       = length(azurerm_backup_container_storage_account.this) == 0 ? null : azurerm_backup_container_storage_account.this[0].id
+}

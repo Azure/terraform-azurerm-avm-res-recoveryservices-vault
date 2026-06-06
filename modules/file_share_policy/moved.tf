@@ -4,6 +4,7 @@
 # preventing failures that occur when backup policies have file shares attached.
 removed {
   from = azurerm_backup_policy_file_share.this
+
   lifecycle {
     destroy = false
   }

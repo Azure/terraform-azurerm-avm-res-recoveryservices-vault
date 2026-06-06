@@ -27,7 +27,13 @@ mock_provider "azapi" {
   }
 }
 
-mock_provider "azurerm" {}
+mock_provider "azurerm" {
+  mock_data "azurerm_backup_policy_file_share" {
+    defaults = {
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.RecoveryServices/vaults/rsv-test-001/backupPolicies/pol-rsv-fileshare-vault-001"
+    }
+  }
+}
 mock_provider "modtm" {}
 mock_provider "random" {}
 
@@ -175,5 +181,49 @@ run "import_null_identity_ignored" {
   assert {
     condition     = azapi_resource.this.ignore_null_property == true
     error_message = "ignore_null_property must be true so that a null identity body property is not treated as a request to remove Azure-assigned identities. Without this, importing a vault causes a 400 ManagedIdentityDetailsNotPresent error."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: file_share_disable_registration_passthrough
+#
+# Verifies that the root module forwards disable_registration to the protected
+# file share submodule so callers can register storage accounts externally.
+# ---------------------------------------------------------------------------
+run "file_share_disable_registration_passthrough" {
+  command = apply
+
+  variables {
+    file_share_backup_policy = {
+      default = {
+        name      = "pol-rsv-fileshare-vault-001"
+        timezone  = "Pacific Standard Time"
+        frequency = "Daily"
+        backup = {
+          time = "23:00"
+        }
+        retention_daily = 30
+      }
+    }
+
+    backup_protected_file_share = {
+      fileshare1 = {
+        source_storage_account_id     = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Storage/storageAccounts/sttest001"
+        backup_file_share_policy_name = "pol-rsv-fileshare-vault-001"
+        source_file_share_name        = "share1"
+        disable_registration          = true
+        sleep_timer                   = "0s"
+      }
+    }
+  }
+
+  assert {
+    condition     = module.backup_protected_file_share["fileshare1"].resource_id != ""
+    error_message = "The protected file share module should still create the protected file share resource when registration is disabled."
+  }
+
+  assert {
+    condition     = module.backup_protected_file_share["fileshare1"].storage_account_registration_resource_id == null
+    error_message = "disable_registration should prevent the module from creating azurerm_backup_container_storage_account so the caller can register the storage account externally."
   }
 }

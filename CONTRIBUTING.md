@@ -12,17 +12,3 @@ instructions provided by the bot. You will only need to do this once across all 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/)
 or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
-## AVM checks before committing
-
-Run the AVM checks before every commit:
-
-- `PORCH_NO_TUI=1 ./avm pre-commit`
-- `PORCH_NO_TUI=1 ./avm pr-check`
-
-You can enforce this locally with the repository-managed git hook:
-
-```bash
-git config core.hooksPath .githooks
-chmod +x .githooks/pre-commit
-```
