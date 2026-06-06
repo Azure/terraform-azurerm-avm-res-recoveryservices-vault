@@ -77,6 +77,10 @@ Description: resource Id output
 
 Description: resource Id output
 
+### <a name="output_storage_account_registration_resource_id"></a> [storage\_account\_registration\_resource\_id](#output\_storage\_account\_registration\_resource\_id)
+
+Description: The storage account registration resource ID when automatic registration is enabled, otherwise null.
+
 ## Modules
 
 No modules.
