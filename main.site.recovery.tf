@@ -23,7 +23,7 @@ module "backup_protected_file_share" {
     source_storage_account_id     = each.value.source_storage_account_id
     source_file_share_name        = each.value.source_file_share_name
     backup_file_share_policy_name = each.value.backup_file_share_policy_name
-    disable_registration          = false
+    disable_registration          = each.value.disable_registration
     sleep_timer                   = each.value.sleep_timer
 
   }
