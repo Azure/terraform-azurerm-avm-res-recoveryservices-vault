@@ -4,6 +4,7 @@
 # preventing failures that occur when backup policies have VMs attached.
 removed {
   from = azurerm_backup_policy_vm.this
+
   lifecycle {
     destroy = false
   }

@@ -1,4 +1,4 @@
-# Privae endpoint resource and application security group association
+# Private endpoint resource and application security group association
 resource "azurerm_private_endpoint" "this_managed_dns_zone_groups" {
   for_each = { for k, v in var.private_endpoints :
     k => v
@@ -36,6 +36,12 @@ resource "azurerm_private_endpoint" "this_managed_dns_zone_groups" {
       private_dns_zone_ids = each.value.private_dns_zone_resource_ids
     }
   }
+  timeouts {
+    create = "60m"
+    delete = "60m"
+    read   = "5m"
+    update = "60m"
+  }
 }
 # The PE resource when we are managing **not** the private_dns_zone_group block:
 resource "azurerm_private_endpoint" "this_unmanaged_dns_zone_groups" {
@@ -64,6 +70,20 @@ resource "azurerm_private_endpoint" "this_unmanaged_dns_zone_groups" {
       subresource_name   = each.value.subresource_name
     }
   }
+  timeouts {
+    create = "60m"
+    delete = "60m"
+    read   = "5m"
+    update = "60m"
+  }
+
+  # depends_on ensures that when switching between managed and unmanaged DNS
+  # zone group ownership, the managed endpoints are fully destroyed before the
+  # unmanaged endpoints are created (and vice-versa for the reverse transition).
+  # Without this, Terraform attempts the destroy and create concurrently,
+  # causing overlapping ARM operations on the same privateDnsZoneGroups/default
+  # resource and a CanceledAndSupersededDueToAnotherOperation error from Azure.
+  depends_on = [azurerm_private_endpoint.this_managed_dns_zone_groups]
 
   lifecycle {
     ignore_changes = [private_dns_zone_group]
