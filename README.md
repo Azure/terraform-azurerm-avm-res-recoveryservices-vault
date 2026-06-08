@@ -522,6 +522,17 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_resource_guard_operation_requests"></a> [resource\_guard\_operation\_requests](#input\_resource\_guard\_operation\_requests)
+
+Description: (Optional) A list of Resource Guard operation request IDs to associate with the Recovery Services Vault.
+
+Each item should be a fully qualified operation request resource ID under a Microsoft.DataProtection Resource Guard, for example:
+`/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg1/modifyEncryptionSettings/default`
+
+Type: `list(string)`
+
+Default: `[]`
+
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
 Description: A map of role assignments to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.

@@ -25,7 +25,8 @@ resource "azapi_resource" "this" {
       } : null
     } : null
     properties = {
-      publicNetworkAccess = var.public_network_access_enabled ? "Enabled" : "Disabled"
+      publicNetworkAccess            = var.public_network_access_enabled ? "Enabled" : "Disabled"
+      resourceGuardOperationRequests = length(var.resource_guard_operation_requests) > 0 ? var.resource_guard_operation_requests : null
       redundancySettings = {
         standardTierStorageRedundancy = var.storage_mode_type
         crossRegionRestore            = var.cross_region_restore_enabled ? "Enabled" : "Disabled"
