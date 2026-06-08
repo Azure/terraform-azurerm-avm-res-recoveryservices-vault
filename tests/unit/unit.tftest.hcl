@@ -229,3 +229,43 @@ run "unmanaged_private_endpoints_omit_dns_zone_group" {
     error_message = "Private endpoint ASG associations must target the unmanaged private endpoint resource when DNS zone groups are managed externally."
   }
 }
+
+# ---------------------------------------------------------------------------
+# run: hourly_file_share_retention_uses_last_scheduled_backup
+#
+# Hourly Azure Files policies must set retentionTimes to the last scheduled
+# backup in the hourly window (not the window start time) to avoid perpetual
+# diffs after apply.
+# ---------------------------------------------------------------------------
+run "hourly_file_share_retention_uses_last_scheduled_backup" {
+  command = plan
+
+  variables {
+    file_share_backup_policy = {
+      hourly = {
+        name      = "pol-hourly-test"
+        timezone  = "UTC"
+        frequency = "Hourly"
+        backup = {
+          time = "00:00"
+          hourly = {
+            interval        = 4
+            start_time      = "00:00"
+            window_duration = 20
+          }
+        }
+        retention_daily = 7
+      }
+    }
+  }
+
+  assert {
+    condition     = output.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.scheduleRunTimes[0] == "1900-01-01T00:00:00Z"
+    error_message = "Hourly scheduleRunTimes should use the configured hourly window start time."
+  }
+
+  assert {
+    condition     = output.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.retentionPolicy.dailySchedule.retentionTimes[0] == "1900-01-01T20:00:00Z"
+    error_message = "Hourly retentionTimes should use the last scheduled backup in the window."
+  }
+}
