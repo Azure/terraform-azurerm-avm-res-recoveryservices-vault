@@ -15,7 +15,7 @@ function Show-Usage {
 
 # Default values for environment variables
 $CONTAINER_RUNTIME = if ($env:CONTAINER_RUNTIME) { $env:CONTAINER_RUNTIME } else { "docker" }
-$CONTAINER_IMAGE = if ($env:CONTAINER_IMAGE) { $env:CONTAINER_IMAGE } else { "mcr.microsoft.com/azterraform:avm-latest" }
+$CONTAINER_IMAGE = if ($env:CONTAINER_IMAGE) { $env:CONTAINER_IMAGE } else { "mcr.microsoft.com/azterraform@sha256:8454b2b7ca41be7bf23a193cb807298c29a798157a9a31c9986d7b5787d851e6" }
 $CONTAINER_PULL_POLICY = if ($env:CONTAINER_PULL_POLICY) { $env:CONTAINER_PULL_POLICY } else { "always" }
 $MAKEFILE_REF = if ($env:MAKEFILE_REF) { $env:MAKEFILE_REF } else { "main" }
 $PORCH_REF = if ($env:PORCH_REF) { $env:PORCH_REF } else { "main" }

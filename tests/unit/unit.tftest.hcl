@@ -33,6 +33,11 @@ mock_provider "azurerm" {
       id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.RecoveryServices/vaults/rsv-test-001/backupPolicies/pol-rsv-fileshare-vault-001"
     }
   }
+  mock_resource "azurerm_private_endpoint" {
+    defaults = {
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/privateEndpoints/pe-test"
+    }
+  }
 }
 mock_provider "modtm" {}
 mock_provider "random" {}
@@ -225,5 +230,51 @@ run "file_share_disable_registration_passthrough" {
   assert {
     condition     = module.backup_protected_file_share["fileshare1"].storage_account_registration_resource_id == null
     error_message = "disable_registration should prevent the module from creating azurerm_backup_container_storage_account so the caller can register the storage account externally."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: unmanaged_private_endpoints_omit_dns_zone_group
+#
+# When callers manage private DNS zone groups outside the module, the private
+# endpoint resource must omit the inline private_dns_zone_group block entirely.
+# This avoids update calls that can fail for Recovery Services Vault private
+# endpoints when centrally managed DNS zone groups are attached separately.
+# ---------------------------------------------------------------------------
+run "unmanaged_private_endpoints_omit_dns_zone_group" {
+  command = apply
+
+  variables {
+    private_endpoints_manage_dns_zone_group = false
+    private_endpoints = {
+      backup = {
+        subnet_resource_id                  = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualNetworks/vnet-test/subnets/snet-test"
+        subresource_name                    = "AzureBackup"
+        private_dns_zone_resource_ids       = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-dns/providers/Microsoft.Network/privateDnsZones/privatelink.test.windowsazure.com"]
+        application_security_group_associations = {
+          asg = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/applicationSecurityGroups/asg-test"
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = length(azurerm_private_endpoint.this_managed_dns_zone_groups) == 0
+    error_message = "Managed private endpoint resources should not be created when var.private_endpoints_manage_dns_zone_group is false."
+  }
+
+  assert {
+    condition     = length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups) == 1
+    error_message = "Exactly one unmanaged private endpoint should be created when DNS zone groups are managed externally."
+  }
+
+  assert {
+    condition     = length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups["backup"].private_dns_zone_group) == 0
+    error_message = "Unmanaged private endpoints must omit the inline private_dns_zone_group block even when private DNS zone IDs are supplied."
+  }
+
+  assert {
+    condition     = can(azurerm_private_endpoint_application_security_group_association.this["backup-asg"])
+    error_message = "Private endpoint ASG associations must target the unmanaged private endpoint resource when DNS zone groups are managed externally."
   }
 }

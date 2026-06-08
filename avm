@@ -21,7 +21,7 @@ fi
 
 # Default values for environment variables
 CONTAINER_RUNTIME=${CONTAINER_RUNTIME:-"docker"}
-CONTAINER_IMAGE=${CONTAINER_IMAGE:-"mcr.microsoft.com/azterraform:avm-latest"}
+CONTAINER_IMAGE=${CONTAINER_IMAGE:-"mcr.microsoft.com/azterraform@sha256:8454b2b7ca41be7bf23a193cb807298c29a798157a9a31c9986d7b5787d851e6"}
 CONTAINER_PULL_POLICY=${CONTAINER_PULL_POLICY:-"always"}
 AVM_MAKEFILE_REF=${AVM_MAKEFILE_REF:-"main"}
 AVM_PORCH_REF=${AVM_PORCH_REF:-"main"}
