@@ -36,3 +36,14 @@ locals {
     } : {}
   }
 }
+
+locals {
+  managed_private_endpoints = {
+    for k, v in var.private_endpoints : k => v
+    if var.private_endpoints_manage_dns_zone_group
+  }
+  unmanaged_private_endpoints = {
+    for k, v in var.private_endpoints : k => v
+    if !var.private_endpoints_manage_dns_zone_group
+  }
+}
