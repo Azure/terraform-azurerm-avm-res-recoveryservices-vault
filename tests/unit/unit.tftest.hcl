@@ -229,3 +229,46 @@ run "unmanaged_private_endpoints_omit_dns_zone_group" {
     error_message = "Private endpoint ASG associations must target the unmanaged private endpoint resource when DNS zone groups are managed externally."
   }
 }
+
+# ---------------------------------------------------------------------------
+# run: managed_private_endpoints_include_dns_zone_group
+#
+# When the module manages private DNS zone groups (default), the managed
+# private endpoint resource must be created and must include the inline
+# private_dns_zone_group block when DNS zone IDs are supplied.  The unmanaged
+# resource must be absent.
+#
+# This complements the unmanaged_private_endpoints_omit_dns_zone_group test
+# and ensures the two exclusive resource types are not created concurrently,
+# which would trigger overlapping ARM operations on the same
+# privateDnsZoneGroups/default resource (CanceledAndSupersededDueToAnotherOperation).
+# ---------------------------------------------------------------------------
+run "managed_private_endpoints_include_dns_zone_group" {
+  command = apply
+
+  variables {
+    private_endpoints_manage_dns_zone_group = true
+    private_endpoints = {
+      backup = {
+        subnet_resource_id            = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualNetworks/vnet-test/subnets/snet-test"
+        subresource_name              = "AzureBackup"
+        private_dns_zone_resource_ids = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-dns/providers/Microsoft.Network/privateDnsZones/privatelink.test.windowsazure.com"]
+      }
+    }
+  }
+
+  assert {
+    condition     = length(azurerm_private_endpoint.this_managed_dns_zone_groups) == 1
+    error_message = "Exactly one managed private endpoint should be created when var.private_endpoints_manage_dns_zone_group is true."
+  }
+
+  assert {
+    condition     = length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups) == 0
+    error_message = "Unmanaged private endpoint resources must not be created when var.private_endpoints_manage_dns_zone_group is true."
+  }
+
+  assert {
+    condition     = length(azurerm_private_endpoint.this_managed_dns_zone_groups["backup"].private_dns_zone_group) == 1
+    error_message = "Managed private endpoints must include the inline private_dns_zone_group block when private DNS zone IDs are supplied."
+  }
+}
