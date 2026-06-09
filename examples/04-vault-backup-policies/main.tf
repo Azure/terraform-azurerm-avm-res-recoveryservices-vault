@@ -6,7 +6,7 @@ resource "random_integer" "region_index" {
   max = length(local.test_regions) - 1
   min = 0
 }
-# This allow use to randomize the name of resources
+# This allows us to randomize the name of resources
 resource "random_string" "this" {
   length  = 6
   special = false
