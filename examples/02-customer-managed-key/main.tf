@@ -88,7 +88,7 @@ resource "time_sleep" "wait_for_kv" {
   depends_on = [module.avm_res_keyvault_vault]
 }
 
-#Create a Customer Managed Key for a Resovery Services Vautl.
+# Create a customer-managed key for a Recovery Services Vault.
 resource "azurerm_key_vault_key" "this" {
   key_opts = [
     "decrypt",
