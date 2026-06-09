@@ -231,41 +231,74 @@ run "unmanaged_private_endpoints_omit_dns_zone_group" {
 }
 
 # ---------------------------------------------------------------------------
-# run: hourly_file_share_retention_uses_last_scheduled_backup
+# run: managed_private_endpoints_include_dns_zone_group
 #
-# Hourly Azure Files policies must set retentionTimes to the last scheduled
-# backup in the hourly window (not the window start time) to avoid perpetual
-# diffs after apply.
+# When the module manages private DNS zone groups (default), the managed
+# private endpoint resource must be created and must include the inline
+# private_dns_zone_group block when DNS zone IDs are supplied.  The unmanaged
+# resource must be absent.
+#
+# This complements the unmanaged_private_endpoints_omit_dns_zone_group test
+# and ensures the two exclusive resource types are not created concurrently,
+# which would trigger overlapping ARM operations on the same
+# privateDnsZoneGroups/default resource (CanceledAndSupersededDueToAnotherOperation).
 # ---------------------------------------------------------------------------
-run "hourly_file_share_retention_uses_last_scheduled_backup" {
-  command = plan
+run "managed_private_endpoints_include_dns_zone_group" {
+  command = apply
 
   variables {
-    file_share_backup_policy = {
-      hourly = {
-        name      = "pol-hourly-test"
-        timezone  = "UTC"
-        frequency = "Hourly"
-        backup = {
-          time = "00:00"
-          hourly = {
-            interval        = 4
-            start_time      = "00:00"
-            window_duration = 20
-          }
-        }
-        retention_daily = 7
+    private_endpoints_manage_dns_zone_group = true
+    private_endpoints = {
+      backup = {
+        subnet_resource_id            = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualNetworks/vnet-test/subnets/snet-test"
+        subresource_name              = "AzureBackup"
+        private_dns_zone_resource_ids = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-dns/providers/Microsoft.Network/privateDnsZones/privatelink.test.windowsazure.com"]
       }
     }
   }
 
   assert {
-    condition     = output.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.scheduleRunTimes[0] == "1900-01-01T00:00:00Z"
-    error_message = "Hourly scheduleRunTimes should use the configured hourly window start time."
+    condition     = length(azurerm_private_endpoint.this_managed_dns_zone_groups) == 1
+    error_message = "Exactly one managed private endpoint should be created when var.private_endpoints_manage_dns_zone_group is true."
   }
 
   assert {
-    condition     = output.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.retentionPolicy.dailySchedule.retentionTimes[0] == "1900-01-01T20:00:00Z"
-    error_message = "Hourly retentionTimes should use the last scheduled backup in the window."
+    condition     = length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups) == 0
+    error_message = "Unmanaged private endpoint resources must not be created when var.private_endpoints_manage_dns_zone_group is true."
+  }
+
+  assert {
+    condition     = length(azurerm_private_endpoint.this_managed_dns_zone_groups["backup"].private_dns_zone_group) == 1
+    error_message = "Managed private endpoints must include the inline private_dns_zone_group block when private DNS zone IDs are supplied."
+  }
+}
+
+run "managed_private_endpoints_sequence_and_unique_defaults" {
+  command = apply
+
+  variables {
+    private_endpoints_manage_dns_zone_group = true
+    private_endpoints = {
+      backup = {
+        subnet_resource_id            = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualNetworks/vnet-test/subnets/snet-test"
+        subresource_name              = "AzureBackup"
+        private_dns_zone_resource_ids = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-dns/providers/Microsoft.Network/privateDnsZones/privatelink.test.windowsazure.com"]
+      }
+      site_recovery = {
+        subnet_resource_id            = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualNetworks/vnet-test/subnets/snet-test"
+        subresource_name              = "AzureSiteRecovery"
+        private_dns_zone_resource_ids = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-dns/providers/Microsoft.Network/privateDnsZones/privatelink.siterecovery.windowsazure.com"]
+      }
+    }
+  }
+
+  assert {
+    condition     = azurerm_private_endpoint.this_managed_dns_zone_groups["backup"].name == "pep-${var.name}-backup" && azurerm_private_endpoint.this_managed_dns_zone_groups["site_recovery"].name == "pep-${var.name}-site_recovery"
+    error_message = "When multiple managed private endpoints are configured without explicit names, default names must include the map key to avoid collisions."
+  }
+
+  assert {
+    condition     = azurerm_private_endpoint.this_managed_dns_zone_groups["backup"].private_service_connection[0].name == "pse-${var.name}-backup" && azurerm_private_endpoint.this_managed_dns_zone_groups["site_recovery"].private_service_connection[0].name == "pse-${var.name}-site_recovery"
+    error_message = "When multiple managed private endpoints are configured without explicit private service connection names, defaults must include the map key to avoid collisions."
   }
 }

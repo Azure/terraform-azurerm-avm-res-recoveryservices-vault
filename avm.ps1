@@ -15,7 +15,7 @@ function Show-Usage {
 
 # Default values for environment variables
 $CONTAINER_RUNTIME = if ($env:CONTAINER_RUNTIME) { $env:CONTAINER_RUNTIME } else { "docker" }
-$CONTAINER_IMAGE = if ($env:CONTAINER_IMAGE) { $env:CONTAINER_IMAGE } else { "mcr.microsoft.com/azterraform@sha256:8454b2b7ca41be7bf23a193cb807298c29a798157a9a31c9986d7b5787d851e6" }
+$CONTAINER_IMAGE = if ($env:CONTAINER_IMAGE) { $env:CONTAINER_IMAGE } else { "mcr.microsoft.com/azterraform:avm-latest" }
 $CONTAINER_PULL_POLICY = if ($env:CONTAINER_PULL_POLICY) { $env:CONTAINER_PULL_POLICY } else { "always" }
 $MAKEFILE_REF = if ($env:MAKEFILE_REF) { $env:MAKEFILE_REF } else { "main" }
 $PORCH_REF = if ($env:PORCH_REF) { $env:PORCH_REF } else { "main" }
@@ -126,7 +126,6 @@ if (-not $env:AVM_IN_CONTAINER) {
     "CONFTEST_EXCEPTIONS_URL",
     "FORCE_COLOR",
     "GITHUB_TOKEN",
-    "GREPT_URL",
     "MPTF_URL",
     "NO_COLOR",
     "PORCH_LOG_LEVEL",
@@ -150,9 +149,16 @@ if (-not $env:AVM_IN_CONTAINER) {
     $dockerArgs += @("-e", "$($_.Name)=$($_.Value)")
   }
 
-  # Add AVM_ environment variables
-  Get-ChildItem env: | Where-Object { $_.Name -like "AVM_*" } | ForEach-Object {
+  # Add AVM_ environment variables (excluding AVM_BARE_* which are forwarded with the prefix stripped)
+  Get-ChildItem env: | Where-Object { $_.Name -like "AVM_*" -and $_.Name -notlike "AVM_BARE_*" } | ForEach-Object {
     $dockerArgs += @("-e", "$($_.Name)=$($_.Value)")
+  }
+
+  # Forward AVM_BARE_* environment variables to the container with the prefix stripped
+  Get-ChildItem env: | Where-Object { $_.Name -like "AVM_BARE_*" } | ForEach-Object {
+    $strippedName = $_.Name -replace '^AVM_BARE_', ''
+    $dockerArgs += @("-e", "$strippedName=$($_.Value)")
+    Write-Host "Forwarding AVM bare variable to container as: $strippedName"
   }
 
   # Add local environment variables from avm.config.json

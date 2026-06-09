@@ -4,6 +4,7 @@
 # preventing failures that occur when backup policies have workloads attached.
 removed {
   from = azurerm_backup_policy_vm_workload.this
+
   lifecycle {
     destroy = false
   }

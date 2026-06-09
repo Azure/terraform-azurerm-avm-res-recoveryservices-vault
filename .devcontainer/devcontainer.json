@@ -1,5 +1,5 @@
 {
-  "image": "mcr.microsoft.com/azterraform@sha256:8454b2b7ca41be7bf23a193cb807298c29a798157a9a31c9986d7b5787d851e6",
+  "image": "mcr.microsoft.com/azterraform:avm-latest",
   "containerEnv": {
     "AVM_IN_CONTAINER": "true"
   },
@@ -15,7 +15,6 @@
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
   ],
   "onCreateCommand": "terraform version",
-  "postCreateCommand": "if [ -f .githooks/pre-commit ]; then git config core.hooksPath .githooks && chmod +x .githooks/pre-commit; else echo '.githooks/pre-commit not found; skipping hook setup'; fi",
   "customizations": {
     "vscode": {
       "settings": {
