@@ -98,11 +98,13 @@ resource "azapi_resource" "this" {
             } : null
           }
         }],
-        [for k, v in local.log : {
+        [for k, v in local.diff : {
           policyType = v.policy_type
           schedulePolicy = {
-            schedulePolicyType      = "LogSchedulePolicy"
-            scheduleFrequencyInMins = v.backup != null ? v.backup.frequency_in_minutes : null
+            schedulePolicyType   = "SimpleSchedulePolicy"
+            scheduleRunFrequency = var.workload_backup_policy["backup_frequency"]
+            scheduleRunTimes     = v.backup != null ? ["1900-01-01T${v.backup.time}:00Z"] : null
+            scheduleRunDays      = var.workload_backup_policy["backup_frequency"] == "Weekly" && v.backup != null ? v.backup.weekdays : null
           }
           retentionPolicy = {
             retentionPolicyType = "SimpleRetentionPolicy"
@@ -112,13 +114,11 @@ resource "azapi_resource" "this" {
             }
           }
         }],
-        [for k, v in local.diff : {
+        [for k, v in local.log : {
           policyType = v.policy_type
           schedulePolicy = {
-            schedulePolicyType   = "SimpleSchedulePolicy"
-            scheduleRunFrequency = var.workload_backup_policy["backup_frequency"]
-            scheduleRunTimes     = v.backup != null ? ["1900-01-01T${v.backup.time}:00Z"] : null
-            scheduleRunDays      = var.workload_backup_policy["backup_frequency"] == "Weekly" && v.backup != null ? v.backup.weekdays : null
+            schedulePolicyType      = "LogSchedulePolicy"
+            scheduleFrequencyInMins = v.backup != null ? v.backup.frequency_in_minutes : null
           }
           retentionPolicy = {
             retentionPolicyType = "SimpleRetentionPolicy"
