@@ -183,6 +183,31 @@ run "cmk_allows_system_assigned_identity" {
 }
 
 # ---------------------------------------------------------------------------
+# run: cmk_allows_user_assigned_identity_when_attached
+#
+# CMK should be allowed when a user-assigned identity is provided and that same
+# identity is attached to the vault via managed_identities.user_assigned_resource_ids.
+# ---------------------------------------------------------------------------
+run "cmk_allows_user_assigned_identity_when_attached" {
+  command = plan
+
+  variables {
+    managed_identities = {
+      user_assigned_resource_ids = [
+        "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uai-test"
+      ]
+    }
+    customer_managed_key = {
+      key_vault_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.KeyVault/vaults/kv-test"
+      key_name              = "https://kv-test.vault.azure.net/keys/key1/00000000000000000000000000000000"
+      user_assigned_identity = {
+        resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uai-test"
+      }
+    }
+  }
+}
+
+# ---------------------------------------------------------------------------
 # run: cmk_user_assigned_identity_must_be_attached
 #
 # If customer_managed_key.user_assigned_identity is provided, it must also be
