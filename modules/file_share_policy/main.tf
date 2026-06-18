@@ -55,9 +55,31 @@ locals {
       }
     } : null
   }
-  retention_time = (
+
+
+  is_hourly = lower(var.file_share_backup_policy.frequency) == "hourly"
+
+  hourly_retention_offset_hours = (
+    local.is_hourly && var.file_share_backup_policy.backup.hourly != null
+    ) ? floor(
+    var.file_share_backup_policy.backup.hourly.window_duration /
+    var.file_share_backup_policy.backup.hourly.interval
+  ) * var.file_share_backup_policy.backup.hourly.interval : 0
+
+  hourly_retention_time = (
     local.is_hourly && local.hourly_start_time != null
-  ) ? local.hourly_start_time : local.daily_time_formatted
+    ) ? formatdate(
+    "YYYY-MM-DD'T'hh:mm:ss'Z'",
+    timeadd(
+      local.hourly_start_time,
+      "${local.hourly_retention_offset_hours}h"
+    )
+  ) : null
+
+  retention_time = (
+    local.is_hourly
+  ) ? local.hourly_retention_time : local.daily_time_formatted
+
   schedule_policy = jsondecode(
     local.is_hourly ? jsonencode({
       schedulePolicyType   = "SimpleSchedulePolicy"
@@ -75,6 +97,7 @@ locals {
       scheduleRunTimes     = [local.daily_time_formatted]
     })
   )
+
   use_vault_standard = lower(var.file_share_backup_policy.backup_tier) == "vault-standard"
 }
 
