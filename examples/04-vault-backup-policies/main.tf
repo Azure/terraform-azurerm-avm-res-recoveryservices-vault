@@ -38,7 +38,7 @@ locals {
 
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = "0.5.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
+  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
 }
 
 module "azure_region" {
