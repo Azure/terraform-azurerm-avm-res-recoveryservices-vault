@@ -1,4 +1,3 @@
-
 module "recovery_workload_policy" {
   source   = "./modules/workload_policy"
   for_each = var.workload_backup_policy != null ? var.workload_backup_policy : {}
