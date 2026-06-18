@@ -1,6 +1,7 @@
 locals {
   daily_time_formatted = "1900-01-01T${var.file_share_backup_policy["backup"].time}:00Z"
   hourly_start_time    = var.file_share_backup_policy.frequency == "Hourly" && var.file_share_backup_policy.backup.hourly != null ? "1900-01-01T${var.file_share_backup_policy.backup.hourly.start_time}:00Z" : null
+  is_hourly            = lower(var.file_share_backup_policy.frequency) == "hourly"
   retention_policy = {
     retentionPolicyType = "LongTermRetentionPolicy"
     dailySchedule = can(regex("^(?:[1-9][0-9]?|1[0-9]{2}|200)$", tostring(var.file_share_backup_policy["retention_daily"]))) ? {

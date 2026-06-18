@@ -14,7 +14,7 @@ This terraform module is designed to deploy Azure Recovery Services Vault. It ha
 ## Limitations and notes
 
 * Feature in preview: Using `user-assigned managed identities` still in preview. [reference](https://learn.microsoft.com/en-us/azure/backup/encryption-at-rest-with-cmk?tabs=portal#assign-a-user-assigned-managed-identity-to-the-vault-in-preview)
-* Vaults that use `user-assigned managed identities` for CMK encryption don't support the use of private endpoints for backup. [reference](https://learn.microsoft.com/en-us/azure/backup/)
+* Vaults that use `user-assigned managed identities` for CMK encryption don't support the use of private endpoints for backup. Use `managed_identities.system_assigned = true` with CMK if you need Azure Backup private endpoints. [reference](https://learn.microsoft.com/en-us/azure/backup/)
 
 ## Feature requests and work in progress
 
@@ -204,7 +204,7 @@ Description: An object type defines a customer managed key to use for encryption
 - `key_vault_resource_id` - (Required) - The full Azure Resource ID of the key\_vault where the customer managed key will be referenced from.
 - `key_name` - (Required) - The full Azur Resource ID of the customer managed Key stored in the key vault
 - `key_version` - (Optional) - Customer managed key version
-- `user_assigned_identity` - (Required) - The user assigned identity to use when accessing the encryption key saved in a key vault. A matching user-assigned identity must also be present in `var.managed_identities.user_assigned_resource_ids`.
+- `user_assigned_identity` - (Optional) - The user assigned identity to use when accessing the encryption key saved in a key vault. If specified, the same identity must also be present in `var.managed_identities.user_assigned_resource_ids`. If omitted, `var.managed_identities.system_assigned` must be `true`.
 
 Example Inputs:
 ```terraform

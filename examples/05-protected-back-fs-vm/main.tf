@@ -6,7 +6,7 @@ resource "random_integer" "region_index" {
   max = length(local.test_regions) - 1
   min = 0
 }
-# This allow use to randomize the name of resources
+# This allows us to randomize the name of resources
 resource "random_string" "this" {
   length  = 6
   special = false
@@ -15,7 +15,7 @@ resource "random_string" "this" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.4.0"
+  version = "0.4.3"
 }
 
 resource "azurerm_resource_group" "this" {
@@ -56,12 +56,12 @@ locals {
 
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = "0.5.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
+  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
 }
 
 module "azure_region" {
   source  = "claranet/regions/azurerm"
-  version = "7.1.1"
+  version = "8.0.5"
 
   azure_region = "westus3"
 }

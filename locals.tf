@@ -1,4 +1,3 @@
-
 locals {
   role_definition_resource_substring = "/providers/Microsoft.Authorization/roleDefinitions"
 }
@@ -15,6 +14,7 @@ locals {
     ]
   ]) : "${assoc.pe_key}-${assoc.asg_key}" => assoc }
 }
+
 locals {
   managed_identities = {
     system_assigned_user_assigned = (var.managed_identities.system_assigned || length(var.managed_identities.user_assigned_resource_ids) > 0) ? {
@@ -34,5 +34,16 @@ locals {
         user_assigned_resource_ids = var.managed_identities.user_assigned_resource_ids
       }
     } : {}
+  }
+}
+
+locals {
+  managed_private_endpoints = {
+    for k, v in var.private_endpoints : k => v
+    if var.private_endpoints_manage_dns_zone_group
+  }
+  unmanaged_private_endpoints = {
+    for k, v in var.private_endpoints : k => v
+    if !var.private_endpoints_manage_dns_zone_group
   }
 }

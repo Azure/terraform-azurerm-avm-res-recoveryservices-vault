@@ -1,4 +1,3 @@
-
 module "backup_protected_vm" {
   source   = "./modules/backup_protected_vm"
   for_each = try(var.backup_protected_vm != null ? var.backup_protected_vm : {})
