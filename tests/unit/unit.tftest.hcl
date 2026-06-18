@@ -250,6 +250,32 @@ run "import_null_identity_ignored" {
 }
 
 # ---------------------------------------------------------------------------
+# run: resource_guard_operation_requests_applied
+#
+# Verifies that Resource Guard operation request IDs are passed through to the
+# vault properties when supplied.
+# ---------------------------------------------------------------------------
+run "resource_guard_operation_requests_applied" {
+  command = apply
+
+  variables {
+    resource_guard_operation_requests = [
+      "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg1/modifyEncryptionSettings/default"
+    ]
+  }
+
+  assert {
+    condition     = length(azapi_resource.this.body.properties.resourceGuardOperationRequests) == 1
+    error_message = "Expected one Resource Guard operation request ID to be set on the vault properties."
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.resourceGuardOperationRequests[0] == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg1/modifyEncryptionSettings/default"
+    error_message = "The supplied Resource Guard operation request ID should be passed through unchanged."
+  }
+}
+
+# ---------------------------------------------------------------------------
 # run: unmanaged_private_endpoints_omit_dns_zone_group
 #
 # When callers manage private DNS zone groups outside the module, the private
