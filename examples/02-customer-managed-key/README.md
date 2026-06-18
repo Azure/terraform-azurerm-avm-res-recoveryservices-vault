@@ -17,7 +17,7 @@ resource "random_integer" "region_index" {
   max = length(local.test_regions) - 1
   min = 0
 }
-# This allow use to randomize the name of resources
+# This allows us to randomize the name of resources
 resource "random_string" "this" {
   length  = 6
   special = false
@@ -26,7 +26,7 @@ resource "random_string" "this" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.4.0"
+  version = "0.4.3"
 }
 
 resource "azurerm_resource_group" "this" {
@@ -41,12 +41,12 @@ locals {
 
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = "0.5.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
+  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
 }
 
 module "azure_region" {
   source  = "claranet/regions/azurerm"
-  version = "7.1.1"
+  version = "8.0.5"
 
   azure_region = "westus3"
 }
@@ -99,7 +99,7 @@ resource "time_sleep" "wait_for_kv" {
   depends_on = [module.avm_res_keyvault_vault]
 }
 
-#Create a Customer Managed Key for a Resovery Services Vautl.
+# Create a customer-managed key for a Recovery Services Vault.
 resource "azurerm_key_vault_key" "this" {
   key_opts = [
     "decrypt",
@@ -202,13 +202,13 @@ Version: 0.5.1
 
 Source: claranet/regions/azurerm
 
-Version: 7.1.1
+Version: 8.0.5
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
 Source: Azure/naming/azurerm
 
-Version: 0.4.0
+Version: 0.4.3
 
 ### <a name="module_recovery_services_vault"></a> [recovery\_services\_vault](#module\_recovery\_services\_vault)
 
@@ -220,7 +220,7 @@ Version:
 
 Source: Azure/regions/azurerm
 
-Version: 0.5.2
+Version: 0.8.2
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
