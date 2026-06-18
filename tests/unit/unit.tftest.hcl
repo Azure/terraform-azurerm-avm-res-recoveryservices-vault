@@ -145,19 +145,84 @@ run "telemetry_enabled_by_default" {
 }
 
 # ---------------------------------------------------------------------------
-# run: cmk_requires_matching_managed_identity
+# run: cmk_requires_managed_identity
 #
-# CMK encryption requires the vault PUT body to include a matching managed
-# identity configuration. Reject inputs that would otherwise defer this to a
-# service-side 400 ManagedIdentityDetailsNotPresent error.
+# CMK encryption requires a managed identity configuration.
 # ---------------------------------------------------------------------------
-run "cmk_requires_matching_managed_identity" {
+run "cmk_requires_managed_identity" {
   command = plan
 
   variables {
     customer_managed_key = {
       key_vault_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.KeyVault/vaults/kv-test"
       key_name              = "https://kv-test.vault.azure.net/keys/key1/00000000000000000000000000000000"
+    }
+  }
+
+  expect_failures = [var.customer_managed_key]
+}
+
+# ---------------------------------------------------------------------------
+# run: cmk_allows_system_assigned_identity
+#
+# CMK should be allowed without customer_managed_key.user_assigned_identity
+# when the vault has a system-assigned managed identity enabled.
+# ---------------------------------------------------------------------------
+run "cmk_allows_system_assigned_identity" {
+  command = plan
+
+  variables {
+    managed_identities = {
+      system_assigned = true
+    }
+    customer_managed_key = {
+      key_vault_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.KeyVault/vaults/kv-test"
+      key_name              = "https://kv-test.vault.azure.net/keys/key1/00000000000000000000000000000000"
+    }
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: cmk_allows_user_assigned_identity_when_attached
+#
+# CMK should be allowed when a user-assigned identity is provided and that same
+# identity is attached to the vault via managed_identities.user_assigned_resource_ids.
+# ---------------------------------------------------------------------------
+run "cmk_allows_user_assigned_identity_when_attached" {
+  command = plan
+
+  variables {
+    managed_identities = {
+      user_assigned_resource_ids = [
+        "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uai-test"
+      ]
+    }
+    customer_managed_key = {
+      key_vault_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.KeyVault/vaults/kv-test"
+      key_name              = "https://kv-test.vault.azure.net/keys/key1/00000000000000000000000000000000"
+      user_assigned_identity = {
+        resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uai-test"
+      }
+    }
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: cmk_user_assigned_identity_must_be_attached
+#
+# If customer_managed_key.user_assigned_identity is provided, it must also be
+# listed in managed_identities.user_assigned_resource_ids.
+# ---------------------------------------------------------------------------
+run "cmk_user_assigned_identity_must_be_attached" {
+  command = plan
+
+  variables {
+    customer_managed_key = {
+      key_vault_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.KeyVault/vaults/kv-test"
+      key_name              = "https://kv-test.vault.azure.net/keys/key1/00000000000000000000000000000000"
+      user_assigned_identity = {
+        resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.ManagedIdentity/userAssignedIdentities/uai-test"
+      }
     }
   }
 
@@ -225,9 +290,9 @@ run "unmanaged_private_endpoints_omit_dns_zone_group" {
     private_endpoints_manage_dns_zone_group = false
     private_endpoints = {
       backup = {
-        subnet_resource_id                  = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualNetworks/vnet-test/subnets/snet-test"
-        subresource_name                    = "AzureBackup"
-        private_dns_zone_resource_ids       = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-dns/providers/Microsoft.Network/privateDnsZones/privatelink.test.windowsazure.com"]
+        subnet_resource_id            = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualNetworks/vnet-test/subnets/snet-test"
+        subresource_name              = "AzureBackup"
+        private_dns_zone_resource_ids = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-dns/providers/Microsoft.Network/privateDnsZones/privatelink.test.windowsazure.com"]
         application_security_group_associations = {
           asg = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/applicationSecurityGroups/asg-test"
         }

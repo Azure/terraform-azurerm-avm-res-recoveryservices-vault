@@ -26,7 +26,7 @@ resource "random_string" "this" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.4.0"
+  version = "0.4.3"
 }
 
 resource "azurerm_resource_group" "this" {
@@ -41,12 +41,12 @@ locals {
 
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = "0.5.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
+  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
 }
 
 module "azure_region" {
   source  = "claranet/regions/azurerm"
-  version = "7.1.1"
+  version = "8.0.5"
 
   azure_region = "westus3"
 }
@@ -114,13 +114,13 @@ The following Modules are called:
 
 Source: claranet/regions/azurerm
 
-Version: 7.1.1
+Version: 8.0.5
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
 Source: Azure/naming/azurerm
 
-Version: 0.4.0
+Version: 0.4.3
 
 ### <a name="module_recovery_services_vault"></a> [recovery\_services\_vault](#module\_recovery\_services\_vault)
 
@@ -132,7 +132,7 @@ Version:
 
 Source: Azure/regions/azurerm
 
-Version: 0.5.2
+Version: 0.8.2
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

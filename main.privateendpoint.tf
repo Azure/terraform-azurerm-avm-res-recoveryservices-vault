@@ -15,6 +15,7 @@ resource "azurerm_private_endpoint" "this_managed_dns_zone_groups" {
     private_connection_resource_id = azapi_resource.this.id
     subresource_names              = [each.value.subresource_name]
   }
+
   dynamic "ip_configuration" {
     for_each = each.value.ip_configurations
 
@@ -25,6 +26,7 @@ resource "azurerm_private_endpoint" "this_managed_dns_zone_groups" {
       subresource_name   = each.value.subresource_name
     }
   }
+
   dynamic "private_dns_zone_group" {
     for_each = length(each.value.private_dns_zone_resource_ids) > 0 ? ["this"] : []
 
@@ -33,6 +35,7 @@ resource "azurerm_private_endpoint" "this_managed_dns_zone_groups" {
       private_dns_zone_ids = each.value.private_dns_zone_resource_ids
     }
   }
+
   timeouts {
     create = "60m"
     delete = "60m"
@@ -58,6 +61,7 @@ resource "azurerm_private_endpoint" "this_unmanaged_dns_zone_groups" {
     private_connection_resource_id = azapi_resource.this.id
     subresource_names              = [each.value.subresource_name]
   }
+
   dynamic "ip_configuration" {
     for_each = each.value.ip_configurations
 
@@ -68,6 +72,7 @@ resource "azurerm_private_endpoint" "this_unmanaged_dns_zone_groups" {
       subresource_name   = each.value.subresource_name
     }
   }
+
   timeouts {
     create = "60m"
     delete = "60m"
@@ -75,6 +80,9 @@ resource "azurerm_private_endpoint" "this_unmanaged_dns_zone_groups" {
     update = "60m"
   }
 
+  lifecycle {
+    ignore_changes = [private_dns_zone_group]
+  }
   # depends_on ensures that when switching between managed and unmanaged DNS
   # zone group ownership, the managed endpoints are fully destroyed before the
   # unmanaged endpoints are created (and vice-versa for the reverse transition).
@@ -82,10 +90,6 @@ resource "azurerm_private_endpoint" "this_unmanaged_dns_zone_groups" {
   # causing overlapping ARM operations on the same privateDnsZoneGroups/default
   # resource and a CanceledAndSupersededDueToAnotherOperation error from Azure.
   depends_on = [azurerm_private_endpoint.this_managed_dns_zone_groups]
-
-  lifecycle {
-    ignore_changes = [private_dns_zone_group]
-  }
 }
 
 resource "azurerm_private_endpoint_application_security_group_association" "this" {
