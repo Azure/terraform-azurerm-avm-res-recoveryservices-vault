@@ -35,7 +35,7 @@ module "regions" {
 
 module "azure_region" {
   source  = "claranet/regions/azurerm"
-  version = "7.1.1"
+  version = "8.0.5"
 
   azure_region = "westus3"
 }
