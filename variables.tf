@@ -466,6 +466,17 @@ variable "public_network_access_enabled" {
   description = "(optional) Specify Public Network Access. true (default), false"
 }
 
+variable "resource_guard_operation_requests" {
+  type        = list(string)
+  default     = []
+  description = <<DESCRIPTION
+(Optional) A list of Resource Guard operation request IDs to associate with the Recovery Services Vault.
+
+Each item should be a fully qualified operation request resource ID under a Microsoft.DataProtection Resource Guard, for example:
+`/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg1/modifyEncryptionSettings/default`
+DESCRIPTION
+}
+
 variable "role_assignments" {
   type = map(object({
     role_definition_id_or_name             = string
