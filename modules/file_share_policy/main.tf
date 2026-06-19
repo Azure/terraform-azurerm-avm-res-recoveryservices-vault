@@ -55,10 +55,6 @@ locals {
       }
     } : null
   }
-
-
-  is_hourly = lower(var.file_share_backup_policy.frequency) == "hourly"
-
   hourly_retention_offset_hours = (
     local.is_hourly && var.file_share_backup_policy.backup.hourly != null
     ) ? floor(
