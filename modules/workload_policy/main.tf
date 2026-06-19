@@ -53,7 +53,7 @@ resource "azapi_resource" "this" {
                 durationType = "Days"
               }
             } : null
-            weeklySchedule = var.workload_backup_policy["backup_frequency"] == "Weekly" || v.retention_weekly != null ? {
+            weeklySchedule = v.retention_weekly != null && v.retention_weekly.count != null && v.retention_weekly.weekdays != null ? {
               daysOfTheWeek  = v.retention_weekly.weekdays
               retentionTimes = v.backup != null ? ["1900-01-01T${v.backup.time}:00Z"] : null
               retentionDuration = {
