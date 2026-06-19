@@ -518,3 +518,51 @@ run "workload_daily_full_uses_monthdays_for_daily_monthly_yearly_retention" {
     error_message = "Yearly retention weekly schedule should be null when retention_yearly.weekdays is not set."
   }
 }
+
+# ---------------------------------------------------------------------------
+# run: file_share_hourly_policy_parses_without_error
+#
+# Regression test for the v1.1.8 duplicate `is_hourly` local bug in
+# modules/file_share_policy/main.tf.  On the buggy code Terraform would emit
+# "Attribute redefined" and refuse to plan; the fix removes the duplicate.
+# This run exercises the hourly path end-to-end and verifies that:
+#   - the schedule policy type is set to Hourly
+#   - the hourlySchedule block is populated with the configured interval
+# ---------------------------------------------------------------------------
+run "file_share_hourly_policy_parses_without_error" {
+  command = apply
+
+  variables {
+    file_share_backup_policy = {
+      hourly = {
+        name      = "pol-rsv-fileshare-hourly-001"
+        timezone  = "UTC"
+        frequency = "Hourly"
+        backup = {
+          time = "06:00"
+          hourly = {
+            interval        = 4
+            start_time      = "06:00"
+            window_duration = 12
+          }
+        }
+        retention_daily = 7
+      }
+    }
+  }
+
+  assert {
+    condition     = module.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.scheduleRunFrequency == "Hourly"
+    error_message = "scheduleRunFrequency should be Hourly for an hourly file share backup policy."
+  }
+
+  assert {
+    condition     = module.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.hourlySchedule.interval == 4
+    error_message = "hourlySchedule.interval should match the configured backup interval."
+  }
+
+  assert {
+    condition     = module.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.hourlySchedule.scheduleWindowDuration == 12
+    error_message = "hourlySchedule.scheduleWindowDuration should match the configured window_duration."
+  }
+}
