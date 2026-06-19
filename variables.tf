@@ -505,9 +505,15 @@ DESCRIPTION
 }
 
 variable "soft_delete_enabled" {
-  type        = bool
-  default     = true
-  description = "(optional) Specify Setting for Soft Delete. true (default), false"
+  type        = string
+  default     = "Enabled"
+  description = "(optional) Specify the soft delete state for the Recovery Services Vault. Possible values are `Enabled` (default), `Disabled`, and `AlwaysON`. `AlwaysON` enables always-on soft delete and cannot be reverted to `Enabled` or `Disabled`."
+  nullable    = false
+
+  validation {
+    condition     = contains(["Disabled", "Enabled", "AlwaysON"], var.soft_delete_enabled)
+    error_message = "soft_delete_enabled must be one of: Disabled, Enabled, AlwaysON."
+  }
 }
 
 variable "storage_mode_type" {

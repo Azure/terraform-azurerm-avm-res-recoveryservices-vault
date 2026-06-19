@@ -250,6 +250,71 @@ run "import_null_identity_ignored" {
 }
 
 # ---------------------------------------------------------------------------
+# run: soft_delete_enabled_by_default
+#
+# The default soft delete state must be "Enabled".
+# ---------------------------------------------------------------------------
+run "soft_delete_enabled_by_default" {
+  command = apply
+
+  assert {
+    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "Enabled"
+    error_message = "Soft delete state should default to 'Enabled'."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: soft_delete_disabled
+#
+# Verifies that soft delete can be set to "Disabled".
+# ---------------------------------------------------------------------------
+run "soft_delete_disabled" {
+  command = apply
+
+  variables {
+    soft_delete_enabled = "Disabled"
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "Disabled"
+    error_message = "Soft delete state should be 'Disabled' when set to 'Disabled'."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: soft_delete_always_on
+#
+# Verifies that the "AlwaysON" always-on soft delete state can be configured.
+# ---------------------------------------------------------------------------
+run "soft_delete_always_on" {
+  command = apply
+
+  variables {
+    soft_delete_enabled = "AlwaysON"
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "AlwaysON"
+    error_message = "Soft delete state should be 'AlwaysON' when always-on soft delete is enabled."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: soft_delete_invalid_value
+#
+# Verifies that an invalid value for soft_delete_enabled is rejected.
+# ---------------------------------------------------------------------------
+run "soft_delete_invalid_value" {
+  command = plan
+
+  variables {
+    soft_delete_enabled = "Invalid"
+  }
+
+  expect_failures = [var.soft_delete_enabled]
+}
+
+# ---------------------------------------------------------------------------
 # run: resource_guard_operation_requests_applied
 #
 # Verifies that Resource Guard operation request IDs are passed through to the
