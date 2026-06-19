@@ -53,7 +53,7 @@ resource "azapi_resource" "this" {
                 durationType = "Days"
               }
             } : null
-            weeklySchedule = var.workload_backup_policy["backup_frequency"] == "Weekly" && v.retention_weekly != null ? {
+            weeklySchedule = v.retention_weekly != null && v.retention_weekly.count != null && v.retention_weekly.weekdays != null ? {
               daysOfTheWeek  = v.retention_weekly.weekdays
               retentionTimes = v.backup != null ? ["1900-01-01T${v.backup.time}:00Z"] : null
               retentionDuration = {
@@ -62,14 +62,14 @@ resource "azapi_resource" "this" {
               }
             } : null
             monthlySchedule = v.retention_monthly != null && v.retention_monthly.count != null ? {
-              retentionScheduleFormatType = var.workload_backup_policy["backup_frequency"] == "Daily" ? "Daily" : "Weekly"
-              retentionScheduleDaily = var.workload_backup_policy["backup_frequency"] == "Daily" ? {
+              retentionScheduleFormatType = (v.retention_monthly.monthdays != null || v.retention_monthly.include_last_days == true) ? "Daily" : "Weekly"
+              retentionScheduleDaily = (v.retention_monthly.monthdays != null || v.retention_monthly.include_last_days == true) ? {
                 daysOfTheMonth = v.retention_monthly.monthdays != null ? [
                   for d in v.retention_monthly.monthdays : { date = d, isLast = false }
                 ] : null
               } : null
-              retentionScheduleWeekly = var.workload_backup_policy["backup_frequency"] != "Daily" ? {
-                daysOfTheWeek   = v.backup != null ? v.backup.weekdays : null
+              retentionScheduleWeekly = (v.retention_monthly.monthdays == null && v.retention_monthly.include_last_days != true) ? {
+                daysOfTheWeek   = v.retention_monthly.weekdays
                 weeksOfTheMonth = v.retention_monthly.weeks
               } : null
               retentionTimes = v.backup != null ? ["1900-01-01T${v.backup.time}:00Z"] : null
@@ -79,14 +79,14 @@ resource "azapi_resource" "this" {
               }
             } : null
             yearlySchedule = v.retention_yearly != null && v.retention_yearly.count != null ? {
-              retentionScheduleFormatType = var.workload_backup_policy["backup_frequency"] == "Daily" ? "Daily" : "Weekly"
-              retentionScheduleDaily = var.workload_backup_policy["backup_frequency"] == "Daily" ? {
+              retentionScheduleFormatType = (v.retention_yearly.monthdays != null || v.retention_yearly.include_last_days == true) ? "Daily" : "Weekly"
+              retentionScheduleDaily = (v.retention_yearly.monthdays != null || v.retention_yearly.include_last_days == true) ? {
                 daysOfTheMonth = v.retention_yearly.monthdays != null ? [
                   for d in v.retention_yearly.monthdays : { date = d, isLast = false }
                 ] : null
               } : null
-              retentionScheduleWeekly = var.workload_backup_policy["backup_frequency"] != "Daily" ? {
-                daysOfTheWeek   = v.backup != null ? v.backup.weekdays : null
+              retentionScheduleWeekly = (v.retention_yearly.monthdays == null && v.retention_yearly.include_last_days != true) ? {
+                daysOfTheWeek   = v.retention_yearly.weekdays
                 weeksOfTheMonth = v.retention_yearly.weeks
               } : null
               monthsOfYear   = v.retention_yearly.months
