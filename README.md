@@ -565,11 +565,11 @@ Default: `{}`
 
 ### <a name="input_soft_delete_enabled"></a> [soft\_delete\_enabled](#input\_soft\_delete\_enabled)
 
-Description: (optional) Specify Setting for Soft Delete. true (default), false
+Description: (optional) Specify the soft delete state for the Recovery Services Vault. Possible values are `Enabled` (default), `Disabled`, and `AlwaysON`. `AlwaysON` enables always-on soft delete and cannot be reverted to `Enabled` or `Disabled`.
 
-Type: `bool`
+Type: `string`
 
-Default: `true`
+Default: `"Enabled"`
 
 ### <a name="input_storage_mode_type"></a> [storage\_mode\_type](#input\_storage\_mode\_type)
 
