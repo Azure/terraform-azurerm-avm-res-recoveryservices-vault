@@ -284,7 +284,7 @@ run "soft_delete_disabled" {
 # ---------------------------------------------------------------------------
 # run: soft_delete_always_on
 #
-# Verifies that the "AlwaysON" always-on soft delete state can be configured.
+# Verifies that the "AlwaysOn" always-on soft delete state can be configured.
 # ---------------------------------------------------------------------------
 run "soft_delete_always_on" {
   command = apply
