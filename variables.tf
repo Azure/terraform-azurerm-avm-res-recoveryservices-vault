@@ -511,8 +511,8 @@ variable "soft_delete_enabled" {
   nullable    = false
 
   validation {
-    condition     = contains(["Disabled", "Enabled", "AlwaysON"], var.soft_delete_enabled)
-    error_message = "soft_delete_enabled must be one of: Disabled, Enabled, AlwaysON."
+    condition     = contains(["Disabled", "Enabled", "AlwaysOn"], var.soft_delete_enabled)
+    error_message = "soft_delete_enabled must be one of: Disabled, Enabled, AlwaysOn."
   }
 }
 
