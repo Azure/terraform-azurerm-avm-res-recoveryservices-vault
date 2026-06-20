@@ -290,11 +290,11 @@ run "soft_delete_always_on" {
   command = apply
 
   variables {
-    soft_delete_enabled = "AlwaysON"
+    soft_delete_enabled = "AlwaysOn"
   }
 
   assert {
-    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "AlwaysON"
+    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "AlwaysOn"
     error_message = "Soft delete state should be 'AlwaysON' when always-on soft delete is enabled."
   }
 }
