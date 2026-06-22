@@ -105,14 +105,15 @@ locals {
   
   properties = merge(
     local.base_properties,
+    local.use_vault_standard ? {} : {
+      retentionPolicy = local.retention_policy
+    },
     local.use_vault_standard ? {
       vaultRetentionPolicy = {
         snapshotRetentionInDays = var.file_share_backup_policy.snapshot_retention_in_days
         vaultRetention          = local.retention_policy
       }
-    } : {
-      retentionPolicy = local.retention_policy
-    }
+    } : {}
   )
 }
 
