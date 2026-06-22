@@ -17,7 +17,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7, < 5.0.0)
 
-- <a name="requirement_time"></a> [time](#requirement\_time) (~> 0.13.1)
+- <a name="requirement_time"></a> [time](#requirement\_time) (~> 0.14.0)
 
 ## Resources
 
