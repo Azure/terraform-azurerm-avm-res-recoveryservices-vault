@@ -63,7 +63,7 @@ module "recovery_services_vault" {
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
   customer_managed_key = {
-    key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
+    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
     key_name              = azurerm_key_vault_key.this.id
     user_assigned_identity = {
       resource_id = azurerm_user_assigned_identity.this_identity.id
@@ -110,7 +110,7 @@ resource "azurerm_key_vault_key" "this" {
     "wrapKey"
   ]
   key_type     = "RSA"
-  key_vault_id = module.avm_res_keyvault_vault.resource.id
+  key_vault_id = module.avm_res_keyvault_vault.resource_id
   name         = module.naming.key_vault_key.name_unique
   key_size     = 2048
 
@@ -120,7 +120,7 @@ resource "azurerm_key_vault_key" "this" {
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "0.5.1"
+  version = "0.10.2"
 
   location            = azurerm_resource_group.this.location
   name                = "${module.naming.key_vault.name_unique}-002"
@@ -196,7 +196,7 @@ The following Modules are called:
 
 Source: Azure/avm-res-keyvault-vault/azurerm
 
-Version: 0.5.1
+Version: 0.10.2
 
 ### <a name="module_azure_region"></a> [azure\_region](#module\_azure\_region)
 
