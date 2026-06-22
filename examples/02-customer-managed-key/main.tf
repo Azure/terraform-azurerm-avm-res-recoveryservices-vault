@@ -109,7 +109,7 @@ resource "azurerm_key_vault_key" "this" {
 #create a keyvault for storing the credential with RBAC for the deployment user
 module "avm_res_keyvault_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "0.5.1"
+  version = "0.10.2"
 
   location            = azurerm_resource_group.this.location
   name                = "${module.naming.key_vault.name_unique}-002"
