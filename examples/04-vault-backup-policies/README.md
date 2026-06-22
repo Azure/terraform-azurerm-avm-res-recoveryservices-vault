@@ -247,6 +247,49 @@ module "recovery_services_vault" {
 
       }
     }
+    "pol-rsv-sqlserver-vault-001" = {
+      name          = "pol-rsv-sqlserver-vault-001"
+      workload_type = "SQLDataBase"
+      settings = {
+        time_zone           = "Pacific Standard Time"
+        compression_enabled = true
+      }
+      backup_frequency = "Daily" # Daily or Weekly
+      protection_policy = {
+        log = {
+          policy_type           = "Log"
+          retention_daily_count = 7
+          backup = {
+            frequency_in_minutes = 15
+            time                 = "22:00"
+          }
+        }
+        full = {
+          policy_type = "Full"
+          backup = {
+            time = "22:00"
+          }
+          retention_daily_count = 7
+          retention_weekly = {
+            count    = 4
+            weekdays = ["Sunday"]
+          }
+          retention_monthly = {
+            count     = 12
+            weekdays  = ["Sunday"]
+            weeks     = ["First"]
+            monthdays = null
+          }
+          retention_yearly = {
+            count     = 5
+            months    = ["January"]
+            weekdays  = ["Sunday"]
+            weeks     = ["First"]
+            monthdays = null
+          }
+        }
+      }
+    }
   }
 }
 
