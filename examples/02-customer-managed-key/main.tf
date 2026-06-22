@@ -52,7 +52,7 @@ module "recovery_services_vault" {
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
   customer_managed_key = {
-    key_vault_resource_id = module.avm_res_keyvault_vault.resource.id
+    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
     key_name              = azurerm_key_vault_key.this.id
     user_assigned_identity = {
       resource_id = azurerm_user_assigned_identity.this_identity.id
@@ -99,7 +99,7 @@ resource "azurerm_key_vault_key" "this" {
     "wrapKey"
   ]
   key_type     = "RSA"
-  key_vault_id = module.avm_res_keyvault_vault.resource.id
+  key_vault_id = module.avm_res_keyvault_vault.resource_id
   name         = module.naming.key_vault_key.name_unique
   key_size     = 2048
 
