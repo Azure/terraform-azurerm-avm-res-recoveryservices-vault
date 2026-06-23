@@ -69,6 +69,298 @@ module "recovery_services_vault" {
     owner = "ABREG0"
     dept  = "IT"
   }
+
+  file_share_backup_policy = {
+    pol-rsv-fileshare-vault-001 = {
+      name     = "pol-rsv-fileshare-vault-001"
+      timezone = "Pacific Standard Time"
+
+      frequency = "Daily" # (Required) Sets the backup frequency. Possible values are hourly, Daily
+
+      backup = {
+        time = "22:00"
+        hourly = {
+          interval        = 6
+          start_time      = "13:00"
+          window_duration = "6"
+        }
+      }
+      retention_daily = 1 # 1-200
+      retention_weekly = {
+        count    = 7
+        weekdays = ["Tuesday", "Saturday"]
+      }
+      retention_monthly = {
+        count = 5
+        # weekdays =  ["Tuesday","Saturday"]
+        # weeks = ["First","Third"]
+        days              = [3, 10, 20]
+        include_last_days = false
+      }
+      retention_yearly = {
+        count    = 5
+        months   = ["January", "June"]
+        weekdays = ["Tuesday", "Saturday"]
+        weeks    = ["First", "Third"]
+        # days = [3, 10, 20]
+        # include_last_days = false
+      }
+    }
+    pol-rsv-fileshare-vault-002 = {
+      name                       = "pol-rsv-fileshare-vault-002"
+      timezone                   = "Pacific Standard Time"
+      frequency                  = "Daily"
+      backup_tier                = "vault-standard"
+      snapshot_retention_in_days = 5
+      backup = {
+        time = "22:00"
+      }
+      retention_daily = 7 # must be greater than snapshot_retention_in_days when backup_tier is vault-standard
+      retention_weekly = {
+        count    = 7
+        weekdays = ["Tuesday", "Saturday"]
+      }
+      retention_monthly = {
+        count    = 5
+        weekdays = ["Tuesday", "Saturday"]
+        weeks    = ["First", "Third"]
+      }
+      retention_yearly = {
+        count    = 5
+        months   = ["January", "June"]
+        weekdays = ["Tuesday", "Saturday"]
+        weeks    = ["First", "Third"]
+      }
+    }
+  }
+
+  vm_backup_policy = {
+    pol-rsv-vm-vault-001 = {
+      name                           = "pol-rsv-vm-vault-001"
+      timezone                       = "Pacific Standard Time"
+      instant_restore_retention_days = 5
+      policy_type                    = "V2"
+      frequency                      = "Weekly" # (Required) Sets the backup frequency. Possible values are Hourly, Daily and Weekly
+      instant_restore_resource_group = {
+        ps = {
+          prefix = "prefix-"
+          suffix = null
+        }
+      }
+      backup = {
+        time          = "22:00"
+        hour_interval = 6
+        hour_duration = 12
+        weekdays      = ["Tuesday", "Saturday"]
+      }
+      retention_daily = 7 # 7-9999
+      retention_weekly = {
+        count    = 7
+        weekdays = ["Tuesday", "Saturday"]
+      }
+      retention_monthly = {
+        count             = 5
+        weekdays          = ["Tuesday", "Saturday"]
+        weeks             = ["First", "Third"]
+        days              = [3, 10, 20]
+        include_last_days = false
+      }
+      retention_yearly = {
+        count             = 5
+        months            = ["January", "June"]
+        weekdays          = ["Tuesday", "Saturday"]
+        weeks             = ["First", "Third"]
+        days              = [3, 10, 20]
+        include_last_days = false
+      }
+    }
+  }
+
+  workload_backup_policy = {
+    "pol-rsv-SAPh-vault-002" = {
+      name          = "pol-rsv-SAPh-vault-01"
+      workload_type = "SAPHanaDatabase"
+      settings = {
+        time_zone           = "Pacific Standard Time"
+        compression_enabled = false
+      }
+      backup_frequency = "Weekly" # Daily or Weekly
+      protection_policy = {
+        log = {
+          policy_type           = "Log"
+          retention_daily_count = 15
+          backup = {
+            frequency_in_minutes = 15
+            time                 = "22:00"
+            weekdays             = ["Saturday"]
+          }
+        }
+        full = {
+          policy_type = "Full"
+          backup = {
+            time     = "22:00"
+            weekdays = ["Saturday"]
+          }
+          retention_daily_count = 15
+          retention_weekly = {
+            count    = 10
+            weekdays = ["Saturday"]
+          }
+          retention_monthly = {
+            count     = 10
+            weekdays  = ["Saturday"]
+            weeks     = ["First", "Third"]
+            monthdays = [3, 10, 20]
+          }
+          retention_yearly = {
+            count     = 10
+            months    = ["January", "June", "October", "March"]
+            weekdays  = ["Saturday"]
+            weeks     = ["First", "Second", "Third"]
+            monthdays = [3, 10, 20]
+          }
+        }
+        differential = {
+          policy_type           = "Differential"
+          retention_daily_count = 15
+          backup = {
+            time     = "22:00"
+            weekdays = ["Wednesday", "Friday"]
+          }
+        }
+      }
+    }
+    "pol-rsv-sql-vault-001" = {
+      name          = "pol-rsv-sql-vault-001"
+      workload_type = "SQLDataBase"
+      settings = {
+        time_zone           = "Pacific Standard Time"
+        compression_enabled = true
+      }
+      backup_frequency = "Daily" # Daily or Weekly
+      protection_policy = {
+        full = {
+          policy_type           = "Full"
+          retention_daily_count = 7
+          backup = {
+            time = "22:00"
+          }
+          retention_weekly = {
+            count    = 5
+            weekdays = ["Sunday"]
+          }
+          retention_monthly = {
+            count     = 4
+            monthdays = [1]
+          }
+          retention_yearly = {
+            count     = 1
+            months    = ["January"]
+            monthdays = [1]
+          }
+        }
+        log = {
+          policy_type           = "Log"
+          retention_daily_count = 7
+          backup = {
+            frequency_in_minutes = 15
+            time                 = "22:00"
+          }
+        }
+      }
+    }
+    "pol-rsv-sql-vault-daily-weekbased" = {
+      name          = "pol-rsv-sql-vault-daily-weekbased"
+      workload_type = "SQLDataBase"
+      settings = {
+        time_zone           = "Pacific Standard Time"
+        compression_enabled = true
+      }
+      backup_frequency = "Daily"
+      protection_policy = {
+        full = {
+          policy_type           = "Full"
+          retention_daily_count = 7
+          backup = {
+            time = "21:00"
+          }
+          retention_weekly = {
+            count    = 8
+            weekdays = ["Sunday"]
+          }
+          retention_monthly = {
+            count    = 60
+            weekdays = ["Sunday"]
+            weeks    = ["First"]
+          }
+          retention_yearly = {
+            count    = 10
+            months   = ["January"]
+            weekdays = ["Sunday"]
+            weeks    = ["First"]
+          }
+        }
+        log = {
+          policy_type           = "Log"
+          retention_daily_count = 7
+          backup = {
+            frequency_in_minutes = 15
+            time                 = "21:00"
+          }
+        }
+      }
+    }
+    "pol-rsv-sql-vault-weekly" = {
+      name          = "pol-rsv-sql-vault-weekly"
+      workload_type = "SQLDataBase"
+      settings = {
+        time_zone           = "Pacific Standard Time"
+        compression_enabled = true
+      }
+      backup_frequency = "Weekly"
+      protection_policy = {
+        full = {
+          policy_type           = "Full"
+          retention_daily_count = 7
+          backup = {
+            time     = "02:00"
+            weekdays = ["Sunday"]
+          }
+          retention_weekly = {
+            count    = 8
+            weekdays = ["Sunday"]
+          }
+          retention_monthly = {
+            count    = 60
+            weekdays = ["Sunday"]
+            weeks    = ["First"]
+          }
+          retention_yearly = {
+            count    = 10
+            months   = ["January"]
+            weekdays = ["Sunday"]
+            weeks    = ["First"]
+          }
+        }
+        differential = {
+          policy_type           = "Differential"
+          retention_daily_count = 7
+          backup = {
+            time     = "03:00"
+            weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+          }
+        }
+        log = {
+          policy_type           = "Log"
+          retention_daily_count = 7
+          backup = {
+            frequency_in_minutes = 15
+            time                 = "02:00"
+          }
+        }
+      }
+    }
+  }
 }
 ```
 
