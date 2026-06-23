@@ -137,30 +137,24 @@ module "recovery_services_vault" {
         }
       }
       backup = {
-        time          = "22:00"
-        hour_interval = 6
-        hour_duration = 12
-        weekdays      = ["Tuesday", "Saturday"]
+        time     = "22:00"
+        weekdays = ["Saturday"]
       }
       retention_daily = 7 # 7-9999
       retention_weekly = {
         count    = 7
-        weekdays = ["Tuesday", "Saturday"]
+        weekdays = ["Saturday"]
       }
       retention_monthly = {
-        count             = 5
-        weekdays          = ["Tuesday", "Saturday"]
-        weeks             = ["First", "Third"]
-        days              = [3, 10, 20]
-        include_last_days = false
+        count    = 5
+        weekdays = ["Saturday"]
+        weeks    = ["First", "Third"]
       }
       retention_yearly = {
-        count             = 5
-        months            = ["January", "June"]
-        weekdays          = ["Tuesday", "Saturday"]
-        weeks             = ["First", "Third"]
-        days              = [3, 10, 20]
-        include_last_days = false
+        count    = 5
+        months   = ["January", "June"]
+        weekdays = ["Saturday"]
+        weeks    = ["First", "Third"]
       }
     }
   }
@@ -196,17 +190,15 @@ module "recovery_services_vault" {
             weekdays = ["Saturday"]
           }
           retention_monthly = {
-            count     = 10
-            weekdays  = ["Saturday"]
-            weeks     = ["First", "Third"]
-            monthdays = [3, 10, 20]
+            count    = 10
+            weekdays = ["Saturday"]
+            weeks    = ["First", "Third"]
           }
           retention_yearly = {
-            count     = 10
-            months    = ["January", "June", "October", "March"]
-            weekdays  = ["Saturday"]
-            weeks     = ["First", "Second", "Third"]
-            monthdays = [3, 10, 20]
+            count    = 10
+            months   = ["January", "June", "October", "March"]
+            weekdays = ["Saturday"]
+            weeks    = ["First", "Second", "Third"]
           }
         }
         differential = {
