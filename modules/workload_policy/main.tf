@@ -131,12 +131,12 @@ resource "azapi_resource" "this" {
       )
     }
   }
-  
+
   # Include api-version in both type and read query parameters to ensure Azure API accepts the read request
   read_query_parameters = {
     "api-version" = ["2024-10-01"]
   }
-  
+
   # For workload policies, only export the resource ID to avoid API read errors
   # The Azure API may not support reading full response for all workload types
   response_export_values = ["id", "name", "type", "properties"]
