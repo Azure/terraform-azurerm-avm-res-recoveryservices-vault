@@ -250,8 +250,8 @@ module "recovery_services_vault" {
         }
       }
     }
-    "pol-rsv-sql-vault-daily-weekbased" = {
-      name          = "pol-rsv-sql-vault-daily-weekbased"
+    "pol-rsv-sql-vault-daily-weekbased-001" = {
+      name          = "pol-rsv-sql-vault-daily-weekbased-001"
       workload_type = "SQLDataBase"
       settings = {
         time_zone           = "Pacific Standard Time"
@@ -291,8 +291,8 @@ module "recovery_services_vault" {
         }
       }
     }
-    "pol-rsv-sql-vault-weekly" = {
-      name          = "pol-rsv-sql-vault-weekly"
+    "pol-rsv-sql-vault-weekly-001" = {
+      name          = "pol-rsv-sql-vault-weekly-001"
       workload_type = "SQLDataBase"
       settings = {
         time_zone           = "Pacific Standard Time"
