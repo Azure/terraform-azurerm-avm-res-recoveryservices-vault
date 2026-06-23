@@ -95,6 +95,26 @@ locals {
   )
 
   use_vault_standard = lower(var.file_share_backup_policy.backup_tier) == "vault-standard"
+  
+  base_properties = {
+    backupManagementType = "AzureStorage"
+    workLoadType         = "AzureFileShare"
+    timeZone             = var.file_share_backup_policy.timezone
+    schedulePolicy       = local.schedule_policy
+  }
+  
+  properties = merge(
+    local.base_properties,
+    local.use_vault_standard ? {} : {
+      retentionPolicy = local.retention_policy
+    },
+    local.use_vault_standard ? {
+      vaultRetentionPolicy = {
+        snapshotRetentionInDays = var.file_share_backup_policy.snapshot_retention_in_days
+        vaultRetention          = local.retention_policy
+      }
+    } : {}
+  )
 }
 
 
@@ -105,17 +125,7 @@ resource "azapi_resource" "this" {
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.RecoveryServices/vaults/${var.recovery_vault_name}"
   type      = "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01"
   body = {
-    properties = {
-      backupManagementType = "AzureStorage"
-      workLoadType         = "AzureFileShare"
-      timeZone             = var.file_share_backup_policy.timezone
-      schedulePolicy       = local.schedule_policy
-      retentionPolicy      = local.use_vault_standard ? null : local.retention_policy
-      vaultRetentionPolicy = local.use_vault_standard ? {
-        snapshotRetentionInDays = var.file_share_backup_policy.snapshot_retention_in_days
-        vaultRetention          = local.retention_policy
-      } : null
-    }
+    properties = local.properties
   }
   read_query_parameters = {
     "api-version" = ["2024-10-01"]

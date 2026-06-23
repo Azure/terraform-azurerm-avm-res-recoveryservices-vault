@@ -23,16 +23,8 @@ resource "azurerm_resource_group" "this" {
   name     = module.naming.resource_group.name_unique
 }
 
-resource "azurerm_resource_group" "primary" {
-  location = "westus3"
-  name     = "${module.naming.resource_group.name_unique}-wus3"
-}
-resource "azurerm_resource_group" "secondary" {
-  location = "Central US"
-  name     = "${module.naming.resource_group.name_unique}-cus"
-}
 locals {
-  test_regions = ["eastus", "eastus2", "westus2"]
+  test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
 }
 
@@ -47,24 +39,26 @@ module "azure_region" {
 
   azure_region = "westus3"
 }
-resource "azurerm_user_assigned_identity" "this_identity" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-}
-
 
 module "recovery_services_vault" {
   source = "../../"
 
   location                                       = azurerm_resource_group.this.location
-  name                                           = local.vault_name
+  name                                           = local.vault_name #"rsv-test-vault-001"
   resource_group_name                            = azurerm_resource_group.this.name
   sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
+  public_network_access_enabled                  = true
+  storage_mode_type                              = "GeoRedundant"
+  tags = {
+    env   = "Prod"
+    owner = "ABREG0"
+    dept  = "IT"
+  }
+
   file_share_backup_policy = {
     pol-rsv-fileshare-vault-001 = {
       name     = "pol-rsv-fileshare-vault-001"
@@ -128,17 +122,7 @@ module "recovery_services_vault" {
       }
     }
   }
-  managed_identities = {
-    system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
-  }
-  public_network_access_enabled = true
-  storage_mode_type             = "GeoRedundant"
-  tags = {
-    env   = "Prod"
-    owner = "ABREG0"
-    dept  = "IT"
-  }
+
   vm_backup_policy = {
     pol-rsv-vm-vault-001 = {
       name                           = "pol-rsv-vm-vault-001"
@@ -147,39 +131,34 @@ module "recovery_services_vault" {
       policy_type                    = "V2"
       frequency                      = "Weekly" # (Required) Sets the backup frequency. Possible values are Hourly, Daily and Weekly
       instant_restore_resource_group = {
-        ps = { prefix = "prefix-"
+        ps = {
+          prefix = "prefix-"
           suffix = null
-
         }
       }
       backup = {
-        time          = "22:00"
-        hour_interval = 6
-        hour_duration = 12
-        weekdays      = ["Tuesday", "Saturday"]
+        time     = "22:00"
+        weekdays = ["Saturday"]
       }
       retention_daily = 7 # 7-9999
       retention_weekly = {
         count    = 7
-        weekdays = ["Tuesday", "Saturday"]
+        weekdays = ["Saturday"]
       }
       retention_monthly = {
-        count             = 5
-        weekdays          = ["Tuesday", "Saturday"]
-        weeks             = ["First", "Third"]
-        days              = [3, 10, 20]
-        include_last_days = false
+        count    = 5
+        weekdays = ["Saturday"]
+        weeks    = ["First", "Third"]
       }
       retention_yearly = {
-        count             = 5
-        months            = ["January", "June"]
-        weekdays          = ["Tuesday", "Saturday"]
-        weeks             = ["First", "Third"]
-        days              = [3, 10, 20]
-        include_last_days = false
+        count    = 5
+        months   = ["January", "June"]
+        weekdays = ["Saturday"]
+        weeks    = ["First", "Third"]
       }
     }
   }
+
   workload_backup_policy = {
     "pol-rsv-SAPh-vault-002" = {
       name          = "pol-rsv-SAPh-vault-01"
@@ -211,19 +190,16 @@ module "recovery_services_vault" {
             weekdays = ["Saturday"]
           }
           retention_monthly = {
-            count     = 10
-            weekdays  = ["Saturday", ]
-            weeks     = ["First", "Third"]
-            monthdays = [3, 10, 20]
+            count    = 10
+            weekdays = ["Saturday"]
+            weeks    = ["First", "Third"]
           }
           retention_yearly = {
-            count     = 10
-            months    = ["January", "June", "October", "March"]
-            weekdays  = ["Saturday", ]
-            weeks     = ["First", "Second", "Third"]
-            monthdays = [3, 10, 20]
+            count    = 10
+            months   = ["January", "June", "October", "March"]
+            weekdays = ["Saturday"]
+            weeks    = ["First", "Second", "Third"]
           }
-
         }
         differential = {
           policy_type           = "Differential"
@@ -233,11 +209,10 @@ module "recovery_services_vault" {
             weekdays = ["Wednesday", "Friday"]
           }
         }
-
       }
     }
-    "pol-rsv-sqlserver-vault-001" = {
-      name          = "pol-rsv-sqlserver-vault-001"
+    "pol-rsv-sql-vault-001" = {
+      name          = "pol-rsv-sql-vault-001"
       workload_type = "SQLDataBase"
       settings = {
         time_zone           = "Pacific Standard Time"
@@ -245,6 +220,26 @@ module "recovery_services_vault" {
       }
       backup_frequency = "Daily" # Daily or Weekly
       protection_policy = {
+        full = {
+          policy_type           = "Full"
+          retention_daily_count = 7
+          backup = {
+            time = "22:00"
+          }
+          retention_weekly = {
+            count    = 5
+            weekdays = ["Sunday"]
+          }
+          retention_monthly = {
+            count     = 4
+            monthdays = [1]
+          }
+          retention_yearly = {
+            count     = 1
+            months    = ["January"]
+            monthdays = [1]
+          }
+        }
         log = {
           policy_type           = "Log"
           retention_daily_count = 7
@@ -253,32 +248,98 @@ module "recovery_services_vault" {
             time                 = "22:00"
           }
         }
+      }
+    }
+    "pol-rsv-sql-vault-daily-weekbased-001" = {
+      name          = "pol-rsv-sql-vault-daily-weekbased-001"
+      workload_type = "SQLDataBase"
+      settings = {
+        time_zone           = "Pacific Standard Time"
+        compression_enabled = true
+      }
+      backup_frequency = "Daily"
+      protection_policy = {
         full = {
-          policy_type = "Full"
-          backup = {
-            time = "22:00"
-          }
+          policy_type           = "Full"
           retention_daily_count = 7
+          backup = {
+            time = "21:00"
+          }
           retention_weekly = {
-            count    = 4
+            count    = 8
             weekdays = ["Sunday"]
           }
           retention_monthly = {
-            count     = 12
-            weekdays  = ["Sunday"]
-            weeks     = ["First"]
-            monthdays = null
+            count    = 60
+            weekdays = ["Sunday"]
+            weeks    = ["First"]
           }
           retention_yearly = {
-            count     = 5
-            months    = ["January"]
-            weekdays  = ["Sunday"]
-            weeks     = ["First"]
-            monthdays = null
+            count    = 10
+            months   = ["January"]
+            weekdays = ["Sunday"]
+            weeks    = ["First"]
+          }
+        }
+        log = {
+          policy_type           = "Log"
+          retention_daily_count = 7
+          backup = {
+            frequency_in_minutes = 15
+            time                 = "21:00"
+          }
+        }
+      }
+    }
+    "pol-rsv-sql-vault-weekly-001" = {
+      name          = "pol-rsv-sql-vault-weekly-001"
+      workload_type = "SQLDataBase"
+      settings = {
+        time_zone           = "Pacific Standard Time"
+        compression_enabled = true
+      }
+      backup_frequency = "Weekly"
+      protection_policy = {
+        full = {
+          policy_type           = "Full"
+          retention_daily_count = 7
+          backup = {
+            time     = "02:00"
+            weekdays = ["Sunday"]
+          }
+          retention_weekly = {
+            count    = 8
+            weekdays = ["Sunday"]
+          }
+          retention_monthly = {
+            count    = 60
+            weekdays = ["Sunday"]
+            weeks    = ["First"]
+          }
+          retention_yearly = {
+            count    = 10
+            months   = ["January"]
+            weekdays = ["Sunday"]
+            weeks    = ["First"]
+          }
+        }
+        differential = {
+          policy_type           = "Differential"
+          retention_daily_count = 7
+          backup = {
+            time     = "03:00"
+            weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+          }
+        }
+        log = {
+          policy_type           = "Log"
+          retention_daily_count = 7
+          backup = {
+            frequency_in_minutes = 15
+            time                 = "02:00"
           }
         }
       }
     }
   }
 }
-
