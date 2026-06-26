@@ -785,3 +785,74 @@ workload_backup_policy = {
 ```
 DESCRIPTION
 }
+
+variable "site_recovery_replicated_vm" {
+  type = map(object({
+    source_vm_id                     = string
+    source_recovery_fabric_name      = string
+    source_protection_container_name = string
+    recovery_replication_policy_id   = string
+    target_resource_id               = string
+    target_recovery_fabric_id        = optional(string, null)
+    target_protection_container_id   = optional(string, null)
+    managed_disk = optional(map(object({
+      disk_id                    = string
+      staging_storage_account_id = string
+    })), null)
+    unmanaged_disk = optional(map(object({
+      disk_uri             = string
+      staging_storage_name = string
+    })), null)
+    target_network_id           = optional(string, null)
+    target_subnet_name          = optional(string, null)
+    target_static_ip            = optional(string, null)
+    test_network_id             = optional(string, null)
+    test_subnet_name            = optional(string, null)
+    recovery_resource_group_id  = optional(string, null)
+    recovery_storage_account_id = optional(string, null)
+    recovery_target_disk_encryption_set_id = optional(string, null)
+    multi_vm_group_name         = optional(string, null)
+    multi_vm_group_create_option = optional(string, "SingleVm")
+    tags                        = optional(map(string), {})
+  }))
+  default     = null
+  description = <<DESCRIPTION
+A map of replicated virtual machines to register with the Recovery Services Vault for site recovery. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+
+- `source_vm_id` - (Required) The resource ID of the virtual machine to replicate.
+- `source_recovery_fabric_name` - (Required) The name of the recovery fabric containing the source VM.
+- `source_protection_container_name` - (Required) The name of the protection container in the source fabric.
+- `recovery_replication_policy_id` - (Required) The ID of the replication policy to use.
+- `target_resource_id` - (Required) The resource ID where the VM should be recovered (target VM resource ID).
+- `target_recovery_fabric_id` - (Optional) The ID of the recovery fabric for the target region.
+- `target_protection_container_id` - (Optional) The ID of the protection container in the target fabric.
+- `managed_disk` - (Optional) A map of managed disks to replicate.
+- `unmanaged_disk` - (Optional) A map of unmanaged disks to replicate.
+- `target_network_id` - (Optional) The ID of the target virtual network.
+- `target_subnet_name` - (Optional) The name of the target subnet.
+- `target_static_ip` - (Optional) The static IP to assign to the target VM.
+- `test_network_id` - (Optional) The ID of the test network.
+- `test_subnet_name` - (Optional) The name of the test subnet.
+- `recovery_resource_group_id` - (Optional) The ID of the recovery resource group.
+- `recovery_storage_account_id` - (Optional) The ID of the recovery storage account.
+- `recovery_target_disk_encryption_set_id` - (Optional) The ID of the target disk encryption set.
+- `multi_vm_group_name` - (Optional) The name of the multi-VM group.
+- `multi_vm_group_create_option` - (Optional) Whether to create a new multi-VM group or add to existing. Defaults to `"SingleVm"`.
+- `tags` - (Optional) A map of tags to assign to the resource.
+
+Example Inputs:
+```terraform
+site_recovery_replicated_vm = {
+  vm1 = {
+    source_vm_id                     = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-source/providers/Microsoft.Compute/virtualMachines/vm-source"
+    source_recovery_fabric_name      = "fabric-source"
+    source_protection_container_name = "container-source"
+    recovery_replication_policy_id   = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-vault/providers/Microsoft.RecoveryServices/vaults/rsv-vault/replicationPolicies/policy-001"
+    target_resource_id               = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-target/providers/Microsoft.Compute/virtualMachines/vm-target"
+    target_recovery_fabric_id        = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-vault/providers/Microsoft.RecoveryServices/vaults/rsv-vault/replicationFabrics/fabric-target"
+    target_protection_container_id   = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-vault/providers/Microsoft.RecoveryServices/vaults/rsv-vault/replicationFabrics/fabric-target/replicationProtectionContainers/container-target"
+  }
+}
+```
+DESCRIPTION
+}
