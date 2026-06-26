@@ -57,5 +57,6 @@ module "site_recovery_replicated_vm" {
     multi_vm_group_name              = each.value.multi_vm_group_name
     multi_vm_group_create_option     = each.value.multi_vm_group_create_option
     tags                             = each.value.tags
+    timeouts                         = each.value.timeouts
   }
 }

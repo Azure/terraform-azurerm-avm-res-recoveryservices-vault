@@ -814,6 +814,12 @@ variable "site_recovery_replicated_vm" {
     multi_vm_group_name         = optional(string, null)
     multi_vm_group_create_option = optional(string, "SingleVm")
     tags                        = optional(map(string), {})
+    timeouts = optional(object({
+      create = optional(string, "60m")
+      delete = optional(string, "60m")
+      read   = optional(string, "5m")
+      update = optional(string, "60m")
+    }), {})
   }))
   default     = null
   description = <<DESCRIPTION
@@ -839,6 +845,7 @@ A map of replicated virtual machines to register with the Recovery Services Vaul
 - `multi_vm_group_name` - (Optional) The name of the multi-VM group.
 - `multi_vm_group_create_option` - (Optional) Whether to create a new multi-VM group or add to existing. Defaults to `"SingleVm"`.
 - `tags` - (Optional) A map of tags to assign to the resource.
+- `timeouts` - (Optional) A map of timeout configurations for create, delete, read, and update operations. Defaults to 60m for create/delete/update and 5m for read.
 
 Example Inputs:
 ```terraform
