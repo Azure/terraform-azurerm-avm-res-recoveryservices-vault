@@ -47,7 +47,3 @@ module "recovery_services_vault" {
 
   depends_on = [azurerm_resource_group.this]
 }
-
-output "rsv" {
-  value = module.recovery_services_vault
-}

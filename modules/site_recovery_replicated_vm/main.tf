@@ -1,5 +1,5 @@
 resource "azurerm_site_recovery_replicated_vm" "this" {
-  name                             = split("/", var.site_recovery_replicated_vm.source_vm_id)[length(split("/", var.site_recovery_replicated_vm.source_vm_id)) - 1]
+  name                             = basename(var.site_recovery_replicated_vm.source_vm_id)
   resource_group_name              = var.site_recovery_replicated_vm.vault_resource_group_name
   recovery_vault_name              = var.site_recovery_replicated_vm.recovery_vault_name
   source_vm_id                     = var.site_recovery_replicated_vm.source_vm_id
