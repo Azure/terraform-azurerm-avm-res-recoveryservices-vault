@@ -22,20 +22,20 @@ resource "azurerm_site_recovery_replicated_vm" "this" {
   tags                             = var.site_recovery_replicated_vm.tags
 
   dynamic "managed_disk" {
-    for_each = var.site_recovery_replicated_vm.managed_disk == null ? [] : [var.site_recovery_replicated_vm.managed_disk]
+    for_each = var.site_recovery_replicated_vm.managed_disk != null ? var.site_recovery_replicated_vm.managed_disk : {}
 
     content {
-      disk_id                    = each.value.disk_id
-      staging_storage_account_id = each.value.staging_storage_account_id
+      disk_id                    = managed_disk.value.disk_id
+      staging_storage_account_id = managed_disk.value.staging_storage_account_id
     }
   }
 
   dynamic "unmanaged_disk" {
-    for_each = var.site_recovery_replicated_vm.unmanaged_disk == null ? [] : [var.site_recovery_replicated_vm.unmanaged_disk]
+    for_each = var.site_recovery_replicated_vm.unmanaged_disk != null ? var.site_recovery_replicated_vm.unmanaged_disk : {}
 
     content {
-      disk_uri             = each.value.disk_uri
-      staging_storage_name = each.value.staging_storage_name
+      disk_uri             = unmanaged_disk.value.disk_uri
+      staging_storage_name = unmanaged_disk.value.staging_storage_name
     }
   }
 
