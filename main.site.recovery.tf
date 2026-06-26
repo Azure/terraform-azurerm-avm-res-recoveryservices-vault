@@ -32,7 +32,7 @@ module "backup_protected_file_share" {
 
 module "site_recovery_replicated_vm" {
   source   = "./modules/site_recovery_replicated_vm"
-  for_each = try(var.site_recovery_replicated_vm != null ? var.site_recovery_replicated_vm : {})
+  for_each = var.site_recovery_replicated_vm != null ? var.site_recovery_replicated_vm : {}
 
   site_recovery_replicated_vm = {
     source_vm_id                     = each.value.source_vm_id
