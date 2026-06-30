@@ -31,7 +31,6 @@ module "recovery_services_vault" {
   name                    = "rsv-site-recovery-001"
   resource_group_name     = azurerm_resource_group.this.name
   sku                     = "RS0"
-  
   site_recovery_replicated_vm = {
     vm1 = {
       source_vm_id                     = azurerm_windows_virtual_machine.source.id
@@ -45,27 +44,48 @@ module "recovery_services_vault" {
 }
 ```
 
+<!-- markdownlint-disable MD033 -->
 ## Requirements
 
 | Name | Version |
 |------|---------|
-| terraform | >= 1.0 |
-| azurerm | ~> 3.50 |
-| azapi | ~> 1.12 |
-| modtm | ~> 0.3 |
-| random | ~> 3.1 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
+| <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) | ~> 2.4 |
+| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | >= 3.50, < 5.0 |
+| <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) | ~> 0.3 |
+| <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.1 |
+
+## Providers
+
+| Name | Version |
+|------|---------|
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | >= 3.50, < 5.0 |
+| <a name="provider_random"></a> [random](#provider\_random) | ~> 3.1 |
 
 ## Resources
 
-The example creates the following resources:
-- `azurerm_resource_group` - Resource group for the Recovery Services Vault
-- Module: `recovery_services_vault` - Recovery Services Vault with site recovery configuration
+| Name | Type |
+|------|------|
+| [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) | resource |
+| [random_integer.region_seed](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) | resource |
+| [azurerm_subscription.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/subscription) | data source |
+
+<!-- markdownlint-disable MD013 -->
+## Inputs
+
+No inputs.
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| rsv | The recovery services vault module output |
+| <a name="output_rsv"></a> [rsv](#output\_rsv) | n/a |
+
+## Modules
+
+| Name | Source | Version |
+|------|--------|---------|
+| <a name="module_recovery_services_vault"></a> [recovery\_services\_vault](#module\_recovery\_services\_vault) | ../../ | n/a |
 
 ## Additional Notes
 
