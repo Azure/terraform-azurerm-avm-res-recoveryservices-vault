@@ -14,8 +14,7 @@ variable "site_recovery_replicated_vm" {
       staging_storage_account_id = string
     })), null)
     unmanaged_disk = optional(map(object({
-      disk_uri             = string
-      staging_storage_name = string
+      disk_uri = string
     })), null)
     target_network_id           = optional(string, null)
     target_subnet_name          = optional(string, null)
@@ -26,8 +25,6 @@ variable "site_recovery_replicated_vm" {
     recovery_storage_account_id = optional(string, null)
     recovery_target_disk_encryption_set_id = optional(string, null)
     multi_vm_group_name         = optional(string, null)
-    multi_vm_group_create_option = optional(string, "SingleVm")
-    tags                        = optional(map(string), {})
     timeouts = optional(object({
       create = optional(string, "60m")
       delete = optional(string, "60m")

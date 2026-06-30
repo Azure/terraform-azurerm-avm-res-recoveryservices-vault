@@ -18,8 +18,6 @@ resource "azurerm_site_recovery_replicated_vm" "this" {
   recovery_storage_account_id      = var.site_recovery_replicated_vm.recovery_storage_account_id
   recovery_target_disk_encryption_set_id = var.site_recovery_replicated_vm.recovery_target_disk_encryption_set_id
   multi_vm_group_name              = var.site_recovery_replicated_vm.multi_vm_group_name
-  multi_vm_group_create_option     = var.site_recovery_replicated_vm.multi_vm_group_create_option
-  tags                             = var.site_recovery_replicated_vm.tags
 
   dynamic "managed_disk" {
     for_each = var.site_recovery_replicated_vm.managed_disk != null ? var.site_recovery_replicated_vm.managed_disk : {}
@@ -34,8 +32,7 @@ resource "azurerm_site_recovery_replicated_vm" "this" {
     for_each = var.site_recovery_replicated_vm.unmanaged_disk != null ? var.site_recovery_replicated_vm.unmanaged_disk : {}
 
     content {
-      disk_uri             = unmanaged_disk.value.disk_uri
-      staging_storage_name = unmanaged_disk.value.staging_storage_name
+      disk_uri = unmanaged_disk.value.disk_uri
     }
   }
 

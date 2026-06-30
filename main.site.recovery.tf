@@ -55,8 +55,6 @@ module "site_recovery_replicated_vm" {
     recovery_storage_account_id      = each.value.recovery_storage_account_id
     recovery_target_disk_encryption_set_id = each.value.recovery_target_disk_encryption_set_id
     multi_vm_group_name              = each.value.multi_vm_group_name
-    multi_vm_group_create_option     = each.value.multi_vm_group_create_option
-    tags                             = each.value.tags
     timeouts                         = each.value.timeouts
   }
 }

@@ -800,8 +800,7 @@ variable "site_recovery_replicated_vm" {
       staging_storage_account_id = string
     })), null)
     unmanaged_disk = optional(map(object({
-      disk_uri             = string
-      staging_storage_name = string
+      disk_uri = string
     })), null)
     target_network_id           = optional(string, null)
     target_subnet_name          = optional(string, null)
@@ -812,8 +811,6 @@ variable "site_recovery_replicated_vm" {
     recovery_storage_account_id = optional(string, null)
     recovery_target_disk_encryption_set_id = optional(string, null)
     multi_vm_group_name         = optional(string, null)
-    multi_vm_group_create_option = optional(string, "SingleVm")
-    tags                        = optional(map(string), {})
     timeouts = optional(object({
       create = optional(string, "60m")
       delete = optional(string, "60m")
@@ -843,8 +840,6 @@ A map of replicated virtual machines to register with the Recovery Services Vaul
 - `recovery_storage_account_id` - (Optional) The ID of the recovery storage account.
 - `recovery_target_disk_encryption_set_id` - (Optional) The ID of the target disk encryption set.
 - `multi_vm_group_name` - (Optional) The name of the multi-VM group.
-- `multi_vm_group_create_option` - (Optional) Whether to create a new multi-VM group or add to existing. Defaults to `"SingleVm"`.
-- `tags` - (Optional) A map of tags to assign to the resource.
 - `timeouts` - (Optional) A map of timeout configurations for create, delete, read, and update operations. Defaults to 60m for create/delete/update and 5m for read.
 
 Example Inputs:
