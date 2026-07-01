@@ -864,4 +864,12 @@ site_recovery_replicated_vm = {
 }
 ```
 DESCRIPTION
+
+validation {
+  condition = alltrue([
+    for _, v in coalesce(var.site_recovery_replicated_vm, {}) :
+    v.target_resource_group_id != null || v.recovery_resource_group_id != null
+  ])
+  error_message = "Each site_recovery_replicated_vm entry must set target_resource_group_id (or legacy fallback recovery_resource_group_id)."
+}
 }
