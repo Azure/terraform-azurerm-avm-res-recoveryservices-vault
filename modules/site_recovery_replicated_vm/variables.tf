@@ -40,5 +40,14 @@ variable "site_recovery_replicated_vm" {
     }), {})
   })
   default     = null
-  description = "Configuration for site recovery replicated VM"
+  description = "Configuration for site recovery replicated VM. Either target_resource_group_id or recovery_resource_group_id must be set."
+
+  validation {
+    condition = (
+      var.site_recovery_replicated_vm == null ||
+      var.site_recovery_replicated_vm.target_resource_group_id != null ||
+      var.site_recovery_replicated_vm.recovery_resource_group_id != null
+    )
+    error_message = "site_recovery_replicated_vm.target_resource_group_id (or legacy fallback site_recovery_replicated_vm.recovery_resource_group_id) must be provided."
+  }
 }
