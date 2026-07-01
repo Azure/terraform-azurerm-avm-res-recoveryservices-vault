@@ -42,6 +42,7 @@ module "site_recovery_replicated_vm" {
     source_protection_container_name = each.value.source_protection_container_name
     recovery_replication_policy_id   = each.value.recovery_replication_policy_id
     target_resource_id               = each.value.target_resource_id
+    target_resource_group_id         = each.value.target_resource_group_id
     target_recovery_fabric_id        = each.value.target_recovery_fabric_id
     target_protection_container_id   = each.value.target_protection_container_id
     managed_disk                     = each.value.managed_disk
