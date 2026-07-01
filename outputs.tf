@@ -25,11 +25,6 @@ output "recovery_workload_policy" {
   value       = module.recovery_workload_policy
 }
 
-output "site_recovery_replicated_vm" {
-  description = "The site recovery replicated VM resources"
-  value       = module.site_recovery_replicated_vm
-}
-
 output "resource" {
   description = "resource Id output"
   value       = azapi_resource.this
@@ -40,4 +35,9 @@ output "resource" {
 output "resource_id" {
   description = "resource Id output"
   value       = azapi_resource.this.id
+}
+
+output "site_recovery_replicated_vm" {
+  description = "The site recovery replicated VM resources"
+  value       = module.site_recovery_replicated_vm
 }

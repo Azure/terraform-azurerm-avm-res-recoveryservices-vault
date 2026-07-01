@@ -181,35 +181,42 @@ data "azurerm_role_definition" "this" {
 <!-- markdownlint-disable MD033 -->
 ## Requirements
 
-| Name | Version |
-|------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.9, < 2.0 |
-| <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) | ~> 2.4 |
-| <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) | >= 4.34.0, < 5.0.0 |
-| <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.5.0 |
+The following requirements are needed by this module:
+
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
+
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
+
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.34.0, < 5.0.0)
+
+- <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
 
 ## Resources
 
-| Name | Type |
-|------|------|
-| [azurerm_network_security_group.nsg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) | resource |
-| [azurerm_network_security_rule.no_internet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_rule) | resource |
-| [azurerm_private_dns_zone.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone) | resource |
-| [azurerm_private_dns_zone_virtual_network_link.private_links](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone_virtual_network_link) | resource |
-| [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) | resource |
-| [azurerm_subnet.private](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) | resource |
-| [azurerm_subnet_network_security_group_association.private](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_network_security_group_association) | resource |
-| [azurerm_user_assigned_identity.this_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) | resource |
-| [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) | resource |
-| [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) | resource |
-| [random_string.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
-| [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) | data source |
-| [azurerm_role_definition.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/role_definition) | data source |
+The following resources are used by this module:
+
+- [azurerm_network_security_group.nsg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) (resource)
+- [azurerm_network_security_rule.no_internet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_rule) (resource)
+- [azurerm_private_dns_zone.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone) (resource)
+- [azurerm_private_dns_zone_virtual_network_link.private_links](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone_virtual_network_link) (resource)
+- [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_subnet.private](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
+- [azurerm_subnet_network_security_group_association.private](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_network_security_group_association) (resource)
+- [azurerm_user_assigned_identity.this_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
+- [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
+- [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
+- [random_string.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) (resource)
+- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
+- [azurerm_role_definition.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/role_definition) (data source)
 
 <!-- markdownlint-disable MD013 -->
-## Inputs
+## Required Inputs
 
-No inputs.
+No required inputs.
+
+## Optional Inputs
+
+No optional inputs.
 
 ## Outputs
 
@@ -217,12 +224,31 @@ No outputs.
 
 ## Modules
 
-| Name | Source | Version |
-|------|--------|---------|
-| <a name="module_azure_region"></a> [azure\_region](#module\_azure\_region) | claranet/regions/azurerm | 8.0.5 |
-| <a name="module_naming"></a> [naming](#module\_naming) | Azure/naming/azurerm | 0.4.3 |
-| <a name="module_recovery_services_vault"></a> [recovery\_services\_vault](#module\_recovery\_services\_vault) | ../../ | n/a |
-| <a name="module_regions"></a> [regions](#module\_regions) | Azure/regions/azurerm | 0.8.2 |
+The following Modules are called:
+
+### <a name="module_azure_region"></a> [azure\_region](#module\_azure\_region)
+
+Source: claranet/regions/azurerm
+
+Version: 8.0.5
+
+### <a name="module_naming"></a> [naming](#module\_naming)
+
+Source: Azure/naming/azurerm
+
+Version: 0.4.3
+
+### <a name="module_recovery_services_vault"></a> [recovery\_services\_vault](#module\_recovery\_services\_vault)
+
+Source: ../../
+
+Version:
+
+### <a name="module_regions"></a> [regions](#module\_regions)
+
+Source: Azure/regions/azurerm
+
+Version: 0.8.2
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
