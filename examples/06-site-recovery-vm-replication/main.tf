@@ -103,7 +103,7 @@ resource "azurerm_windows_virtual_machine" "source" {
 
   os_disk {
     caching              = "ReadWrite"
-    storage_account_type = "StandardSSD_LRS"
+    storage_account_type = "Premium_LRS"
   }
 
   source_image_reference {
@@ -122,7 +122,7 @@ resource "azurerm_managed_disk" "source_data" {
   location             = azurerm_resource_group.this.location
   name                 = "disk-source-${each.value.vm_key}-${each.value.disk_key}-${random_integer.region_seed.result}"
   resource_group_name  = azurerm_resource_group.this.name
-  storage_account_type = "StandardSSD_LRS"
+  storage_account_type = "Premium_LRS"
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "source_data" {
@@ -143,7 +143,7 @@ data "azurerm_managed_disk" "source_os" {
 
 resource "azurerm_storage_account" "staging" {
   account_kind             = "StorageV2"
-  account_replication_type = "LRS"
+  account_replication_type = "GRS"
   account_tier             = "Standard"
   location                 = azurerm_resource_group.this.location
   name                     = "stasr${random_integer.region_seed.result}${random_string.storage_suffix.result}"
