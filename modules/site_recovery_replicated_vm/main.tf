@@ -1,28 +1,28 @@
 resource "azurerm_site_recovery_replicated_vm" "this" {
-  name                             = basename(var.site_recovery_replicated_vm.source_vm_id)
-  resource_group_name              = var.site_recovery_replicated_vm.vault_resource_group_name
-  recovery_vault_name              = var.site_recovery_replicated_vm.recovery_vault_name
-  source_vm_id                     = var.site_recovery_replicated_vm.source_vm_id
-  source_recovery_fabric_name      = var.site_recovery_replicated_vm.source_recovery_fabric_name
+  name                                      = basename(var.site_recovery_replicated_vm.source_vm_id)
+  resource_group_name                       = var.site_recovery_replicated_vm.vault_resource_group_name
+  recovery_vault_name                       = var.site_recovery_replicated_vm.recovery_vault_name
+  source_vm_id                              = var.site_recovery_replicated_vm.source_vm_id
+  source_recovery_fabric_name               = var.site_recovery_replicated_vm.source_recovery_fabric_name
   source_recovery_protection_container_name = var.site_recovery_replicated_vm.source_protection_container_name
-  recovery_replication_policy_id   = var.site_recovery_replicated_vm.recovery_replication_policy_id
-  target_resource_group_id         = coalesce(var.site_recovery_replicated_vm.target_resource_group_id, var.site_recovery_replicated_vm.recovery_resource_group_id)
-  target_recovery_fabric_id        = var.site_recovery_replicated_vm.target_recovery_fabric_id
-  target_recovery_protection_container_id = var.site_recovery_replicated_vm.target_protection_container_id
-  target_network_id                = var.site_recovery_replicated_vm.target_network_id
-  test_network_id                  = var.site_recovery_replicated_vm.test_network_id
-  multi_vm_group_name              = var.site_recovery_replicated_vm.multi_vm_group_name
+  recovery_replication_policy_id            = var.site_recovery_replicated_vm.recovery_replication_policy_id
+  target_resource_group_id                  = coalesce(var.site_recovery_replicated_vm.target_resource_group_id, var.site_recovery_replicated_vm.recovery_resource_group_id)
+  target_recovery_fabric_id                 = var.site_recovery_replicated_vm.target_recovery_fabric_id
+  target_recovery_protection_container_id   = var.site_recovery_replicated_vm.target_protection_container_id
+  target_network_id                         = var.site_recovery_replicated_vm.target_network_id
+  test_network_id                           = var.site_recovery_replicated_vm.test_network_id
+  multi_vm_group_name                       = var.site_recovery_replicated_vm.multi_vm_group_name
 
   dynamic "managed_disk" {
     for_each = var.site_recovery_replicated_vm.managed_disk != null ? var.site_recovery_replicated_vm.managed_disk : {}
 
     content {
-      disk_id                    = managed_disk.value.disk_id
-      staging_storage_account_id = managed_disk.value.staging_storage_account_id
-      target_resource_group_id   = coalesce(managed_disk.value.target_resource_group_id, var.site_recovery_replicated_vm.target_resource_group_id, var.site_recovery_replicated_vm.recovery_resource_group_id)
-      target_disk_type           = managed_disk.value.target_disk_type
-      target_replica_disk_type   = managed_disk.value.target_replica_disk_type
-      target_disk_encryption_set_id = coalesce(managed_disk.value.target_disk_encryption_set_id, var.site_recovery_replicated_vm.recovery_target_disk_encryption_set_id)
+      disk_id                       = managed_disk.value.disk_id
+      staging_storage_account_id    = managed_disk.value.staging_storage_account_id
+      target_resource_group_id      = coalesce(managed_disk.value.target_resource_group_id, var.site_recovery_replicated_vm.target_resource_group_id, var.site_recovery_replicated_vm.recovery_resource_group_id)
+      target_disk_type              = managed_disk.value.target_disk_type
+      target_replica_disk_type      = managed_disk.value.target_replica_disk_type
+      target_disk_encryption_set_id = managed_disk.value.target_disk_encryption_set_id != null ? managed_disk.value.target_disk_encryption_set_id : var.site_recovery_replicated_vm.recovery_target_disk_encryption_set_id
     }
   }
 
@@ -30,9 +30,9 @@ resource "azurerm_site_recovery_replicated_vm" "this" {
     for_each = var.site_recovery_replicated_vm.unmanaged_disk != null ? var.site_recovery_replicated_vm.unmanaged_disk : {}
 
     content {
-      disk_uri                    = unmanaged_disk.value.disk_uri
-      staging_storage_account_id  = coalesce(unmanaged_disk.value.staging_storage_account_id, var.site_recovery_replicated_vm.recovery_storage_account_id)
-      target_storage_account_id   = coalesce(unmanaged_disk.value.target_storage_account_id, var.site_recovery_replicated_vm.recovery_storage_account_id)
+      disk_uri                   = unmanaged_disk.value.disk_uri
+      staging_storage_account_id = unmanaged_disk.value.staging_storage_account_id != null ? unmanaged_disk.value.staging_storage_account_id : var.site_recovery_replicated_vm.recovery_storage_account_id
+      target_storage_account_id  = unmanaged_disk.value.target_storage_account_id != null ? unmanaged_disk.value.target_storage_account_id : var.site_recovery_replicated_vm.recovery_storage_account_id
     }
   }
 
