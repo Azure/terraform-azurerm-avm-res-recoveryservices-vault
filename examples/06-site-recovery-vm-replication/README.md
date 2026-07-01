@@ -143,6 +143,7 @@ resource "azurerm_windows_virtual_machine" "source" {
   admin_username        = "azureadmin"
   location              = azurerm_resource_group.this.location
   name                  = "vm-source-${each.key}-${random_integer.region_seed.result}"
+  computer_name         = substr(replace("src-${each.key}-${random_integer.region_seed.result}", "-", ""), 0, 15)
   network_interface_ids = [azurerm_network_interface.source[each.key].id]
   resource_group_name   = azurerm_resource_group.this.name
   size                  = "Standard_B2s"
@@ -250,6 +251,8 @@ resource "azurerm_site_recovery_replication_policy" "this" {
   recovery_point_retention_in_minutes                  = 1440
   recovery_vault_name                                  = local.vault_name
   resource_group_name                                  = azurerm_resource_group.this.name
+
+  depends_on = [module.recovery_services_vault]
 }
 
 resource "azurerm_site_recovery_protection_container_mapping" "primary_to_secondary" {
