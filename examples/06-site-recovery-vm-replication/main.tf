@@ -98,7 +98,7 @@ resource "azurerm_windows_virtual_machine" "source" {
   computer_name         = substr(replace("src-${each.key}-${random_integer.region_seed.result}", "-", ""), 0, 15)
   network_interface_ids = [azurerm_network_interface.source[each.key].id]
   resource_group_name   = azurerm_resource_group.this.name
-  size                  = "Standard_B2s"
+  size                  = var.source_vm_size
 
   os_disk {
     caching              = "ReadWrite"

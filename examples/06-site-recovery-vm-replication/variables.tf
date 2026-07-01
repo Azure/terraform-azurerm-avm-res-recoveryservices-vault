@@ -52,3 +52,9 @@ variable "source_vms" {
     error_message = "Each VM in source_vms must use unique LUN values across its data disks."
   }
 }
+
+variable "source_vm_size" {
+  type        = string
+  description = "VM SKU for source VMs used in the Site Recovery example."
+  default     = "Standard_D2s_v3"
+}
