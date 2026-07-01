@@ -445,7 +445,11 @@ Default:
 
 The following outputs are exported:
 
-### <a name="output_rsv"></a> [rsv](#output\_rsv)
+### <a name="output_rsv_primary"></a> [rsv\_primary](#output\_rsv\_primary)
+
+Description: n/a
+
+### <a name="output_rsv_secondary"></a> [rsv\_secondary](#output\_rsv\_secondary)
 
 Description: n/a
 
