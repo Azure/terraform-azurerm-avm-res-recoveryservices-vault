@@ -30,7 +30,8 @@ resource "random_password" "vm_admin" {
 }
 
 locals {
-  vault_name = "rsv-site-recovery-${random_integer.region_seed.result}"
+  primary_vault_name   = "rsv-site-recovery-primary-${random_integer.region_seed.result}"
+  secondary_vault_name = "rsv-site-recovery-secondary-${random_integer.region_seed.result}"
 
   source_vms = var.source_vms
 
@@ -150,11 +151,26 @@ resource "azurerm_storage_account" "staging" {
 }
 
 # Recovery Services Vault with Site Recovery VM replication enabled
-module "recovery_services_vault" {
+module "recovery_services_vault_primary" {
+  source = "../../"
+
+  location                                       = azurerm_resource_group.target.location
+  name                                           = local.primary_vault_name
+  resource_group_name                            = azurerm_resource_group.target.name
+  sku                                            = "RS0"
+  alerts_for_all_job_failures_enabled            = true
+  alerts_for_critical_operation_failures_enabled = true
+  classic_vmware_replication_enabled             = false
+  cross_region_restore_enabled                   = false
+
+  depends_on = [azurerm_resource_group.target]
+}
+
+module "recovery_services_vault_secondary" {
   source = "../../"
 
   location                                       = azurerm_resource_group.this.location
-  name                                           = local.vault_name
+  name                                           = local.secondary_vault_name
   resource_group_name                            = azurerm_resource_group.this.name
   sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
@@ -162,49 +178,49 @@ module "recovery_services_vault" {
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
 
-  depends_on = [azurerm_resource_group.this, azurerm_resource_group.target]
+  depends_on = [azurerm_resource_group.this]
 }
 
 resource "azurerm_site_recovery_fabric" "primary" {
   location            = azurerm_resource_group.this.location
   name                = "fabric-primary-${random_integer.region_seed.result}"
-  recovery_vault_name = local.vault_name
-  resource_group_name = azurerm_resource_group.this.name
+  recovery_vault_name = local.primary_vault_name
+  resource_group_name = azurerm_resource_group.target.name
 
-  depends_on = [module.recovery_services_vault]
+  depends_on = [module.recovery_services_vault_primary]
 }
 
 resource "azurerm_site_recovery_fabric" "secondary" {
   location            = azurerm_resource_group.target.location
   name                = "fabric-secondary-${random_integer.region_seed.result}"
-  recovery_vault_name = local.vault_name
-  resource_group_name = azurerm_resource_group.this.name
+  recovery_vault_name = local.primary_vault_name
+  resource_group_name = azurerm_resource_group.target.name
 
-  depends_on = [module.recovery_services_vault]
+  depends_on = [module.recovery_services_vault_primary]
 }
 
 resource "azurerm_site_recovery_protection_container" "primary" {
   name                 = "pc-primary-${random_integer.region_seed.result}"
   recovery_fabric_name = azurerm_site_recovery_fabric.primary.name
-  recovery_vault_name  = local.vault_name
-  resource_group_name  = azurerm_resource_group.this.name
+  recovery_vault_name  = local.primary_vault_name
+  resource_group_name  = azurerm_resource_group.target.name
 }
 
 resource "azurerm_site_recovery_protection_container" "secondary" {
   name                 = "pc-secondary-${random_integer.region_seed.result}"
   recovery_fabric_name = azurerm_site_recovery_fabric.secondary.name
-  recovery_vault_name  = local.vault_name
-  resource_group_name  = azurerm_resource_group.this.name
+  recovery_vault_name  = local.primary_vault_name
+  resource_group_name  = azurerm_resource_group.target.name
 }
 
 resource "azurerm_site_recovery_replication_policy" "this" {
   application_consistent_snapshot_frequency_in_minutes = 240
   name                                                 = "replication-policy-${random_integer.region_seed.result}"
   recovery_point_retention_in_minutes                  = 1440
-  recovery_vault_name                                  = local.vault_name
-  resource_group_name                                  = azurerm_resource_group.this.name
+  recovery_vault_name                                  = local.primary_vault_name
+  resource_group_name                                  = azurerm_resource_group.target.name
 
-  depends_on = [module.recovery_services_vault]
+  depends_on = [module.recovery_services_vault_primary]
 }
 
 resource "azurerm_site_recovery_protection_container_mapping" "primary_to_secondary" {
@@ -213,14 +229,14 @@ resource "azurerm_site_recovery_protection_container_mapping" "primary_to_second
   recovery_replication_policy_id            = azurerm_site_recovery_replication_policy.this.id
   recovery_source_protection_container_name = azurerm_site_recovery_protection_container.primary.name
   recovery_target_protection_container_id   = azurerm_site_recovery_protection_container.secondary.id
-  recovery_vault_name                       = local.vault_name
-  resource_group_name                       = azurerm_resource_group.this.name
+  recovery_vault_name                       = local.primary_vault_name
+  resource_group_name                       = azurerm_resource_group.target.name
 }
 
 resource "azurerm_site_recovery_network_mapping" "primary_to_secondary" {
   name                        = "nm-primary-secondary-${random_integer.region_seed.result}"
-  recovery_vault_name         = local.vault_name
-  resource_group_name         = azurerm_resource_group.this.name
+  recovery_vault_name         = local.primary_vault_name
+  resource_group_name         = azurerm_resource_group.target.name
   source_network_id           = azurerm_virtual_network.source.id
   source_recovery_fabric_name = azurerm_site_recovery_fabric.primary.name
   target_network_id           = azurerm_virtual_network.target.id
@@ -250,7 +266,7 @@ module "site_recovery_replicated_vm" {
       }
     )
     recovery_replication_policy_id   = azurerm_site_recovery_replication_policy.this.id
-    recovery_vault_name              = local.vault_name
+    recovery_vault_name              = local.primary_vault_name
     source_protection_container_name = azurerm_site_recovery_protection_container.primary.name
     source_recovery_fabric_name      = azurerm_site_recovery_fabric.primary.name
     source_vm_id                     = azurerm_windows_virtual_machine.source[each.key].id
@@ -262,7 +278,7 @@ module "site_recovery_replicated_vm" {
     target_subnet_name               = azurerm_subnet.target.name
     test_network_id                  = azurerm_virtual_network.target.id
     test_subnet_name                 = azurerm_subnet.target.name
-    vault_resource_group_name        = azurerm_resource_group.this.name
+    vault_resource_group_name        = azurerm_resource_group.target.name
   }
 
   depends_on = [
