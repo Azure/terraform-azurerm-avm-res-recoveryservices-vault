@@ -50,6 +50,7 @@ object({
     target_resource_group_id         = optional(string, null)
     target_recovery_fabric_id        = optional(string, null)
     target_protection_container_id   = optional(string, null)
+    target_virtual_machine_size      = optional(string, null)
     managed_disk = optional(map(object({
       disk_id                       = string
       staging_storage_account_id    = string
