@@ -9,6 +9,7 @@ resource "azurerm_site_recovery_replicated_vm" "this" {
   target_resource_group_id                  = coalesce(var.site_recovery_replicated_vm.target_resource_group_id, var.site_recovery_replicated_vm.recovery_resource_group_id)
   target_recovery_fabric_id                 = var.site_recovery_replicated_vm.target_recovery_fabric_id
   target_recovery_protection_container_id   = var.site_recovery_replicated_vm.target_protection_container_id
+  target_virtual_machine_size               = var.site_recovery_replicated_vm.target_virtual_machine_size
   target_network_id                         = var.site_recovery_replicated_vm.target_network_id
   test_network_id                           = var.site_recovery_replicated_vm.test_network_id
   multi_vm_group_name                       = var.site_recovery_replicated_vm.multi_vm_group_name
@@ -45,5 +46,16 @@ resource "azurerm_site_recovery_replicated_vm" "this" {
       read   = timeouts.value.read
       update = timeouts.value.update
     }
+  }
+
+  # Azure Site Recovery mutates these fields after enablement.
+  # Ignoring them avoids perpetual replacement loops in subsequent plans.
+  lifecycle {
+    ignore_changes = [
+      managed_disk,
+      network_interface,
+      target_virtual_machine_size,
+      test_network_id,
+    ]
   }
 }

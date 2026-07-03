@@ -56,5 +56,27 @@ variable "source_vms" {
 variable "source_vm_size" {
   type        = string
   description = "VM SKU for source VMs used in the Site Recovery example."
-  default     = "Standard_D2s_v3"
+  default     = "Standard_D2as_v5"
+}
+
+variable "target_vm_size" {
+  type        = string
+  description = "VM SKU used for failover target replicated VMs. Must be compatible with the source VM's disk controller type (SCSI) and generation; incompatible sizes cause Azure Site Recovery error 1400148. Defaults to the source VM size to guarantee compatibility."
+  default     = "Standard_D2as_v5"
+}
+
+variable "site_recovery_replication_timeouts" {
+  type = object({
+    create = string
+    update = string
+    delete = string
+    read   = string
+  })
+  description = "Timeouts for replicated VM Site Recovery operations. Increase these when Azure replication operations are slow to report completion."
+  default = {
+    create = "180m"
+    update = "180m"
+    delete = "120m"
+    read   = "15m"
+  }
 }

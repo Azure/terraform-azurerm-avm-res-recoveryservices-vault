@@ -1,12 +1,12 @@
 data "azurerm_subscription" "this" {}
 
 resource "azurerm_resource_group" "this" {
-  location = "eastus"
+  location = "westus2"
   name     = "rg-site-recovery-${random_integer.region_seed.result}"
 }
 
 resource "azurerm_resource_group" "target" {
-  location = "westus2"
+  location = "westcentralus"
   name     = "rg-site-recovery-target-${random_integer.region_seed.result}"
 }
 
@@ -112,6 +112,10 @@ resource "azurerm_windows_virtual_machine" "source" {
     sku       = "2022-datacenter-azure-edition"
     version   = "latest"
   }
+
+  identity {
+    type = "SystemAssigned"
+  }
 }
 
 resource "azurerm_managed_disk" "source_data" {
@@ -145,6 +149,9 @@ resource "azurerm_storage_account" "staging" {
   account_kind             = "StorageV2"
   account_replication_type = "GRS"
   account_tier             = "Standard"
+  allow_nested_items_to_be_public = false
+  public_network_access_enabled   = true
+  shared_access_key_enabled       = false
   location                 = azurerm_resource_group.this.location
   name                     = "stasr${random_integer.region_seed.result}${random_string.storage_suffix.result}"
   resource_group_name      = azurerm_resource_group.this.name
@@ -158,6 +165,9 @@ module "recovery_services_vault_primary" {
   name                                           = local.primary_vault_name
   resource_group_name                            = azurerm_resource_group.target.name
   sku                                            = "RS0"
+  managed_identities = {
+    system_assigned = true
+  }
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
@@ -179,6 +189,24 @@ module "recovery_services_vault_secondary" {
   cross_region_restore_enabled                   = false
 
   depends_on = [azurerm_resource_group.this]
+}
+
+resource "azurerm_role_assignment" "asr_vault_msi_storage_account_contributor" {
+  principal_id         = module.recovery_services_vault_primary.resource.output.identity.principalId
+  role_definition_name = "Storage Account Contributor"
+  scope                = azurerm_storage_account.staging.id
+}
+
+resource "azurerm_role_assignment" "asr_vault_msi_blob_data_contributor" {
+  principal_id         = module.recovery_services_vault_primary.resource.output.identity.principalId
+  role_definition_name = "Storage Blob Data Contributor"
+  scope                = azurerm_storage_account.staging.id
+}
+
+resource "azurerm_role_assignment" "asr_vault_msi_queue_data_contributor" {
+  principal_id         = module.recovery_services_vault_primary.resource.output.identity.principalId
+  role_definition_name = "Storage Queue Data Contributor"
+  scope                = azurerm_storage_account.staging.id
 }
 
 resource "azurerm_site_recovery_fabric" "primary" {
@@ -249,22 +277,15 @@ module "site_recovery_replicated_vm" {
   source = "../../modules/site_recovery_replicated_vm"
 
   site_recovery_replicated_vm = {
-    managed_disk = merge(
-      {
-        os = {
-          disk_id                    = data.azurerm_managed_disk.source_os[each.key].id
-          staging_storage_account_id = azurerm_storage_account.staging.id
-          target_resource_group_id   = azurerm_resource_group.target.id
-        }
-      },
-      {
-        for disk_ref, disk in local.source_vm_data_disks : disk.disk_key => {
-          disk_id                    = azurerm_managed_disk.source_data[disk_ref].id
-          staging_storage_account_id = azurerm_storage_account.staging.id
-          target_resource_group_id   = azurerm_resource_group.target.id
-        } if disk.vm_key == each.key
+    managed_disk = {
+      os = {
+        disk_id                    = data.azurerm_managed_disk.source_os[each.key].id
+        staging_storage_account_id = azurerm_storage_account.staging.id
+        target_resource_group_id   = azurerm_resource_group.target.id
+        target_disk_type           = "Premium_LRS"
+        target_replica_disk_type   = "Premium_LRS"
       }
-    )
+    }
     recovery_replication_policy_id   = azurerm_site_recovery_replication_policy.this.id
     recovery_vault_name              = local.primary_vault_name
     source_protection_container_name = azurerm_site_recovery_protection_container.primary.name
@@ -275,9 +296,11 @@ module "site_recovery_replicated_vm" {
     target_recovery_fabric_id        = azurerm_site_recovery_fabric.secondary.id
     target_resource_group_id         = azurerm_resource_group.target.id
     target_resource_id               = "/subscriptions/${data.azurerm_subscription.this.subscription_id}/resourceGroups/${azurerm_resource_group.target.name}/providers/Microsoft.Compute/virtualMachines/vm-target-${each.key}-${random_integer.region_seed.result}"
+    target_virtual_machine_size      = var.target_vm_size
     target_subnet_name               = azurerm_subnet.target.name
     test_network_id                  = azurerm_virtual_network.target.id
     test_subnet_name                 = azurerm_subnet.target.name
+    timeouts                         = var.site_recovery_replication_timeouts
     vault_resource_group_name        = azurerm_resource_group.target.name
   }
 
