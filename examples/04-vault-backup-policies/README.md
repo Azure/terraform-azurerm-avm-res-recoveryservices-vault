@@ -371,7 +371,7 @@ Version: 0.8.2
 
 Source: Azure/avm-res-storage-storageaccount/azurerm
 
-Version: 0.7.2
+Version: 0.7.3
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
