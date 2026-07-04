@@ -65,7 +65,7 @@ module "recovery_services_vault" {
   cross_region_restore_enabled                   = false
   public_network_access_enabled                  = true
   storage_mode_type                              = "GeoRedundant"
-  resource_guard_id                              = azapi_resource.resource_guard.id
+  resource_guard_id                              = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${azurerm_resource_group.this.name}/providers/Microsoft.DataProtection/resourceGuards/${azapi_resource.resource_guard.name}"
   tags = {
     env   = "Prod"
     owner = "ABREG0"
