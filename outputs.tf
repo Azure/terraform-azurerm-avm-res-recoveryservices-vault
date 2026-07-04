@@ -15,6 +15,11 @@ output "recovery_services_vault_file_share_policy" {
   value       = module.recovery_services_vault_file_share_policy
 }
 
+output "recovery_services_vault_resource_guard_association" {
+  description = "Resource Guard association for the Recovery Services Vault"
+  value       = try(azurerm_recovery_services_vault_resource_guard_association.this[0], null)
+}
+
 output "recovery_services_vault_vm_policy" {
   description = "Resource ID of the VM backup policy"
   value       = module.recovery_services_vault_vm_policy

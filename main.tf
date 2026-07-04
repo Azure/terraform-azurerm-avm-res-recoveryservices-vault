@@ -138,3 +138,11 @@ resource "azurerm_role_assignment" "this" {
   role_definition_name                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? null : each.value.role_definition_id_or_name
   skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
 }
+
+# associate resource guard when specified
+resource "azurerm_recovery_services_vault_resource_guard_association" "this" {
+  count = var.resource_guard_id != null ? 1 : 0
+
+  vault_id          = azapi_resource.this.id
+  resource_guard_id = var.resource_guard_id
+}
