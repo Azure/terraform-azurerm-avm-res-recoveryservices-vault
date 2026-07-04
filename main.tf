@@ -143,6 +143,6 @@ resource "azurerm_role_assignment" "this" {
 resource "azurerm_recovery_services_vault_resource_guard_association" "this" {
   count = var.resource_guard_id != null ? 1 : 0
 
-  vault_id          = azapi_resource.this.id
   resource_guard_id = var.resource_guard_id
+  vault_id          = azapi_resource.this.id
 }
