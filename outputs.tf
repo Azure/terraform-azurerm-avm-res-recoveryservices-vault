@@ -41,3 +41,8 @@ output "resource_id" {
   description = "resource Id output"
   value       = azapi_resource.this.id
 }
+
+output "site_recovery_replicated_vm" {
+  description = "The site recovery replicated VM resources"
+  value       = module.site_recovery_replicated_vm
+}
