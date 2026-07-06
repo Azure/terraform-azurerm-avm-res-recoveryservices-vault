@@ -11,8 +11,8 @@ resource "azurerm_resource_group" "target" {
 }
 
 resource "random_integer" "region_seed" {
-  max = 9999
-  min = 1000
+  max = 99999999
+  min = 10000000
 }
 
 resource "random_string" "storage_suffix" {
