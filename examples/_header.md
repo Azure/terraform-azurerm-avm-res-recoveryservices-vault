@@ -1,6 +1,15 @@
-# Default example
+# Examples Overview
 
-* This deploys the module in its simplest form.
+These examples show progressively more advanced ways to deploy and configure the Recovery Services Vault module.
+
+## What these examples cover
+
+- Baseline vault deployment with minimal configuration
+- Customer-managed key encryption
+- Private endpoint integration
+- Backup policy configuration for file shares, virtual machines, and workloads
+- Protected file share and VM registration
+- Azure Site Recovery VM replication across regions
 
 ## Data Collection
 
