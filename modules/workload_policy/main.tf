@@ -62,13 +62,13 @@ resource "azapi_resource" "this" {
               }
             } : null
             monthlySchedule = v.retention_monthly != null && v.retention_monthly.count != null ? {
-              retentionScheduleFormatType = v.retention_monthly.weekdays != null ? "Weekly" : "Daily"
-              retentionScheduleDaily = v.retention_monthly.monthdays != null ? {
-                daysOfTheMonth = [
+              retentionScheduleFormatType = (v.retention_monthly.monthdays != null || v.retention_monthly.include_last_days == true) ? "Daily" : "Weekly"
+              retentionScheduleDaily = (v.retention_monthly.monthdays != null || v.retention_monthly.include_last_days == true) ? {
+                daysOfTheMonth = v.retention_monthly.monthdays != null ? [
                   for d in v.retention_monthly.monthdays : { date = d, isLast = false }
                 ]
               } : null
-              retentionScheduleWeekly = v.retention_monthly.weekdays != null ? {
+              retentionScheduleWeekly = (v.retention_monthly.monthdays == null && v.retention_monthly.include_last_days != true) ? {
                 daysOfTheWeek   = v.retention_monthly.weekdays
                 weeksOfTheMonth = v.retention_monthly.weeks
               } : null
@@ -79,13 +79,13 @@ resource "azapi_resource" "this" {
               }
             } : null
             yearlySchedule = v.retention_yearly != null && v.retention_yearly.count != null ? {
-              retentionScheduleFormatType = v.retention_yearly.weekdays != null ? "Weekly" : "Daily"
-              retentionScheduleDaily = v.retention_yearly.monthdays != null ? {
-                daysOfTheMonth = [
+              retentionScheduleFormatType = (v.retention_yearly.monthdays != null || v.retention_yearly.include_last_days == true) ? "Daily" : "Weekly"
+              retentionScheduleDaily = (v.retention_yearly.monthdays != null || v.retention_yearly.include_last_days == true) ? {
+                daysOfTheMonth = v.retention_yearly.monthdays != null ? [
                   for d in v.retention_yearly.monthdays : { date = d, isLast = false }
                 ]
               } : null
-              retentionScheduleWeekly = v.retention_yearly.weekdays != null ? {
+              retentionScheduleWeekly = (v.retention_yearly.monthdays == null && v.retention_yearly.include_last_days != true) ? {
                 daysOfTheWeek   = v.retention_yearly.weekdays
                 weeksOfTheMonth = v.retention_yearly.weeks
               } : null
@@ -131,9 +131,13 @@ resource "azapi_resource" "this" {
       )
     }
   }
-  schema_validation_enabled = false
+
+  # Include api-version in both type and read query parameters to ensure Azure API accepts the read request
   read_query_parameters = {
     "api-version" = ["2024-10-01"]
   }
-  response_export_values = ["*"]
+
+  # For workload policies, only export the resource ID to avoid API read errors
+  # The Azure API may not support reading full response for all workload types
+  response_export_values = ["id", "name", "type", "properties"]
 }

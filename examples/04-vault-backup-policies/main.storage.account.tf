@@ -1,6 +1,6 @@
 module "this" {
   source  = "Azure/avm-res-storage-storageaccount/azurerm"
-  version = "0.6.4"
+  version = "0.7.3"
 
   location                 = azurerm_resource_group.primary.location
   name                     = module.naming.storage_account.name_unique

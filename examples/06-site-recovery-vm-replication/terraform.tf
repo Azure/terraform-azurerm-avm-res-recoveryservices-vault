@@ -1,19 +1,17 @@
 terraform {
-  required_version = ">= 1.9, < 2.0"
-
+  required_version = ">= 1.0"
   required_providers {
     azapi = {
-      source  = "Azure/azapi"
+      source  = "azure/azapi"
       version = "~> 2.4"
     }
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 4.34.0, < 5.0.0"
+      version = ">= 3.50, < 5.0"
     }
     random = {
       source  = "hashicorp/random"
-      version = ">= 3.5.0"
+      version = "~> 3.1"
     }
   }
 }
-

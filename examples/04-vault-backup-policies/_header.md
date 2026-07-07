@@ -1,6 +1,13 @@
-# Default example
+# Backup Policies Example
 
-* This deploys the module with backup custom policies file share, virtual machine, workload
+This example focuses on defining backup policies in the vault for file shares, virtual machines, and workloads.
+
+## What this example shows
+
+- File share backup policies with daily schedules and detailed retention settings
+- VM backup policies for infrastructure protection scenarios
+- Workload backup policies for application-aware backup configurations
+- A reusable pattern for teams that want policy definitions managed centrally in Terraform
 
 ## Data Collection
 

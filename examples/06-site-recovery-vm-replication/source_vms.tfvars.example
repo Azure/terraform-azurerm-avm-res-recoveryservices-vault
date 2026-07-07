@@ -1,0 +1,40 @@
+source_vms = {
+  app01 = {
+    data_disks = {
+      data01 = {
+        lun     = 0
+        size_gb = 32
+      }
+      data02 = {
+        lun     = 1
+        size_gb = 64
+      }
+    }
+  }
+
+  app02 = {
+    data_disks = {
+      data01 = {
+        lun     = 0
+        size_gb = 128
+      }
+      data02 = {
+        lun     = 1
+        size_gb = 256
+      }
+      data03 = {
+        lun     = 2
+        size_gb = 512
+      }
+    }
+  }
+
+  app03 = {
+    data_disks = {
+      data01 = {
+        lun     = 0
+        size_gb = 64
+      }
+    }
+  }
+}

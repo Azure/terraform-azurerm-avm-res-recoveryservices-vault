@@ -88,6 +88,25 @@ locals {
     })
   ))
   time_formatted = "1900-01-01T${var.vm_backup_policy["backup"].time}:00Z"
+  
+  base_properties = {
+    backupManagementType          = "AzureIaasVM"
+    policyType                    = var.vm_backup_policy.policy_type
+    timeZone                      = var.vm_backup_policy.timezone
+    instantRpRetentionRangeInDays = var.vm_backup_policy.instant_restore_retention_days != null ? (var.vm_backup_policy.policy_type == "Weekly" ? 5 : var.vm_backup_policy.instant_restore_retention_days) : null
+    schedulePolicy                = local.schedule_policy
+    retentionPolicy               = local.retention_policy
+  }
+  
+  properties = merge(
+    local.base_properties,
+    length(var.vm_backup_policy.instant_restore_resource_group) > 0 ? {
+      instantRPDetails = {
+        azureBackupRGNamePrefix = values(var.vm_backup_policy.instant_restore_resource_group)[0].prefix
+        azureBackupRGNameSuffix = values(var.vm_backup_policy.instant_restore_resource_group)[0].suffix
+      }
+    } : {}
+  )
 }
 
 data "azapi_client_config" "current" {}
@@ -97,18 +116,7 @@ resource "azapi_resource" "this" {
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.RecoveryServices/vaults/${var.recovery_vault_name}"
   type      = "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01"
   body = {
-    properties = {
-      backupManagementType          = "AzureIaasVM"
-      policyType                    = var.vm_backup_policy.policy_type
-      timeZone                      = var.vm_backup_policy.timezone
-      instantRpRetentionRangeInDays = var.vm_backup_policy.instant_restore_retention_days != null ? (var.vm_backup_policy.policy_type == "Weekly" ? 5 : var.vm_backup_policy.instant_restore_retention_days) : null
-      instantRPDetails = length(var.vm_backup_policy.instant_restore_resource_group) > 0 ? {
-        azureBackupRGNamePrefix = values(var.vm_backup_policy.instant_restore_resource_group)[0].prefix
-        azureBackupRGNameSuffix = values(var.vm_backup_policy.instant_restore_resource_group)[0].suffix
-      } : null
-      schedulePolicy  = local.schedule_policy
-      retentionPolicy = local.retention_policy
-    }
+    properties = local.properties
   }
   read_query_parameters = {
     "api-version" = ["2024-10-01"]

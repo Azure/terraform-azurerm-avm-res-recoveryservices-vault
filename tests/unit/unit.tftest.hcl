@@ -250,6 +250,71 @@ run "import_null_identity_ignored" {
 }
 
 # ---------------------------------------------------------------------------
+# run: soft_delete_enabled_by_default
+#
+# The default soft delete state must be "Enabled".
+# ---------------------------------------------------------------------------
+run "soft_delete_enabled_by_default" {
+  command = apply
+
+  assert {
+    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "Enabled"
+    error_message = "Soft delete state should default to 'Enabled'."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: soft_delete_disabled
+#
+# Verifies that soft delete can be set to "Disabled".
+# ---------------------------------------------------------------------------
+run "soft_delete_disabled" {
+  command = apply
+
+  variables {
+    soft_delete_enabled = "Disabled"
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "Disabled"
+    error_message = "Soft delete state should be 'Disabled' when set to 'Disabled'."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: soft_delete_always_on
+#
+# Verifies that the "AlwaysOn" always-on soft delete state can be configured.
+# ---------------------------------------------------------------------------
+run "soft_delete_always_on" {
+  command = apply
+
+  variables {
+    soft_delete_enabled = "AlwaysOn"
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "AlwaysOn"
+    error_message = "Soft delete state should be 'AlwaysON' when always-on soft delete is enabled."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: soft_delete_invalid_value
+#
+# Verifies that an invalid value for soft_delete_enabled is rejected.
+# ---------------------------------------------------------------------------
+run "soft_delete_invalid_value" {
+  command = plan
+
+  variables {
+    soft_delete_enabled = "Invalid"
+  }
+
+  expect_failures = [var.soft_delete_enabled]
+}
+
+# ---------------------------------------------------------------------------
 # run: resource_guard_operation_requests_applied
 #
 # Verifies that Resource Guard operation request IDs are passed through to the
@@ -272,6 +337,45 @@ run "resource_guard_operation_requests_applied" {
   assert {
     condition     = azapi_resource.this.body.properties.resourceGuardOperationRequests[0] == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg1/modifyEncryptionSettings/default"
     error_message = "The supplied Resource Guard operation request ID should be passed through unchanged."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: resource_guard_association_created
+#
+# Verifies that Resource Guard association is created when resource_guard_id
+# is supplied.
+# ---------------------------------------------------------------------------
+run "resource_guard_association_created" {
+  command = apply
+
+  variables {
+    resource_guard_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg-guard-01"
+  }
+
+  assert {
+    condition     = azurerm_recovery_services_vault_resource_guard_association.this[0].vault_id == azapi_resource.this.id
+    error_message = "Resource Guard association vault_id should match the vault resource ID."
+  }
+
+  assert {
+    condition     = azurerm_recovery_services_vault_resource_guard_association.this[0].resource_guard_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg-guard-01"
+    error_message = "Resource Guard association resource_guard_id should match the supplied variable."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: no_resource_guard_association_by_default
+#
+# Verifies that no Resource Guard association is created when resource_guard_id
+# is not supplied.
+# ---------------------------------------------------------------------------
+run "no_resource_guard_association_by_default" {
+  command = plan
+
+  assert {
+    condition     = length(azurerm_recovery_services_vault_resource_guard_association.this) == 0
+    error_message = "No Resource Guard association should be created when resource_guard_id is not supplied."
   }
 }
 
@@ -381,6 +485,7 @@ run "managed_private_endpoints_sequence_and_unique_defaults" {
         private_dns_zone_resource_ids = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-dns/providers/Microsoft.Network/privateDnsZones/privatelink.siterecovery.windowsazure.com"]
       }
     }
+
   }
 
   assert {
@@ -391,5 +496,177 @@ run "managed_private_endpoints_sequence_and_unique_defaults" {
   assert {
     condition     = azurerm_private_endpoint.this_managed_dns_zone_groups["backup"].private_service_connection[0].name == "pse-${var.name}-backup" && azurerm_private_endpoint.this_managed_dns_zone_groups["site_recovery"].private_service_connection[0].name == "pse-${var.name}-site_recovery"
     error_message = "When multiple managed private endpoints are configured without explicit private service connection names, defaults must include the map key to avoid collisions."
+  }
+}
+
+run "workload_daily_full_uses_retention_weekly_monthly_yearly_config" {
+  command = apply
+
+  variables {
+    workload_backup_policy = {
+      daily_full = {
+        name          = "pol-rsv-saph-vault-01"
+        workload_type = "SAPHanaDatabase"
+        settings = {
+          time_zone           = "Pacific Standard Time"
+          compression_enabled = false
+        }
+        backup_frequency = "Daily"
+        protection_policy = {
+          full = {
+            policy_type           = "Full"
+            retention_daily_count = 15
+            backup = {
+              time     = "22:00"
+              weekdays = ["Monday"]
+            }
+            retention_weekly = {
+              count    = 10
+              weekdays = ["Saturday"]
+            }
+            retention_monthly = {
+              count    = 10
+              weekdays = ["Saturday"]
+              weeks    = ["First"]
+            }
+            retention_yearly = {
+              count    = 10
+              months   = ["January"]
+              weekdays = ["Sunday"]
+              weeks    = ["Last"]
+            }
+          }
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.weeklySchedule != null
+    error_message = "weeklySchedule should be set when retention_weekly is configured, even when backup_frequency is Daily."
+  }
+
+  assert {
+    condition     = contains(module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Saturday") && !contains(module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Monday")
+    error_message = "Monthly retention weekly days should come from retention_monthly.weekdays, not backup.weekdays."
+  }
+
+  assert {
+    condition     = module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleFormatType == "Weekly"
+    error_message = "Monthly retention schedule format should be Weekly when retention_monthly.weekdays is set."
+  }
+
+  assert {
+    condition     = contains(module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Sunday") && !contains(module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Monday")
+    error_message = "Yearly retention weekly days should come from retention_yearly.weekdays, not backup.weekdays."
+  }
+
+  assert {
+    condition     = module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleFormatType == "Weekly"
+    error_message = "Yearly retention schedule format should be Weekly when retention_yearly.weekdays is set."
+  }
+}
+
+run "workload_daily_full_uses_monthdays_for_daily_monthly_yearly_retention" {
+  command = apply
+
+  variables {
+    workload_backup_policy = {
+      daily_full_monthdays = {
+        name          = "pol-rsv-saph-vault-02"
+        workload_type = "SAPHanaDatabase"
+        settings = {
+          time_zone           = "Pacific Standard Time"
+          compression_enabled = false
+        }
+        backup_frequency = "Daily"
+        protection_policy = {
+          full = {
+            policy_type           = "Full"
+            retention_daily_count = 15
+            backup = {
+              time = "22:00"
+            }
+            retention_monthly = {
+              count     = 10
+              monthdays = [3, 10]
+            }
+            retention_yearly = {
+              count     = 10
+              months    = ["January"]
+              monthdays = [20]
+            }
+          }
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = module.recovery_workload_policy["daily_full_monthdays"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleFormatType == "Daily"
+    error_message = "Monthly retention schedule format should be Daily when retention_monthly.monthdays is set."
+  }
+
+  assert {
+    condition     = module.recovery_workload_policy["daily_full_monthdays"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly == null
+    error_message = "Monthly retention weekly schedule should be null when retention_monthly.weekdays is not set."
+  }
+
+  assert {
+    condition     = module.recovery_workload_policy["daily_full_monthdays"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleFormatType == "Daily"
+    error_message = "Yearly retention schedule format should be Daily when retention_yearly.monthdays is set."
+  }
+
+  assert {
+    condition     = module.recovery_workload_policy["daily_full_monthdays"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly == null
+    error_message = "Yearly retention weekly schedule should be null when retention_yearly.weekdays is not set."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: file_share_hourly_policy_parses_without_error
+#
+# Regression test for the v1.1.8 duplicate `is_hourly` local bug in
+# modules/file_share_policy/main.tf.  On the buggy code Terraform would emit
+# "Attribute redefined" and refuse to plan; the fix removes the duplicate.
+# This run exercises the hourly path end-to-end and verifies that:
+#   - the schedule policy type is set to Hourly
+#   - the hourlySchedule block is populated with the configured interval
+# ---------------------------------------------------------------------------
+run "file_share_hourly_policy_parses_without_error" {
+  command = apply
+
+  variables {
+    file_share_backup_policy = {
+      hourly = {
+        name      = "pol-rsv-fileshare-hourly-001"
+        timezone  = "UTC"
+        frequency = "Hourly"
+        backup = {
+          time = "06:00"
+          hourly = {
+            interval        = 4
+            start_time      = "06:00"
+            window_duration = 12
+          }
+        }
+        retention_daily = 7
+      }
+    }
+  }
+
+  assert {
+    condition     = module.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.scheduleRunFrequency == "Hourly"
+    error_message = "scheduleRunFrequency should be Hourly for an hourly file share backup policy."
+  }
+
+  assert {
+    condition     = module.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.hourlySchedule.interval == 4
+    error_message = "hourlySchedule.interval should match the configured backup interval."
+  }
+
+  assert {
+    condition     = module.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.hourlySchedule.scheduleWindowDuration == 12
+    error_message = "hourlySchedule.scheduleWindowDuration should match the configured window_duration."
   }
 }
