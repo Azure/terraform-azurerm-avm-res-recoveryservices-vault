@@ -1,6 +1,14 @@
-# Default example
+# Default Vault Example
 
-* This deploys the module in its simplest form.
+This example deploys a Recovery Services Vault with a minimal, production-shaped baseline configuration.
+
+## What this example shows
+
+- A single vault deployment in one resource group
+- RS0 SKU with standard alert settings enabled
+- Public network access enabled
+- Geo-redundant storage mode
+- Basic tagging without backup items, private endpoints, or Site Recovery resources
 
 ## Data Collection
 

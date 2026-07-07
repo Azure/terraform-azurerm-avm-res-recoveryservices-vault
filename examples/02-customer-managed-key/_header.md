@@ -1,6 +1,13 @@
-# Default example
+# Customer-Managed Key Example
 
-* This deploys Azure recovery services vault with customer managed keys
+This example deploys a Recovery Services Vault encrypted with a customer-managed key stored in Azure Key Vault.
+
+## What this example shows
+
+- Creating and wiring a customer-managed key for vault encryption
+- Using both system-assigned and user-assigned managed identities
+- Passing the Key Vault and identity references the vault needs for CMK access
+- A secure pattern for vaults that must use customer-controlled encryption material
 
 ## Data Collection
 
