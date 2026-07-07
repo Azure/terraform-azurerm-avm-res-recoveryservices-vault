@@ -466,6 +466,12 @@ variable "public_network_access_enabled" {
   description = "(optional) Specify Public Network Access. true (default), false"
 }
 
+variable "resource_guard_id" {
+  type        = string
+  default     = null
+  description = "(Optional) The ID of the Azure Data Protection resource guard to associate with this Recovery Services Vault."
+}
+
 variable "resource_guard_operation_requests" {
   type        = list(string)
   default     = []

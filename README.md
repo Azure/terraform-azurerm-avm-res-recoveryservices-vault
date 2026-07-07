@@ -54,6 +54,7 @@ The following resources are used by this module:
 - [azurerm_private_endpoint.this_managed_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint.this_unmanaged_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
+- [azurerm_recovery_services_vault_resource_guard_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/recovery_services_vault_resource_guard_association) (resource)
 - [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
@@ -522,6 +523,14 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_resource_guard_id"></a> [resource\_guard\_id](#input\_resource\_guard\_id)
+
+Description: (Optional) The ID of the Azure Data Protection resource guard to associate with this Recovery Services Vault.
+
+Type: `string`
+
+Default: `null`
+
 ### <a name="input_resource_guard_operation_requests"></a> [resource\_guard\_operation\_requests](#input\_resource\_guard\_operation\_requests)
 
 Description: (Optional) A list of Resource Guard operation request IDs to associate with the Recovery Services Vault.
@@ -947,6 +956,10 @@ Description:   A map of private endpoints. The map key is the supplied input to 
 ### <a name="output_recovery_services_vault_file_share_policy"></a> [recovery\_services\_vault\_file\_share\_policy](#output\_recovery\_services\_vault\_file\_share\_policy)
 
 Description: Resource ID of the file share backup policy
+
+### <a name="output_recovery_services_vault_resource_guard_association"></a> [recovery\_services\_vault\_resource\_guard\_association](#output\_recovery\_services\_vault\_resource\_guard\_association)
+
+Description: Resource Guard association for the Recovery Services Vault
 
 ### <a name="output_recovery_services_vault_vm_policy"></a> [recovery\_services\_vault\_vm\_policy](#output\_recovery\_services\_vault\_vm\_policy)
 

@@ -42,6 +42,18 @@ resource "azurerm_resource_group" "this" {
   name     = module.naming.resource_group.name_unique
 }
 
+data "azurerm_client_config" "current" {}
+
+resource "azapi_resource" "resource_guard" {
+  location  = azurerm_resource_group.this.location
+  name      = "rg-${random_string.this.result}"
+  parent_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${azurerm_resource_group.this.name}"
+  type      = "Microsoft.DataProtection/resourceGuards@2024-04-01"
+  body = {
+    properties = {}
+  }
+}
+
 locals {
   test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
@@ -72,6 +84,7 @@ module "recovery_services_vault" {
   cross_region_restore_enabled                   = false
   public_network_access_enabled                  = true
   storage_mode_type                              = "GeoRedundant"
+  resource_guard_id                              = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${azurerm_resource_group.this.name}/providers/Microsoft.DataProtection/resourceGuards/${azapi_resource.resource_guard.name}"
   tags = {
     env   = "Prod"
     owner = "ABREG0"
@@ -381,9 +394,11 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource.resource_guard](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_string.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) (resource)
+- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
