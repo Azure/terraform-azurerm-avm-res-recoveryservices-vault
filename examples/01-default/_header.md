@@ -1,6 +1,13 @@
-# Default example
+# Basic Recovery Services Vault Example
 
-* This deploys Azure recovery services vault with basic option. simple form
+This example shows a straightforward Recovery Services Vault deployment using the module's common operational settings.
+
+## What this example shows
+
+- Basic vault provisioning with the RS0 SKU
+- Alert settings for job failures and critical operations
+- Public network access and geo-redundant storage
+- A good starting point for testing or extending the module with additional features later
 
 ## Data Collection
 

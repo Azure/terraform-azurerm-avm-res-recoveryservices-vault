@@ -341,6 +341,45 @@ run "resource_guard_operation_requests_applied" {
 }
 
 # ---------------------------------------------------------------------------
+# run: resource_guard_association_created
+#
+# Verifies that Resource Guard association is created when resource_guard_id
+# is supplied.
+# ---------------------------------------------------------------------------
+run "resource_guard_association_created" {
+  command = apply
+
+  variables {
+    resource_guard_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg-guard-01"
+  }
+
+  assert {
+    condition     = azurerm_recovery_services_vault_resource_guard_association.this[0].vault_id == azapi_resource.this.id
+    error_message = "Resource Guard association vault_id should match the vault resource ID."
+  }
+
+  assert {
+    condition     = azurerm_recovery_services_vault_resource_guard_association.this[0].resource_guard_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg-guard-01"
+    error_message = "Resource Guard association resource_guard_id should match the supplied variable."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: no_resource_guard_association_by_default
+#
+# Verifies that no Resource Guard association is created when resource_guard_id
+# is not supplied.
+# ---------------------------------------------------------------------------
+run "no_resource_guard_association_by_default" {
+  command = plan
+
+  assert {
+    condition     = length(azurerm_recovery_services_vault_resource_guard_association.this) == 0
+    error_message = "No Resource Guard association should be created when resource_guard_id is not supplied."
+  }
+}
+
+# ---------------------------------------------------------------------------
 # run: unmanaged_private_endpoints_omit_dns_zone_group
 #
 # When callers manage private DNS zone groups outside the module, the private
