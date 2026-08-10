@@ -507,60 +507,8 @@ Source: ../../modules/site_recovery_replicated_vm
 
 Version:
 
-## Additional Notes
-
-### Site Recovery Infrastructure Setup
-
-To use VM replication, you need to configure the following Azure Site Recovery components first:
-
-1. **Recovery Fabrics**: Define your source and target Azure regions
-2. **Protection Containers**: Containers within each fabric to organize protected items
-3. **Replication Policy**: Defines recovery point objectives (RPO) and retention policies
-4. **Container Mappings**: Map source containers to target containers
-5. **Network Mappings**: Map source virtual networks to target virtual networks
-6. **Virtual Machines**: Create or identify VMs to replicate
-
-### Example Setup Flow
-
-```hcl
-# 1. Create recovery fabrics
-resource "azurerm_site_recovery_fabric" "primary" {
-  name                = "fabric-primary"
-  resource_group_name = azurerm_resource_group.this.name
-  recovery_vault_name = azurerm_recovery_services_vault.example.name
-  location            = "eastus"
-}
-
-resource "azurerm_site_recovery_fabric" "secondary" {
-  name                = "fabric-secondary"
-  resource_group_name = azurerm_resource_group.this.name
-  recovery_vault_name = azurerm_recovery_services_vault.example.name
-  location            = "westus"
-}
-
-# 2. Create protection containers
-resource "azurerm_site_recovery_protection_container" "primary" {
-  name                = "container-primary"
-  resource_group_name = azurerm_resource_group.this.name
-  recovery_vault_name = azurerm_recovery_services_vault.example.name
-  recovery_fabric_name = azurerm_site_recovery_fabric.primary.name
-}
-
-# 3. Create replication policy
-resource "azurerm_site_recovery_replication_policy" "test" {
-  name                = "test-policy"
-  resource_group_name = azurerm_resource_group.this.name
-  recovery_vault_name = azurerm_recovery_services_vault.example.name
-  recovery_point_retention_in_minutes = 24 * 60
-  application_consistent_snapshot_frequency_in_minutes = 60
-}
-
-# 4. Then use site_recovery_replicated_vm
-```
-
+<!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
 
-The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve Microsoft products and services. You may turn off the telemetry as described in the repository. There are also some features in the software that may enable you and Microsoft to collect data from end users of your applications that incorporate Microsoft code from the software.
-
-If you are collecting end user data with the software, you must comply with applicable laws, including providing appropriate notices to end users and you should provide a copy of Microsoft's privacy statement to end users (https://privacy.microsoft.com/privacystatement). Microsoft's privacy statement describes the personal data Microsoft processes and the commitments we make about that data.
+The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the repository. There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft’s privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
 <!-- END_TF_DOCS -->
