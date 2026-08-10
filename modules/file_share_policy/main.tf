@@ -95,14 +95,14 @@ locals {
   )
 
   use_vault_standard = lower(var.file_share_backup_policy.backup_tier) == "vault-standard"
-  
+
   base_properties = {
     backupManagementType = "AzureStorage"
     workLoadType         = "AzureFileShare"
     timeZone             = var.file_share_backup_policy.timezone
     schedulePolicy       = local.schedule_policy
   }
-  
+
   properties = merge(
     local.base_properties,
     local.use_vault_standard ? {} : {

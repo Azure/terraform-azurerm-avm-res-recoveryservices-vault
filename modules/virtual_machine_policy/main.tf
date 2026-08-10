@@ -88,7 +88,7 @@ locals {
     })
   ))
   time_formatted = "1900-01-01T${var.vm_backup_policy["backup"].time}:00Z"
-  
+
   base_properties = {
     backupManagementType          = "AzureIaasVM"
     policyType                    = var.vm_backup_policy.policy_type
@@ -97,7 +97,7 @@ locals {
     schedulePolicy                = local.schedule_policy
     retentionPolicy               = local.retention_policy
   }
-  
+
   properties = merge(
     local.base_properties,
     length(var.vm_backup_policy.instant_restore_resource_group) > 0 ? {

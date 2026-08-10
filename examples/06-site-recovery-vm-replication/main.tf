@@ -146,25 +146,25 @@ data "azurerm_managed_disk" "source_os" {
 }
 
 resource "azurerm_storage_account" "staging" {
-  account_kind             = "StorageV2"
-  account_replication_type = "GRS"
-  account_tier             = "Standard"
+  account_kind                    = "StorageV2"
+  account_replication_type        = "GRS"
+  account_tier                    = "Standard"
   allow_nested_items_to_be_public = false
   public_network_access_enabled   = true
   shared_access_key_enabled       = false
-  location                 = azurerm_resource_group.this.location
-  name                     = "stasr${random_integer.region_seed.result}${random_string.storage_suffix.result}"
-  resource_group_name      = azurerm_resource_group.this.name
+  location                        = azurerm_resource_group.this.location
+  name                            = "stasr${random_integer.region_seed.result}${random_string.storage_suffix.result}"
+  resource_group_name             = azurerm_resource_group.this.name
 }
 
 # Recovery Services Vault with Site Recovery VM replication enabled
 module "recovery_services_vault_primary" {
   source = "../../"
 
-  location                                       = azurerm_resource_group.target.location
-  name                                           = local.primary_vault_name
-  resource_group_name                            = azurerm_resource_group.target.name
-  sku                                            = "RS0"
+  location            = azurerm_resource_group.target.location
+  name                = local.primary_vault_name
+  resource_group_name = azurerm_resource_group.target.name
+  sku                 = "RS0"
   managed_identities = {
     system_assigned = true
   }
