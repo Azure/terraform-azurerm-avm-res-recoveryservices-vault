@@ -148,10 +148,9 @@ resource "azurerm_private_dns_zone" "this" {
 resource "azurerm_private_dns_zone_virtual_network_link" "private_links" {
   for_each = azurerm_private_dns_zone.this
 
-  name                  = "${each.key}_${azurerm_virtual_network.vnet.name}-link"
-  private_dns_zone_name = azurerm_private_dns_zone.this[each.key].name
-  resource_group_name   = azurerm_resource_group.this.name
-  virtual_network_id    = azurerm_virtual_network.vnet.id
+  name                = "${each.key}_${azurerm_virtual_network.vnet.name}-link"
+  private_dns_zone_id = azurerm_private_dns_zone.this[each.key].id
+  virtual_network_id  = azurerm_virtual_network.vnet.id
 }
 
 data "azurerm_client_config" "current" {}
