@@ -95,6 +95,14 @@ Type: `string`
 
 The following input variables are optional (have default values):
 
+### <a name="input_alerts_for_all_failover_issues_enabled"></a> [alerts\_for\_all\_failover\_issues\_enabled](#input\_alerts\_for\_all\_failover\_issues\_enabled)
+
+Description: (optional) Specify Setting for Monitoring 'Alerts for All Failover Issues'. true, false (default)
+
+Type: `bool`
+
+Default: `false`
+
 ### <a name="input_alerts_for_all_job_failures_enabled"></a> [alerts\_for\_all\_job\_failures\_enabled](#input\_alerts\_for\_all\_job\_failures\_enabled)
 
 Description: (optional) Specify Setting for Monitoring 'Alerts for All Job Failures'. true (default), false
@@ -102,6 +110,14 @@ Description: (optional) Specify Setting for Monitoring 'Alerts for All Job Failu
 Type: `bool`
 
 Default: `true`
+
+### <a name="input_alerts_for_all_replication_issues_enabled"></a> [alerts\_for\_all\_replication\_issues\_enabled](#input\_alerts\_for\_all\_replication\_issues\_enabled)
+
+Description: (optional) Specify Setting for Monitoring 'Alerts for All Replication Issues'. true, false (default)
+
+Type: `bool`
+
+Default: `false`
 
 ### <a name="input_alerts_for_critical_operation_failures_enabled"></a> [alerts\_for\_critical\_operation\_failures\_enabled](#input\_alerts\_for\_critical\_operation\_failures\_enabled)
 

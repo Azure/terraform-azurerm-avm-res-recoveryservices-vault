@@ -315,6 +315,50 @@ run "soft_delete_invalid_value" {
 }
 
 # ---------------------------------------------------------------------------
+# run: monitoring_alerts_defaults
+#
+# Replication and failover alerts default to "Disabled", job failure alerts to
+# "Enabled".
+# ---------------------------------------------------------------------------
+run "monitoring_alerts_defaults" {
+  command = apply
+
+  assert {
+    condition     = azapi_resource.this.body.properties.monitoringSettings.azureMonitorAlertSettings.alertsForAllReplicationIssues == "Disabled"
+    error_message = "Alerts for all replication issues should default to 'Disabled'."
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.monitoringSettings.azureMonitorAlertSettings.alertsForAllFailoverIssues == "Disabled"
+    error_message = "Alerts for all failover issues should default to 'Disabled'."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: monitoring_alerts_enabled
+#
+# Verifies that replication and failover alerts can be enabled.
+# ---------------------------------------------------------------------------
+run "monitoring_alerts_enabled" {
+  command = apply
+
+  variables {
+    alerts_for_all_replication_issues_enabled = true
+    alerts_for_all_failover_issues_enabled    = true
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.monitoringSettings.azureMonitorAlertSettings.alertsForAllReplicationIssues == "Enabled"
+    error_message = "Alerts for all replication issues should be 'Enabled' when alerts_for_all_replication_issues_enabled is true."
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.monitoringSettings.azureMonitorAlertSettings.alertsForAllFailoverIssues == "Enabled"
+    error_message = "Alerts for all failover issues should be 'Enabled' when alerts_for_all_failover_issues_enabled is true."
+  }
+}
+
+# ---------------------------------------------------------------------------
 # run: resource_guard_operation_requests_applied
 #
 # Verifies that Resource Guard operation request IDs are passed through to the
