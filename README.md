@@ -180,6 +180,59 @@ map(object({
 
 Default: `null`
 
+### <a name="input_backup_protected_workload"></a> [backup\_protected\_workload](#input\_backup\_protected\_workload)
+
+Description: A map of virtual machine hosted workloads (SQL Server databases) to protect with the Recovery Services Vault. The virtual machine is registered as a `VMAppContainer`, workload discovery is triggered, and each selected database is protected with the supplied workload backup policy. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+
+- `source_vm_id` - (Required) The resource ID of the virtual machine hosting the workload.
+- `workload_backup_policy_name` - (Required) The name of the workload backup policy in this vault to associate with the protected databases.
+- `workload_type` - (Optional) The workload type to protect. Only `SQLDataBase` is currently supported.
+- `inquiry_enabled` - (Optional) Whether to trigger a workload discovery (inquiry) on the registered container. Defaults to `true`.
+- `sleep_timer` - (Optional) Duration to sleep after registration/discovery, to allow for Azure propagation. Defaults to `"60s"`.
+- `protected_databases` - (Required) A map of databases to protect. The map key is used as the Terraform address of the protected item so that it stays deterministic when databases are added or removed.
+  - `server_name` - (Required) The name of the SQL instance hosting the database, as discovered by Azure Backup (for example `MSSQLSERVER`).
+  - `database_name` - (Required) The name of the database to protect.
+  - `protected_item_name` - (Optional) Overrides the generated protected item name (`<workload_type>;<server_name>;<database_name>`).
+  - `workload_backup_policy_id` - (Optional) Overrides the resource ID of the workload backup policy for this database, allowing policies from another vault or an externally managed policy to be used.
+
+> **Note:** The `AzureBackupWindowsWorkload` virtual machine extension and the SQL Server permissions required by Azure Backup must be configured on the virtual machine before the databases can be protected. Destroying a protected item stops protection and deletes its backup data, subject to the vault soft delete configuration.
+
+Example Inputs:
+```terraform
+backup_protected_workload = {
+  sqlvm1 = {
+    source_vm_id                = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-example/providers/Microsoft.Compute/virtualMachines/vm-sql-example"
+    workload_backup_policy_name = "pol-rsv-workload-vault-001"
+    protected_databases = {
+      master = {
+        server_name   = "MSSQLSERVER"
+        database_name = "master"
+      }
+    }
+  }
+}
+```
+
+Type:
+
+```hcl
+map(object({
+    source_vm_id                = string
+    workload_backup_policy_name = string
+    workload_type               = optional(string, "SQLDataBase")
+    inquiry_enabled             = optional(bool, true)
+    sleep_timer                 = optional(string, "60s")
+    protected_databases = map(object({
+      server_name               = string
+      database_name             = string
+      protected_item_name       = optional(string)
+      workload_backup_policy_id = optional(string)
+    }))
+  }))
+```
+
+Default: `null`
+
 ### <a name="input_classic_vmware_replication_enabled"></a> [classic\_vmware\_replication\_enabled](#input\_classic\_vmware\_replication\_enabled)
 
 Description: (option) Specify Setting for Classic VMWare Replication. true, false.
@@ -949,6 +1002,10 @@ The following outputs are exported:
 
 Description: Resource ID of the workload backup policy
 
+### <a name="output_backup_protected_workload"></a> [backup\_protected\_workload](#output\_backup\_protected\_workload)
+
+Description: The workload (SQL Server on Azure VM) protection containers and protected items
+
 ### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
 
 Description:   A map of private endpoints. The map key is the supplied input to var.private\_endpoints. The map value is the entire azurerm\_private\_endpoint resource."
@@ -994,6 +1051,12 @@ Version:
 ### <a name="module_backup_protected_vm"></a> [backup\_protected\_vm](#module\_backup\_protected\_vm)
 
 Source: ./modules/backup_protected_vm
+
+Version:
+
+### <a name="module_backup_protected_workload"></a> [backup\_protected\_workload](#module\_backup\_protected\_workload)
+
+Source: ./modules/backup_protected_workload
 
 Version:
 

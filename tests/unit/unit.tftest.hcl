@@ -35,6 +35,7 @@ mock_provider "azurerm" {
   }
 }
 mock_provider "modtm" {}
+mock_provider "time" {}
 mock_provider "random" {}
 
 # ---------------------------------------------------------------------------
@@ -669,4 +670,129 @@ run "file_share_hourly_policy_parses_without_error" {
     condition     = module.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.hourlySchedule.scheduleWindowDuration == 12
     error_message = "hourlySchedule.scheduleWindowDuration should match the configured window_duration."
   }
+}
+
+# ---------------------------------------------------------------------------
+# run: workload_protected_item_addressing_and_body
+#
+# The workload (SQL Server on Azure VM) protection is composed of a
+# `VMAppContainer` protection container registration and one protected item per
+# selected database.  Both resource names are constructed by the module from the
+# supplied virtual machine ID and database selection, so verify:
+#   - the container name follows `VMAppContainer;Compute;<rg>;<vm>`
+#   - the container is created under the `Azure` backup fabric of the vault
+#   - protected items are addressed by the caller supplied map key and named
+#     `<workload type>;<sql instance>;<database>`
+#   - the protected item body carries the workload policy ID and the source VM
+# ---------------------------------------------------------------------------
+run "workload_protected_item_addressing_and_body" {
+  command = apply
+
+  variables {
+    backup_protected_workload = {
+      sqlvm1 = {
+        source_vm_id                = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-sql/providers/Microsoft.Compute/virtualMachines/vm-sql-001"
+        workload_backup_policy_name = "pol-rsv-workload-vault-001"
+        protected_databases = {
+          master = {
+            server_name   = "MSSQLSERVER"
+            database_name = "master"
+          }
+          model = {
+            server_name               = "MSSQLSERVER"
+            database_name             = "model"
+            workload_backup_policy_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.RecoveryServices/vaults/rsv-test-001/backupPolicies/pol-rsv-workload-vault-002"
+          }
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = module.backup_protected_workload["sqlvm1"].resource.name == "VMAppContainer;Compute;rg-sql;vm-sql-001"
+    error_message = "The protection container should be named VMAppContainer;Compute;<vm resource group>;<vm name>."
+  }
+
+  assert {
+    condition     = endswith(module.backup_protected_workload["sqlvm1"].resource.parent_id, "/backupFabrics/Azure")
+    error_message = "The protection container should be registered under the Azure backup fabric of the vault."
+  }
+
+  assert {
+    condition     = module.backup_protected_workload["sqlvm1"].resource.body.properties.containerType == "VMAppContainer"
+    error_message = "The protection container type should be VMAppContainer for a workload registration."
+  }
+
+  assert {
+    condition     = module.backup_protected_workload["sqlvm1"].resource.body.properties.workloadType == "SQL"
+    error_message = "The protection container workload type should be SQL when protecting SQLDataBase items."
+  }
+
+  assert {
+    condition     = module.backup_protected_workload["sqlvm1"].protected_item_names["master"] == "SQLDataBase;MSSQLSERVER;master"
+    error_message = "The protected item should be named <workload type>;<sql instance name>;<database name>."
+  }
+
+  assert {
+    condition     = module.backup_protected_workload["sqlvm1"].protected_items["master"].body.properties.protectedItemType == "AzureVmWorkloadSQLDatabase"
+    error_message = "SQLDataBase workloads should be protected as AzureVmWorkloadSQLDatabase protected items."
+  }
+
+  assert {
+    condition     = module.backup_protected_workload["sqlvm1"].protected_items["master"].body.properties.sourceResourceId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-sql/providers/Microsoft.Compute/virtualMachines/vm-sql-001"
+    error_message = "The protected item should reference the virtual machine hosting the database."
+  }
+
+  assert {
+    condition     = endswith(module.backup_protected_workload["sqlvm1"].protected_items["master"].body.properties.policyId, "/backupPolicies/pol-rsv-workload-vault-001")
+    error_message = "The protected item should be associated with the workload policy of this vault."
+  }
+
+  assert {
+    condition     = endswith(module.backup_protected_workload["sqlvm1"].protected_items["model"].body.properties.policyId, "/backupPolicies/pol-rsv-workload-vault-002")
+    error_message = "A per database workload_backup_policy_id should override the vault policy name."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: no_workload_protection_by_default
+#
+# var.backup_protected_workload defaults to null, so no container registration
+# or protected item should be created for callers that do not use the feature.
+# ---------------------------------------------------------------------------
+run "no_workload_protection_by_default" {
+  command = apply
+
+  assert {
+    condition     = length(module.backup_protected_workload) == 0
+    error_message = "No workload protection should be created when var.backup_protected_workload is null."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: workload_source_vm_id_must_be_a_virtual_machine
+#
+# The container name is derived from the virtual machine resource ID, so a
+# non virtual machine ID must be rejected at plan time rather than producing an
+# invalid container name.
+# ---------------------------------------------------------------------------
+run "workload_source_vm_id_must_be_a_virtual_machine" {
+  command = plan
+
+  variables {
+    backup_protected_workload = {
+      sqlvm1 = {
+        source_vm_id                = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-sql/providers/Microsoft.Sql/servers/sql-001"
+        workload_backup_policy_name = "pol-rsv-workload-vault-001"
+        protected_databases = {
+          master = {
+            server_name   = "MSSQLSERVER"
+            database_name = "master"
+          }
+        }
+      }
+    }
+  }
+
+  expect_failures = [var.backup_protected_workload]
 }

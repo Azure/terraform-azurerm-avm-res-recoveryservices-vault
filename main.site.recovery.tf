@@ -59,3 +59,20 @@ module "site_recovery_replicated_vm" {
     timeouts                               = each.value.timeouts
   }
 }
+
+module "backup_protected_workload" {
+  source   = "./modules/backup_protected_workload"
+  for_each = var.backup_protected_workload != null ? var.backup_protected_workload : {}
+
+  backup_protected_workload = {
+    vault_id                  = azapi_resource.this.id
+    source_vm_id              = each.value.source_vm_id
+    workload_backup_policy_id = "${azapi_resource.this.id}/backupPolicies/${each.value.workload_backup_policy_name}"
+    workload_type             = each.value.workload_type
+    inquiry_enabled           = each.value.inquiry_enabled
+    sleep_timer               = each.value.sleep_timer
+    protected_databases       = each.value.protected_databases
+  }
+
+  depends_on = [module.recovery_workload_policy]
+}
