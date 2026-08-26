@@ -1,6 +1,12 @@
 locals {
-  # ARM resource type / API version used by this module.
-  replication_protected_item_type = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectedItems@2024-10-01"
+  # `site_recovery_replicated_vm.timeouts` is the pre-existing public input and keeps
+  # precedence; `var.timeouts` is the TFFR7 fallback for any value it leaves unset.
+  effective_timeouts = {
+    create = try(coalesce(var.site_recovery_replicated_vm.timeouts.create, var.timeouts.create), null)
+    delete = try(coalesce(var.site_recovery_replicated_vm.timeouts.delete, var.timeouts.delete), null)
+    read   = try(coalesce(var.site_recovery_replicated_vm.timeouts.read, var.timeouts.read), null)
+    update = try(coalesce(var.site_recovery_replicated_vm.timeouts.update, var.timeouts.update), null)
+  }
   # The root module only passes the vault name and its resource group, so the vault
   # ARM ID (and therefore the source protection container ID) is rebuilt here from
   # the current AzAPI client configuration.

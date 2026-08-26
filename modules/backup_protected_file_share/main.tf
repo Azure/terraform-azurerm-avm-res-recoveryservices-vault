@@ -6,7 +6,7 @@ resource "azapi_resource" "storage_container" {
 
   name      = local.container_name
   parent_id = local.fabric_id
-  type      = local.protection_container_type
+  type      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers
   body = {
     properties = {
       backupManagementType = "AzureStorage"
@@ -14,19 +14,23 @@ resource "azapi_resource" "storage_container" {
       sourceResourceId     = var.backup_protected_file_share.source_storage_account_id
     }
   }
+  ignore_body_changes = length(var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers : null
   read_query_parameters = {
     "api-version" = ["2024-10-01"]
   }
   replace_triggers_refs  = ["properties.sourceResourceId"]
-  response_export_values = ["*"]
+  response_export_values = []
+  retry                  = var.retry
+  tags                   = var.tags
 
   dynamic "timeouts" {
-    for_each = var.backup_protected_file_share.timeouts == null ? [] : [var.backup_protected_file_share.timeouts]
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
       create = timeouts.value.create
       delete = timeouts.value.delete
       read   = timeouts.value.read
+      update = timeouts.value.update
     }
   }
 }
@@ -42,7 +46,7 @@ resource "time_sleep" "wait_pre" {
 resource "azapi_resource" "this" {
   name      = local.protected_item_name
   parent_id = local.protection_container_id
-  type      = local.protected_item_type
+  type      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   body = {
     properties = {
       protectedItemType = "AzureFileShareProtectedItem"
@@ -57,20 +61,24 @@ resource "azapi_resource" "this" {
       isInlineInquiry = true
     }
   }
+  ignore_body_changes = length(var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items : null
   read_query_parameters = {
     "api-version" = ["2024-10-01"]
   }
   replace_triggers_refs     = ["properties.sourceResourceId"]
-  response_export_values    = ["*"]
+  response_export_values    = []
+  retry                     = var.retry
   schema_validation_enabled = false
+  tags                      = var.tags
 
   dynamic "timeouts" {
-    for_each = var.backup_protected_file_share.timeouts == null ? [] : [var.backup_protected_file_share.timeouts]
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
       create = timeouts.value.create
       delete = timeouts.value.delete
       read   = timeouts.value.read
+      update = timeouts.value.update
     }
   }
 

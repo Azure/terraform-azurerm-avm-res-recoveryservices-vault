@@ -51,7 +51,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
 - <a name="requirement_time"></a> [time](#requirement\_time) (~> 0.14.0)
 
@@ -59,7 +59,7 @@ The following requirements are needed by this module:
 
 The following providers are used by this module:
 
-- <a name="provider_azapi"></a> [azapi](#provider\_azapi) (~> 2.4)
+- <a name="provider_azapi"></a> [azapi](#provider\_azapi) (~> 2.12)
 
 - <a name="provider_time"></a> [time](#provider\_time) (~> 0.14.0)
 
@@ -110,13 +110,122 @@ object({
 
 Default: `null`
 
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative paths to ignore for each AzAPI resource owned by this module. Paths use dot notation, e.g. `properties.policyId`.  
+Changes take effect only after apply. Ignored configuration is not sent to Azure until the path is removed.
+
+- `recoveryservices_vaults_backup_fabrics_protection_containers` - Paths ignored on the storage account protection container resource.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Paths ignored on the Azure Files protected item resource.
+
+Type:
+
+```hcl
+object({
+    recoveryservices_vaults_backup_fabrics_protection_containers                 = optional(list(string), [])
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(list(string), [])
+  })
+```
+
+Default: `{}`
+
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: AzAPI resource types and API versions used by this module.
+
+- `recoveryservices_vaults_backup_policies` - Resource type and API version used to look up the existing Azure Files backup policy.
+- `recoveryservices_vaults_backup_fabrics_protection_containers` - Resource type and API version for the storage account protection container.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Resource type and API version for the Azure Files protected item.
+
+Type:
+
+```hcl
+object({
+    recoveryservices_vaults_backup_policies                                      = optional(string, "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01")
+    recoveryservices_vaults_backup_fabrics_protection_containers                 = optional(string, "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers@2024-10-01")
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(string, "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01")
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration applied to the AzAPI resources created by this module.
+
+- `error_message_regex` - A list of regular expressions matched against the error message returned by Azure. A matching error is retried.
+- `interval_seconds` - The initial number of seconds to wait before the first retry.
+- `max_interval_seconds` - The maximum number of seconds to wait between retries.
+- `multiplier` - The factor by which the retry interval grows after each attempt.
+- `randomization_factor` - The random jitter applied to each retry interval. Set to `0` to disable jitter.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string), ["ReferencedResourceNotProvisioned"])
+    interval_seconds     = optional(number, 10)
+    max_interval_seconds = optional(number, 180)
+    multiplier           = optional(number, 1.5)
+    randomization_factor = optional(number, 0.5)
+  })
+```
+
+Default: `{}`
+
+### <a name="input_tags"></a> [tags](#input\_tags)
+
+Description: (Optional) Tags of the resource.
+
+Type: `map(string)`
+
+Default: `null`
+
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: Operation timeouts applied to the AzAPI resources created by this module. Values use Go duration strings, e.g. `60m`.
+
+- `create` - The timeout for create operations.
+- `delete` - The timeout for delete operations.
+- `read` - The timeout for read operations.
+- `update` - The timeout for update operations.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    delete = optional(string)
+    read   = optional(string)
+    update = optional(string)
+  })
+```
+
+Default: `{}`
+
 ## Outputs
 
 The following outputs are exported:
 
-### <a name="output_resource"></a> [resource](#output\_resource)
+### <a name="output_body"></a> [body](#output\_body)
 
-Description: The `azapi_resource` object for the Azure Files protected item (`Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems`). This is an AzAPI resource object, not the legacy AzureRM `azurerm_backup_protected_file_share` object.
+Description: The configured AzAPI request body sent to Azure for the Azure Files protected item.
+
+### <a name="output_name"></a> [name](#output\_name)
+
+Description: The name of the Azure Files protected item.
+
+### <a name="output_parent_id"></a> [parent\_id](#output\_parent\_id)
+
+Description: The ARM resource ID of the protection container that contains the Azure Files protected item.
+
+### <a name="output_policy_id"></a> [policy\_id](#output\_policy\_id)
+
+Description: The ARM resource ID of the backup policy applied to the Azure Files protected item.
+
+### <a name="output_protection_container_resource_id"></a> [protection\_container\_resource\_id](#output\_protection\_container\_resource\_id)
+
+Description: The ARM resource ID of the storage account protection container registered with the vault, or `null` when registration is disabled.
 
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 

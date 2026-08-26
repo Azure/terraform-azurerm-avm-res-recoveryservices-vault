@@ -12,7 +12,7 @@ resource "azapi_resource" "this" {
   location  = var.location
   name      = var.name
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}"
-  type      = "Microsoft.RecoveryServices/vaults@2024-10-01"
+  type      = var.resource_types.recoveryservices_vaults
   body = {
     sku = {
       name = var.sku
@@ -70,11 +70,24 @@ resource "azapi_resource" "this" {
   # Without this flag, importing a vault that Azure has auto-assigned an identity to
   # would produce a PUT body without the identity field, causing a 400
   # ManagedIdentityDetailsNotPresent error from the Recovery Services API.
+  ignore_body_changes    = length(var.ignore_body_changes.recoveryservices_vaults) > 0 ? var.ignore_body_changes.recoveryservices_vaults : null
   ignore_null_property   = true
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  response_export_values = ["*"]
+  response_export_values = ["identity.principalId", "properties.provisioningState"]
+  retry                  = var.retry
   tags                   = var.tags
   update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 
   lifecycle {}
 }
@@ -88,7 +101,7 @@ resource "azapi_resource" "diagnostic_settings" {
 
   name      = each.value.name != null ? each.value.name : "diag-${var.name}"
   parent_id = azapi_resource.this.id
-  type      = "Microsoft.Insights/diagnosticSettings@2021-05-01-preview"
+  type      = var.resource_types.insights_diagnostic_settings
   body = {
     properties = {
       eventHubAuthorizationRuleId = each.value.event_hub_authorization_rule_resource_id
@@ -121,8 +134,20 @@ resource "azapi_resource" "diagnostic_settings" {
       ] : null
     }
   }
-  replace_triggers_refs  = []
-  response_export_values = ["*"]
+  ignore_body_changes    = length(var.ignore_body_changes.insights_diagnostic_settings) > 0 ? var.ignore_body_changes.insights_diagnostic_settings : null
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }
 
 # Keep existing state from v1.x releases where diagnostic settings were managed as
@@ -138,14 +163,27 @@ resource "azapi_resource" "lock" {
 
   name      = coalesce(var.lock.name, "lock-${var.name}")
   parent_id = azapi_resource.this.id
-  type      = "Microsoft.Authorization/locks@2020-05-01"
+  type      = var.resource_types.authorization_locks
   body = {
     properties = {
       level = var.lock.kind
+      notes = var.lock.notes
     }
   }
-  replace_triggers_refs  = []
-  response_export_values = ["*"]
+  ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }
 
 # Keep existing state from v1.x releases where the lock was managed as
@@ -177,12 +215,13 @@ data "azapi_resource_list" "role_definitions" {
 resource "azapi_resource" "role_assignments" {
   for_each = var.role_assignments
 
-  # ARM requires the role assignment name to be a GUID. A deterministic uuidv5 of the
-  # scope, principal and role definition keeps the name stable across plans (unlike
-  # random_uuid, which requires additional state) while remaining unique per assignment.
-  name      = uuidv5("url", "${azapi_resource.this.id}|${each.value.principal_id}|${local.role_assignment_role_definition_resource_ids[each.key]}")
+  # ARM requires the role assignment name to be a GUID unless the consumer supplies one.
+  # A deterministic uuidv5 of the scope, principal and role definition keeps the name
+  # stable across plans (unlike random_uuid, which requires additional state) while
+  # remaining unique per assignment.
+  name      = each.value.name != null ? each.value.name : uuidv5("url", "${azapi_resource.this.id}|${each.value.principal_id}|${local.role_assignment_role_definition_resource_ids[each.key]}")
   parent_id = azapi_resource.this.id
-  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
+  type      = var.resource_types.authorization_role_assignments
   body = {
     properties = {
       condition                          = each.value.condition
@@ -194,8 +233,20 @@ resource "azapi_resource" "role_assignments" {
       roleDefinitionId                   = local.role_assignment_role_definition_resource_ids[each.key]
     }
   }
-  replace_triggers_refs  = []
-  response_export_values = ["*"]
+  ignore_body_changes    = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
+  response_export_values = []
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }
 
 # Keep existing state from v1.x releases where role assignments were managed as
@@ -213,14 +264,27 @@ resource "azapi_resource" "resource_guard_association" {
   # the association keeps the same ARM resource ID after the state move.
   name      = "RecoveryServicesVault"
   parent_id = azapi_resource.this.id
-  type      = "Microsoft.RecoveryServices/vaults/backupResourceGuardProxies@2024-10-01"
+  type      = var.resource_types.recoveryservices_vaults_backup_resource_guard_proxies
   body = {
     properties = {
       resourceGuardResourceId = var.resource_guard_id
     }
   }
-  replace_triggers_refs  = []
-  response_export_values = ["*"]
+  ignore_body_changes    = length(var.ignore_body_changes.recoveryservices_vaults_backup_resource_guard_proxies) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_resource_guard_proxies : null
+  response_export_values = []
+  retry                  = var.retry
+  tags                   = var.tags
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
 }
 
 # Keep existing state from v1.x releases where the resource guard association was

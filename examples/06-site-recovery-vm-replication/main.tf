@@ -281,13 +281,13 @@ module "recovery_services_vault_secondary" {
 
 # Storage Account Contributor on the ASR staging storage account.
 resource "azapi_resource" "ra_storage_account_contributor" {
-  name = uuidv5("url", "${azapi_resource.sa_staging.id}|${module.recovery_services_vault_primary.resource.output.identity.principalId}|${local.role_definition_ids.storage_account_contributor}")
+  name = uuidv5("url", "${azapi_resource.sa_staging.id}|${module.recovery_services_vault_primary.system_assigned_mi_principal_id}|${local.role_definition_ids.storage_account_contributor}")
   # The role assignment is scoped to the staging storage account.
   parent_id = azapi_resource.sa_staging.id
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   body = {
     properties = {
-      principalId      = module.recovery_services_vault_primary.resource.output.identity.principalId
+      principalId      = module.recovery_services_vault_primary.system_assigned_mi_principal_id
       principalType    = "ServicePrincipal"
       roleDefinitionId = local.role_definition_ids.storage_account_contributor
     }
@@ -296,12 +296,12 @@ resource "azapi_resource" "ra_storage_account_contributor" {
 
 # Storage Blob Data Contributor on the ASR staging storage account.
 resource "azapi_resource" "ra_storage_blob_data_contributor" {
-  name      = uuidv5("url", "${azapi_resource.sa_staging.id}|${module.recovery_services_vault_primary.resource.output.identity.principalId}|${local.role_definition_ids.storage_blob_data_contributor}")
+  name      = uuidv5("url", "${azapi_resource.sa_staging.id}|${module.recovery_services_vault_primary.system_assigned_mi_principal_id}|${local.role_definition_ids.storage_blob_data_contributor}")
   parent_id = azapi_resource.sa_staging.id
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   body = {
     properties = {
-      principalId      = module.recovery_services_vault_primary.resource.output.identity.principalId
+      principalId      = module.recovery_services_vault_primary.system_assigned_mi_principal_id
       principalType    = "ServicePrincipal"
       roleDefinitionId = local.role_definition_ids.storage_blob_data_contributor
     }
@@ -310,12 +310,12 @@ resource "azapi_resource" "ra_storage_blob_data_contributor" {
 
 # Storage Queue Data Contributor on the ASR staging storage account.
 resource "azapi_resource" "ra_storage_queue_data_contributor" {
-  name      = uuidv5("url", "${azapi_resource.sa_staging.id}|${module.recovery_services_vault_primary.resource.output.identity.principalId}|${local.role_definition_ids.storage_queue_data_contributor}")
+  name      = uuidv5("url", "${azapi_resource.sa_staging.id}|${module.recovery_services_vault_primary.system_assigned_mi_principal_id}|${local.role_definition_ids.storage_queue_data_contributor}")
   parent_id = azapi_resource.sa_staging.id
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   body = {
     properties = {
-      principalId      = module.recovery_services_vault_primary.resource.output.identity.principalId
+      principalId      = module.recovery_services_vault_primary.system_assigned_mi_principal_id
       principalType    = "ServicePrincipal"
       roleDefinitionId = local.role_definition_ids.storage_queue_data_contributor
     }

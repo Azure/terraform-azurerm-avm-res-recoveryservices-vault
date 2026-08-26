@@ -14,7 +14,7 @@ resource "azapi_resource" "this_managed_dns_zone_groups" {
   location  = each.value.location != null ? each.value.location : var.location
   name      = each.value.name != null ? each.value.name : length(local.managed_private_endpoints) > 1 ? "pep-${var.name}-${each.key}" : "pep-${var.name}"
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${each.value.resource_group_name != null ? each.value.resource_group_name : var.resource_group_name}"
-  type      = "Microsoft.Network/privateEndpoints@2024-05-01"
+  type      = var.resource_types.network_private_endpoints
   body = {
     properties = {
       applicationSecurityGroups  = local.private_endpoint_application_security_group_ids[each.key]
@@ -43,15 +43,20 @@ resource "azapi_resource" "this_managed_dns_zone_groups" {
       }
     }
   }
-  replace_triggers_refs  = []
-  response_export_values = ["*"]
-  tags                   = each.value.tags
+  ignore_body_changes    = length(var.ignore_body_changes.network_private_endpoints) > 0 ? var.ignore_body_changes.network_private_endpoints : null
+  response_export_values = []
+  retry                  = var.retry
+  tags                   = var.tags
 
-  timeouts {
-    create = "60m"
-    delete = "60m"
-    read   = "5m"
-    update = "60m"
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
   }
 }
 
@@ -70,20 +75,25 @@ resource "azapi_resource" "this_managed_dns_zone_groups_dns_zone_group" {
 
   name      = each.value.private_dns_zone_group_name
   parent_id = azapi_resource.this_managed_dns_zone_groups[each.key].id
-  type      = "Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-05-01"
+  type      = var.resource_types.network_private_endpoints_private_dns_zone_groups
   body = {
     properties = {
       privateDnsZoneConfigs = local.private_endpoint_dns_zone_configs[each.key]
     }
   }
-  replace_triggers_refs  = []
-  response_export_values = ["*"]
+  ignore_body_changes    = length(var.ignore_body_changes.network_private_endpoints_private_dns_zone_groups) > 0 ? var.ignore_body_changes.network_private_endpoints_private_dns_zone_groups : null
+  response_export_values = []
+  retry                  = var.retry
 
-  timeouts {
-    create = "60m"
-    delete = "60m"
-    read   = "5m"
-    update = "60m"
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
   }
 }
 
@@ -94,7 +104,7 @@ resource "azapi_resource" "this_unmanaged_dns_zone_groups" {
   location  = each.value.location != null ? each.value.location : var.location
   name      = each.value.name != null ? each.value.name : length(local.unmanaged_private_endpoints) > 1 ? "pep-${var.name}-${each.key}" : "pep-${var.name}"
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${each.value.resource_group_name != null ? each.value.resource_group_name : var.resource_group_name}"
-  type      = "Microsoft.Network/privateEndpoints@2024-05-01"
+  type      = var.resource_types.network_private_endpoints
   body = {
     properties = {
       applicationSecurityGroups  = local.private_endpoint_application_security_group_ids[each.key]
@@ -123,15 +133,20 @@ resource "azapi_resource" "this_unmanaged_dns_zone_groups" {
       }
     }
   }
-  replace_triggers_refs  = []
-  response_export_values = ["*"]
-  tags                   = each.value.tags
+  ignore_body_changes    = length(var.ignore_body_changes.network_private_endpoints) > 0 ? var.ignore_body_changes.network_private_endpoints : null
+  response_export_values = []
+  retry                  = var.retry
+  tags                   = var.tags
 
-  timeouts {
-    create = "60m"
-    delete = "60m"
-    read   = "5m"
-    update = "60m"
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
   }
 
   # The AzureRM implementation needed `lifecycle { ignore_changes = [private_dns_zone_group] }`

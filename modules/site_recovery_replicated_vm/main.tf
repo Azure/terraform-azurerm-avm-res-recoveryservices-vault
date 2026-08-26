@@ -3,21 +3,23 @@
 resource "azapi_resource" "this" {
   name      = basename(var.site_recovery_replicated_vm.source_vm_id)
   parent_id = local.source_protection_container_id
-  type      = local.replication_protected_item_type
+  type      = var.resource_types.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items
   body = {
     properties = {
       policyId                = var.site_recovery_replicated_vm.recovery_replication_policy_id
       providerSpecificDetails = local.provider_specific_details
     }
   }
+  ignore_body_changes = length(var.ignore_body_changes.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items) > 0 ? var.ignore_body_changes.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items : null
   read_query_parameters = {
     "api-version" = ["2024-10-01"]
   }
   replace_triggers_refs  = ["properties.providerSpecificDetails.fabricObjectId"]
-  response_export_values = ["*"]
+  response_export_values = []
+  retry                  = var.retry
 
   dynamic "timeouts" {
-    for_each = var.site_recovery_replicated_vm.timeouts == null ? [] : [var.site_recovery_replicated_vm.timeouts]
+    for_each = var.timeouts == null ? [] : [local.effective_timeouts]
 
     content {
       create = timeouts.value.create
@@ -51,7 +53,7 @@ resource "azapi_resource_action" "target_settings" {
   count = length(local.post_enablement_settings) > 0 ? 1 : 0
 
   resource_id = azapi_resource.this.id
-  type        = local.replication_protected_item_type
+  type        = var.resource_types.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items
   body = {
     properties = merge(local.post_enablement_settings, {
       providerSpecificDetails = {
@@ -61,9 +63,10 @@ resource "azapi_resource_action" "target_settings" {
   }
   method                 = "PATCH"
   response_export_values = []
+  retry                  = var.retry
 
   dynamic "timeouts" {
-    for_each = var.site_recovery_replicated_vm.timeouts == null ? [] : [var.site_recovery_replicated_vm.timeouts]
+    for_each = var.timeouts == null ? [] : [local.effective_timeouts]
 
     content {
       create = timeouts.value.create

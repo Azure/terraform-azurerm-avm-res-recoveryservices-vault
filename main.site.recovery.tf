@@ -8,6 +8,10 @@ module "backup_protected_vm" {
     vault_name                = azapi_resource.this.name
     vault_resource_group_name = var.resource_group_name
   }
+  ignore_body_changes = var.ignore_body_changes.backup_protected_vm
+  resource_types      = var.resource_types.backup_protected_vm
+  retry               = var.retry
+  timeouts            = var.timeouts
 
   depends_on = [module.recovery_services_vault_vm_policy]
 }
@@ -26,6 +30,10 @@ module "backup_protected_file_share" {
     sleep_timer                   = each.value.sleep_timer
 
   }
+  ignore_body_changes = var.ignore_body_changes.backup_protected_file_share
+  resource_types      = var.resource_types.backup_protected_file_share
+  retry               = var.retry
+  timeouts            = var.timeouts
 
   depends_on = [module.recovery_services_vault_file_share_policy, ]
 }
@@ -58,4 +66,8 @@ module "site_recovery_replicated_vm" {
     multi_vm_group_name                    = each.value.multi_vm_group_name
     timeouts                               = each.value.timeouts
   }
+  ignore_body_changes = var.ignore_body_changes.site_recovery_replicated_vm
+  resource_types      = var.resource_types.site_recovery_replicated_vm
+  retry               = var.retry
+  timeouts            = var.timeouts
 }

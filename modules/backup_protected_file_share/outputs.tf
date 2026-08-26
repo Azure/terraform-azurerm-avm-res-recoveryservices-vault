@@ -1,10 +1,28 @@
-output "resource" {
-  description = "The `azapi_resource` object for the Azure Files protected item (`Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems`). This is an AzAPI resource object, not the legacy AzureRM `azurerm_backup_protected_file_share` object."
-  value       = azapi_resource.this
+output "body" {
+  description = "The configured AzAPI request body sent to Azure for the Azure Files protected item."
+  value       = azapi_resource.this.body
 }
 
-# Module owners should include the full resource via a 'resource' output
-# https://azure.github.io/Azure-Verified-Modules/specs/terraform/#id-tffr2---category-outputs---additional-terraform-outputs
+output "name" {
+  description = "The name of the Azure Files protected item."
+  value       = azapi_resource.this.name
+}
+
+output "parent_id" {
+  description = "The ARM resource ID of the protection container that contains the Azure Files protected item."
+  value       = azapi_resource.this.parent_id
+}
+
+output "policy_id" {
+  description = "The ARM resource ID of the backup policy applied to the Azure Files protected item."
+  value       = data.azapi_resource.this.id
+}
+
+output "protection_container_resource_id" {
+  description = "The ARM resource ID of the storage account protection container registered with the vault, or `null` when registration is disabled."
+  value       = try(azapi_resource.storage_container[0].id, null)
+}
+
 output "resource_id" {
   description = "The ARM resource ID of the Azure Files protected item."
   value       = azapi_resource.this.id

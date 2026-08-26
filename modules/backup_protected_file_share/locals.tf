@@ -1,8 +1,4 @@
 locals {
-  # ARM resource types / API versions used by this module.
-  backup_policy_type        = "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01"
-  protection_container_type = "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers@2024-10-01"
-  protected_item_type       = "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01"
   # The Azure Backup fabric that hosts Azure Storage containers is always named "Azure".
   backup_fabric_name = "Azure"
   # Azure Backup uses a fixed, documented naming scheme for Azure Files:
