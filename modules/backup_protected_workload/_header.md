@@ -1,6 +1,6 @@
-# Default example
+# Backup protected workload submodule
 
-* This deploys the module in its simplest form.
+* This submodule protects SQL Server on Azure Virtual Machine workloads in a Recovery Services Vault.
 
 ## Data Collection
 
