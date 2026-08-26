@@ -82,41 +82,36 @@ DESCRIPTION
 
 variable "retry" {
   type = object({
-    error_message_regex  = optional(list(string), ["ReferencedResourceNotProvisioned"])
-    interval_seconds     = optional(number, 10)
-    max_interval_seconds = optional(number, 180)
-    multiplier           = optional(number, 1.5)
-    randomization_factor = optional(number, 0.5)
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
   })
-  default     = {}
+  default     = null
   description = <<DESCRIPTION
-Retry configuration applied to the AzAPI resources created by this module.
+Retry configuration applied to every `azapi` resource created by this module. Defaults to `null` (no custom retry).
 
-- `error_message_regex` - A list of regular expressions matched against the error message returned by Azure. A matching error is retried.
-- `interval_seconds` - The initial number of seconds to wait before the first retry.
-- `max_interval_seconds` - The maximum number of seconds to wait between retries.
-- `multiplier` - The factor by which the retry interval grows after each attempt.
-- `randomization_factor` - The random jitter applied to each retry interval. Set to `0` to disable jitter.
+- `error_message_regex`  - (Optional) A list of regex patterns matching error messages that trigger a retry.
+- `interval_seconds`     - (Optional) Initial interval between retries in seconds.
+- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
+
+See <https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource#retry> for full semantics.
 DESCRIPTION
-  nullable    = false
 }
 
 variable "timeouts" {
   type = object({
     create = optional(string)
-    delete = optional(string)
     read   = optional(string)
     update = optional(string)
+    delete = optional(string)
   })
-  default     = {}
+  default     = null
   description = <<DESCRIPTION
-Operation timeouts applied to the AzAPI resources created by this module. Values use Go duration strings, e.g. `60m`.
-Any value set through `site_recovery_replicated_vm.timeouts` takes precedence over the matching value here.
+Default per-operation timeouts applied to every `azapi` resource created by this module. Defaults to `null` (provider defaults). Each value is a Go duration string (e.g. `30m`, `1h`).
 
-- `create` - The timeout for create operations.
-- `delete` - The timeout for delete operations.
-- `read` - The timeout for read operations.
-- `update` - The timeout for update operations.
+- `create` - (Optional) Timeout for create operations.
+- `read`   - (Optional) Timeout for read operations.
+- `update` - (Optional) Timeout for update operations.
+- `delete` - (Optional) Timeout for delete operations.
 DESCRIPTION
-  nullable    = false
 }

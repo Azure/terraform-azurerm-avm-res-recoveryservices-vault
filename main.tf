@@ -260,9 +260,10 @@ moved {
 resource "azapi_resource" "resource_guard_association" {
   count = var.resource_guard_id != null ? 1 : 0
 
-  # `RecoveryServicesVault` is the fixed proxy name that the AzureRM provider used, so
-  # the association keeps the same ARM resource ID after the state move.
-  name      = "RecoveryServicesVault"
+  # `VaultProxy` is the only name Azure accepts for a backup resource guard proxy, and it is
+  # the fixed name the AzureRM provider used, so the association keeps the same ARM resource
+  # ID after the state move.
+  name      = "VaultProxy"
   parent_id = azapi_resource.this.id
   type      = var.resource_types.recoveryservices_vaults_backup_resource_guard_proxies
   body = {

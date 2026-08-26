@@ -69,4 +69,24 @@ locals {
     selectedTfoAzureNetworkId = var.site_recovery_replicated_vm.test_network_id
   }
   post_enablement_settings = { for key, value in local.post_enablement_settings_optional : key => value if value != null }
+
+  # Azure Site Recovery completes the enable-protection job asynchronously after the
+  # PUT returns, and rejects the update contract until that job has succeeded. Retry
+  # on that specific failure instead of aborting the apply. Any caller-supplied
+  # `var.retry` patterns and intervals are preserved.
+  target_settings_retry = {
+    error_message_regex = distinct(concat(try(var.retry.error_message_regex, []), [
+      "ErrorInVMConfigurationAsProtectionFailed",
+      "Ensure that the virtual machine is configured for protection successfully",
+    ]))
+    interval_seconds     = try(var.retry.interval_seconds, null) != null ? var.retry.interval_seconds : 60
+    max_interval_seconds = try(var.retry.max_interval_seconds, null) != null ? var.retry.max_interval_seconds : 300
+  }
+  # Retrying needs a window long enough for the enable-protection job to finish.
+  target_settings_timeouts = {
+    create = coalesce(local.effective_timeouts.create, "90m")
+    delete = local.effective_timeouts.delete
+    read   = local.effective_timeouts.read
+    update = coalesce(local.effective_timeouts.update, "90m")
+  }
 }

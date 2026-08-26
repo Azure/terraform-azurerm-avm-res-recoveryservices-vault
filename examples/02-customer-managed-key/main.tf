@@ -130,8 +130,10 @@ resource "azapi_resource" "key_vault" {
         family = "A"
         name   = "standard"
       }
-      enableRbacAuthorization   = true
-      enableSoftDelete          = true
+      enableRbacAuthorization = true
+      enableSoftDelete        = true
+      # Recovery Services vault CMK encryption requires purge protection on the key vault.
+      enablePurgeProtection     = true
       softDeleteRetentionInDays = 7
       publicNetworkAccess       = "Enabled"
       networkAcls = {

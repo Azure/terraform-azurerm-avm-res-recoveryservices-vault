@@ -52,6 +52,8 @@ locals {
   }
 
   source_vms = var.source_vms
+  # Availability zone for the source virtual machines and their data disks.
+  source_vm_zone = "1"
 
   source_vm_data_disks = merge([
     for vm_key, vm in local.source_vms : {
@@ -147,6 +149,9 @@ resource "azapi_resource" "vm_source" {
   parent_id = azapi_resource.rg_this.id
   type      = "Microsoft.Compute/virtualMachines@2024-07-01"
   body = {
+    # Zonal placement is required by the Azure Proactive Resiliency Library policy
+    # checks. The data disks below are pinned to the same zone so they can attach.
+    zones = [local.source_vm_zone]
     identity = {
       type = "SystemAssigned"
     }
@@ -215,6 +220,8 @@ resource "azapi_resource" "disk_source_data" {
   parent_id = azapi_resource.rg_this.id
   type      = "Microsoft.Compute/disks@2023-04-02"
   body = {
+    # Must match the zone of the virtual machine the disk is attached to.
+    zones = [local.source_vm_zone]
     sku = {
       name = "Premium_LRS"
     }

@@ -19,7 +19,7 @@ resource "azapi_resource" "this" {
   retry                  = var.retry
 
   dynamic "timeouts" {
-    for_each = var.timeouts == null ? [] : [local.effective_timeouts]
+    for_each = anytrue([for t in values(local.effective_timeouts) : t != null]) ? [local.effective_timeouts] : []
 
     content {
       create = timeouts.value.create
@@ -63,16 +63,12 @@ resource "azapi_resource_action" "target_settings" {
   }
   method                 = "PATCH"
   response_export_values = []
-  retry                  = var.retry
+  retry                  = local.target_settings_retry
 
-  dynamic "timeouts" {
-    for_each = var.timeouts == null ? [] : [local.effective_timeouts]
-
-    content {
-      create = timeouts.value.create
-      delete = timeouts.value.delete
-      read   = timeouts.value.read
-      update = timeouts.value.update
-    }
+  timeouts {
+    create = local.target_settings_timeouts.create
+    delete = local.target_settings_timeouts.delete
+    read   = local.target_settings_timeouts.read
+    update = local.target_settings_timeouts.update
   }
 }

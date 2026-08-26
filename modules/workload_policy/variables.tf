@@ -93,23 +93,20 @@ DESCRIPTION
 
 variable "retry" {
   type = object({
-    error_message_regex  = optional(list(string), ["ReferencedResourceNotProvisioned"])
-    interval_seconds     = optional(number, 10)
-    max_interval_seconds = optional(number, 180)
-    multiplier           = optional(number, 1.5)
-    randomization_factor = optional(number, 0.5)
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
   })
-  default     = {}
+  default     = null
   description = <<DESCRIPTION
-Retry configuration applied to every AzAPI resource managed by this submodule.
+Retry configuration applied to every `azapi` resource created by this module. Defaults to `null` (no custom retry).
 
-- `error_message_regex` - A list of regular expressions matched against the returned error message. A retry is only attempted when one of the expressions matches.
-- `interval_seconds` - The initial interval, in seconds, between retries.
-- `max_interval_seconds` - The maximum interval, in seconds, between retries.
-- `multiplier` - The factor by which the retry interval increases after each attempt.
-- `randomization_factor` - The randomization factor applied to the retry interval. Set to `0` to disable jitter.
+- `error_message_regex`  - (Optional) A list of regex patterns matching error messages that trigger a retry.
+- `interval_seconds`     - (Optional) Initial interval between retries in seconds.
+- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
+
+See <https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource#retry> for full semantics.
 DESCRIPTION
-  nullable    = false
 }
 
 variable "tags" {
@@ -121,18 +118,17 @@ variable "tags" {
 variable "timeouts" {
   type = object({
     create = optional(string)
-    delete = optional(string)
     read   = optional(string)
     update = optional(string)
+    delete = optional(string)
   })
-  default     = {}
+  default     = null
   description = <<DESCRIPTION
-Timeouts applied to every AzAPI resource managed by this submodule. Each value is a Go duration string, for example `30m`. A `null` value uses the provider default.
+Default per-operation timeouts applied to every `azapi` resource created by this module. Defaults to `null` (provider defaults). Each value is a Go duration string (e.g. `30m`, `1h`).
 
-- `create` - The timeout for creating the resource.
-- `delete` - The timeout for deleting the resource.
-- `read` - The timeout for reading the resource.
-- `update` - The timeout for updating the resource.
+- `create` - (Optional) Timeout for create operations.
+- `read`   - (Optional) Timeout for read operations.
+- `update` - (Optional) Timeout for update operations.
+- `delete` - (Optional) Timeout for delete operations.
 DESCRIPTION
-  nullable    = false
 }
