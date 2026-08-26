@@ -9,4 +9,5 @@ module "recovery_workload_policy" {
   resource_types         = var.resource_types.recovery_workload_policy
   retry                  = var.retry
   timeouts               = var.timeouts
+  tags                   = var.tags
 }

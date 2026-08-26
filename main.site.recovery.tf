@@ -12,6 +12,7 @@ module "backup_protected_vm" {
   resource_types      = var.resource_types.backup_protected_vm
   retry               = var.retry
   timeouts            = var.timeouts
+  tags                = var.tags
 
   depends_on = [module.recovery_services_vault_vm_policy]
 }
@@ -34,6 +35,7 @@ module "backup_protected_file_share" {
   resource_types      = var.resource_types.backup_protected_file_share
   retry               = var.retry
   timeouts            = var.timeouts
+  tags                = var.tags
 
   depends_on = [module.recovery_services_vault_file_share_policy, ]
 }
