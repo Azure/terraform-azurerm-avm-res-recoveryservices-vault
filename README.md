@@ -1014,7 +1014,7 @@ Description: The workload (SQL Server on Azure VM) protection containers and pro
 
 ### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
 
-Description:   A map of private endpoints. The map key is the supplied input to var.private\_endpoints. The map value is the entire azapi\_resource private endpoint resource."
+Description: A map of private endpoints. The map key is the supplied input to var.private\_endpoints. The map value is the entire azapi\_resource private endpoint resource.
 
 ### <a name="output_recovery_services_vault_file_share_policy"></a> [recovery\_services\_vault\_file\_share\_policy](#output\_recovery\_services\_vault\_file\_share\_policy)
 

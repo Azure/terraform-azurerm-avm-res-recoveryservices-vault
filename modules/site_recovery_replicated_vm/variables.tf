@@ -162,6 +162,19 @@ variable "site_recovery_replicated_vm" {
 
   validation {
     condition = (
+      var.site_recovery_replicated_vm.target_resource_id != null ||
+      (
+        var.site_recovery_replicated_vm.target_network_id == null &&
+        var.site_recovery_replicated_vm.test_network_id == null &&
+        var.site_recovery_replicated_vm.target_virtual_machine_size == null &&
+        length(coalesce(var.site_recovery_replicated_vm.managed_disk, {})) == 0
+      )
+    )
+    error_message = "`target_resource_id` must be provided when configuring a Site Recovery protected item update."
+  }
+
+  validation {
+    condition = (
       var.site_recovery_replicated_vm.recovery_storage_account_id == null ||
       can(provider::azapi::parse_resource_id("Microsoft.Storage/storageAccounts", var.site_recovery_replicated_vm.recovery_storage_account_id))
     )
