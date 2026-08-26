@@ -538,7 +538,7 @@ variable "resource_guard_id" {
 variable "resource_guard_association_enabled" {
   type        = bool
   default     = false
-  description = "Whether to create a Resource Guard association. Set this to true when resource_guard_id is computed from a resource in the same configuration."
+  description = "Whether to create a Resource Guard association. Set this to true whenever resource_guard_id is supplied, including when the ID is computed from a resource in the same configuration."
   nullable    = false
 
   validation {
