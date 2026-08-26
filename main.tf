@@ -270,9 +270,9 @@ resource "azapi_resource" "role_assignments" {
   }
 }
 
-# Associate a Resource Guard when specified.
+# Associate a Resource Guard when explicitly enabled.
 resource "azapi_resource" "resource_guard_association" {
-  count = var.resource_guard_id != null ? 1 : 0
+  count = var.resource_guard_association_enabled ? 1 : 0
 
   type      = var.resource_types.recoveryservices_vaults_backup_resource_guard_proxies
   name      = "VaultProxy"

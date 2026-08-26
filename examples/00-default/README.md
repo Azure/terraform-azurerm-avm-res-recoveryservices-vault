@@ -88,6 +88,7 @@ module "recovery_services_vault" {
   public_network_access_enabled                  = true
   storage_mode_type                              = "GeoRedundant"
   resource_guard_id                              = azapi_resource.resource_guard.id
+  resource_guard_association_enabled             = true
   tags = {
     env   = "Prod"
     owner = "ABREG0"

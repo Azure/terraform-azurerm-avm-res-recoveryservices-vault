@@ -344,7 +344,8 @@ run "resource_guard_association_created" {
   command = apply
 
   variables {
-    resource_guard_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg-guard-01"
+    resource_guard_association_enabled = true
+    resource_guard_id                  = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg-guard-01"
   }
 
   assert {

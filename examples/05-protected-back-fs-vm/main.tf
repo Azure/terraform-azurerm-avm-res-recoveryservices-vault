@@ -99,11 +99,6 @@ locals {
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-005"
 }
 
-module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
-}
-
 module "azure_region" {
   source  = "claranet/regions/azurerm"
   version = "8.0.6"

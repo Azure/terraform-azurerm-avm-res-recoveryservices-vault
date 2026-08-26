@@ -535,6 +535,18 @@ variable "resource_guard_id" {
   description = "(Optional) The ID of the Azure Data Protection resource guard to associate with this Recovery Services Vault."
 }
 
+variable "resource_guard_association_enabled" {
+  type        = bool
+  default     = false
+  description = "Whether to create a Resource Guard association. Set this to true when resource_guard_id is computed from a resource in the same configuration."
+  nullable    = false
+
+  validation {
+    condition     = !var.resource_guard_association_enabled || var.resource_guard_id != null
+    error_message = "resource_guard_id must be supplied when resource_guard_association_enabled is true."
+  }
+}
+
 variable "resource_guard_operation_requests" {
   type        = list(string)
   default     = []

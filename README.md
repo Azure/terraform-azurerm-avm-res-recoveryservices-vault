@@ -582,6 +582,14 @@ Type: `string`
 
 Default: `null`
 
+### <a name="input_resource_guard_association_enabled"></a> [resource\_guard\_association\_enabled](#input\_resource\_guard\_association\_enabled)
+
+Description: Whether to create a Resource Guard association. Set this to true when resource\_guard\_id is computed from a resource in the same configuration.
+
+Type: `bool`
+
+Default: `false`
+
 ### <a name="input_resource_guard_operation_requests"></a> [resource\_guard\_operation\_requests](#input\_resource\_guard\_operation\_requests)
 
 Description: (Optional) A list of Resource Guard operation request IDs to associate with the Recovery Services Vault.

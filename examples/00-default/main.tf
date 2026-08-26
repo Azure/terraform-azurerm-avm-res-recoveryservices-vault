@@ -43,11 +43,6 @@ locals {
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
 }
 
-module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
-}
-
 module "azure_region" {
   source  = "claranet/regions/azurerm"
   version = "8.0.6"
@@ -69,6 +64,7 @@ module "recovery_services_vault" {
   public_network_access_enabled                  = true
   storage_mode_type                              = "GeoRedundant"
   resource_guard_id                              = azapi_resource.resource_guard.id
+  resource_guard_association_enabled             = true
   tags = {
     env   = "Prod"
     owner = "ABREG0"
