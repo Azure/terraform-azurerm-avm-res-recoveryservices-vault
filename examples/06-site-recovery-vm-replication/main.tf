@@ -36,6 +36,11 @@ resource "random_password" "vm_admin" {
 locals {
   primary_vault_name   = "rsv-site-recovery-primary-${random_integer.region_seed.result}"
   secondary_vault_name = "rsv-site-recovery-secondary-${random_integer.region_seed.result}"
+  # Built from known-at-plan values instead of `azapi_resource.vnet_target.id`.
+  # The AzAPI provider does not refine its `id` attribute as non-null while it is
+  # unknown, so passing it directly would make the `test_network_id != null`
+  # condition in the replicated VM submodule undecidable during plan.
+  vnet_target_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}/resourceGroups/${azapi_resource.rg_target.name}/providers/Microsoft.Network/virtualNetworks/${azapi_resource.vnet_target.name}"
   # Built-in role definition IDs referenced by their well-known GUIDs.
   role_definition_ids = {
     # Storage Account Contributor
@@ -101,7 +106,7 @@ resource "azapi_resource" "snet_source" {
 
 resource "azapi_resource" "snet_target" {
   name      = "snet-target"
-  parent_id = azapi_resource.vnet_target.id
+  parent_id = local.vnet_target_id
   type      = "Microsoft.Network/virtualNetworks/subnets@2024-05-01"
   body = {
     properties = {
@@ -409,7 +414,7 @@ resource "azapi_resource" "network_mapping_primary_to_secondary" {
   body = {
     properties = {
       recoveryFabricName = azapi_resource.fabric_secondary.name
-      recoveryNetworkId  = azapi_resource.vnet_target.id
+      recoveryNetworkId  = local.vnet_target_id
       fabricSpecificDetails = {
         instanceType     = "AzureToAzure"
         primaryNetworkId = azapi_resource.vnet_source.id
@@ -438,14 +443,14 @@ module "site_recovery_replicated_vm" {
     source_protection_container_name = azapi_resource.container_primary.name
     source_recovery_fabric_name      = azapi_resource.fabric_primary.name
     source_vm_id                     = azapi_resource.vm_source[each.key].id
-    target_network_id                = azapi_resource.vnet_target.id
+    target_network_id                = local.vnet_target_id
     target_protection_container_id   = azapi_resource.container_secondary.id
     target_recovery_fabric_id        = azapi_resource.fabric_secondary.id
     target_resource_group_id         = azapi_resource.rg_target.id
     target_resource_id               = "/subscriptions/${data.azapi_client_config.this.subscription_id}/resourceGroups/${azapi_resource.rg_target.name}/providers/Microsoft.Compute/virtualMachines/vm-target-${each.key}-${random_integer.region_seed.result}"
     target_virtual_machine_size      = var.target_vm_size
     target_subnet_name               = azapi_resource.snet_target.name
-    test_network_id                  = azapi_resource.vnet_target.id
+    test_network_id                  = local.vnet_target_id
     test_subnet_name                 = azapi_resource.snet_target.name
     timeouts                         = var.site_recovery_replication_timeouts
     vault_resource_group_name        = azapi_resource.rg_target.name
