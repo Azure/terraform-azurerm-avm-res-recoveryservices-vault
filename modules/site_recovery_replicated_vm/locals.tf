@@ -1,4 +1,7 @@
 locals {
+  # API version derived from the configured resource type so it cannot drift when a
+  # caller overrides `var.resource_types`.
+  api_version = split("@", var.resource_types.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items)[1]
   # `site_recovery_replicated_vm.timeouts` is the pre-existing public input and keeps
   # precedence; `var.timeouts` is the TFFR7 fallback for any value it leaves unset.
   effective_timeouts = {

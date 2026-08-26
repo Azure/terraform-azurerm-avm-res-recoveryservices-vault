@@ -12,7 +12,7 @@ resource "azapi_resource" "this" {
   }
   ignore_body_changes = length(var.ignore_body_changes.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items) > 0 ? var.ignore_body_changes.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items : null
   read_query_parameters = {
-    "api-version" = ["2024-10-01"]
+    "api-version" = [local.api_version]
   }
   replace_triggers_refs  = ["properties.providerSpecificDetails.fabricObjectId"]
   response_export_values = []

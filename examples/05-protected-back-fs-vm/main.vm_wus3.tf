@@ -27,7 +27,7 @@ resource "azapi_resource" "vm_wus3" {
       }
       osProfile = {
         adminUsername = "adminuser"
-        computerName  = "vm-${azapi_resource.rg_primary_wus3.location}-005"
+        computerName  = substr("vm-${azapi_resource.rg_primary_wus3.location}-005", 0, 15)
       }
       storageProfile = {
         dataDisks = [
