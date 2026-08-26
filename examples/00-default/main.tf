@@ -18,17 +18,20 @@ module "naming" {
   version = "0.4.3"
 }
 
-resource "azurerm_resource_group" "this" {
+data "azapi_client_config" "current" {}
+
+resource "azapi_resource" "resource_group" {
   location = local.test_regions[random_integer.region_index.result]
   name     = module.naming.resource_group.name_unique
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2024-03-01"
+  body      = {}
 }
 
-data "azurerm_client_config" "current" {}
-
 resource "azapi_resource" "resource_guard" {
-  location  = azurerm_resource_group.this.location
+  location  = azapi_resource.resource_group.location
   name      = "rg-${random_string.this.result}"
-  parent_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${azurerm_resource_group.this.name}"
+  parent_id = azapi_resource.resource_group.id
   type      = "Microsoft.DataProtection/resourceGuards@2024-04-01"
   body = {
     properties = {}
@@ -55,9 +58,9 @@ module "azure_region" {
 module "recovery_services_vault" {
   source = "../../"
 
-  location                                       = azurerm_resource_group.this.location
+  location                                       = azapi_resource.resource_group.location
   name                                           = local.vault_name #"rsv-test-vault-001"
-  resource_group_name                            = azurerm_resource_group.this.name
+  resource_group_name                            = azapi_resource.resource_group.name
   sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
@@ -65,7 +68,7 @@ module "recovery_services_vault" {
   cross_region_restore_enabled                   = false
   public_network_access_enabled                  = true
   storage_mode_type                              = "GeoRedundant"
-  resource_guard_id                              = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${azurerm_resource_group.this.name}/providers/Microsoft.DataProtection/resourceGuards/${azapi_resource.resource_guard.name}"
+  resource_guard_id                              = azapi_resource.resource_guard.id
   tags = {
     env   = "Prod"
     owner = "ABREG0"

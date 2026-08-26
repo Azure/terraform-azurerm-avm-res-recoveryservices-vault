@@ -1,19 +1,36 @@
 resource "time_sleep" "wait_pre" {
   create_duration = var.backup_protected_vm.sleep_timer
 }
-resource "azurerm_backup_protected_vm" "this" {
-  recovery_vault_name = var.backup_protected_vm.vault_name
-  resource_group_name = var.backup_protected_vm.vault_resource_group_name
-  backup_policy_id    = data.azurerm_backup_policy_vm.this.id
-  source_vm_id        = var.backup_protected_vm.source_vm_id
+
+resource "azapi_resource" "this" {
+  type      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
+  name      = "VM;iaasvmcontainerv2;${local.source_vm_resource_group_name};${local.source_vm_name}"
+  parent_id = var.parent_id
+  body = {
+    properties = {
+      friendlyName      = local.source_vm_name
+      policyId          = var.backup_protected_vm.backup_policy_id
+      protectedItemType = "Microsoft.Compute/virtualMachines"
+      sourceResourceId  = var.backup_protected_vm.source_vm_id
+      virtualMachineId  = var.backup_protected_vm.source_vm_id
+      workloadType      = "VM"
+    }
+  }
+  ignore_body_changes = length(var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items : null
+  response_export_values = [
+    "properties.protectionState",
+    "properties.protectionStatus",
+  ]
+  retry = var.retry
 
   dynamic "timeouts" {
-    for_each = var.backup_protected_vm.timeouts == null ? [] : [var.backup_protected_vm.timeouts]
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
       create = timeouts.value.create
       delete = timeouts.value.delete
       read   = timeouts.value.read
+      update = timeouts.value.update
     }
   }
 

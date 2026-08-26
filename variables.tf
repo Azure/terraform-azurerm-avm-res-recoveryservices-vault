@@ -582,7 +582,7 @@ variable "site_recovery_replicated_vm" {
     target_resource_id               = string
     target_resource_group_id         = optional(string, null)
     target_recovery_fabric_id        = optional(string, null)
-    target_protection_container_id   = optional(string, null)
+    target_protection_container_id   = string
     managed_disk = optional(map(object({
       disk_id                       = string
       staging_storage_account_id    = string
@@ -601,6 +601,7 @@ variable "site_recovery_replicated_vm" {
     target_static_ip                       = optional(string, null)
     test_network_id                        = optional(string, null)
     test_subnet_name                       = optional(string, null)
+    target_virtual_machine_size            = optional(string, null)
     recovery_resource_group_id             = optional(string, null)
     recovery_storage_account_id            = optional(string, null)
     recovery_target_disk_encryption_set_id = optional(string, null)
@@ -610,7 +611,7 @@ variable "site_recovery_replicated_vm" {
       delete = optional(string, "60m")
       read   = optional(string, "5m")
       update = optional(string, "60m")
-    }), {})
+    }), null)
   }))
   default     = null
   description = <<DESCRIPTION
@@ -622,12 +623,13 @@ A map of replicated virtual machines to register with the Recovery Services Vaul
 - `recovery_replication_policy_id` - (Required) The ID of the replication policy to use.
 - `target_resource_id` - (Required) The resource ID where the VM should be recovered (target VM resource ID).
 - `target_recovery_fabric_id` - (Optional) The ID of the recovery fabric for the target region.
-- `target_protection_container_id` - (Optional) The ID of the protection container in the target fabric.
+- `target_protection_container_id` - (Required) The ID of the protection container in the target fabric.
 - `managed_disk` - (Optional) A map of managed disks to replicate.
 - `unmanaged_disk` - (Optional) A map of unmanaged disks to replicate.
 - `target_network_id` - (Optional) The ID of the target virtual network.
 - `target_subnet_name` - (Optional) The name of the target subnet.
 - `target_static_ip` - (Optional) The static IP to assign to the target VM.
+- `target_virtual_machine_size` - (Optional) The size of the target virtual machine.
 - `test_network_id` - (Optional) The ID of the test network.
 - `test_subnet_name` - (Optional) The name of the test subnet.
 - `recovery_resource_group_id` - (Optional) The ID of the recovery resource group.
@@ -659,6 +661,111 @@ DESCRIPTION
     ])
     error_message = "Each site_recovery_replicated_vm entry must set target_resource_group_id (or legacy fallback recovery_resource_group_id)."
   }
+}
+
+variable "ignore_body_changes" {
+  type = object({
+    authorization_locks                                   = optional(list(string), [])
+    authorization_role_assignments                        = optional(list(string), [])
+    insights_diagnostic_settings                          = optional(list(string), [])
+    network_private_endpoints                             = optional(list(string), [])
+    recoveryservices_vaults                               = optional(list(string), [])
+    recoveryservices_vaults_backup_resource_guard_proxies = optional(list(string), [])
+
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(object({
+      recoveryservices_vaults_backup_fabrics_protection_containers                 = optional(list(string), [])
+      recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(list(string), [])
+    }), {})
+
+    recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(object({
+      recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(list(string), [])
+    }), {})
+  })
+  default     = {}
+  nullable    = false
+  description = <<DESCRIPTION
+Body-relative paths ignored for each AzAPI resource owned by the module and the converted protection submodules. Paths use dot notation.
+Changes take effect only after apply. Ignored configuration is not sent to Azure until the path is removed.
+
+- `recoveryservices_vaults` - Paths ignored on the Recovery Services vault.
+- `insights_diagnostic_settings` - Paths ignored on diagnostic settings.
+- `authorization_locks` - Paths ignored on locks.
+- `authorization_role_assignments` - Paths ignored on role assignments.
+- `recoveryservices_vaults_backup_resource_guard_proxies` - Paths ignored on Resource Guard proxy associations.
+- `network_private_endpoints` - Paths ignored on private endpoints.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Paths passed to the protected VM and protected file share submodules.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protection_containers` - Paths ignored on storage-account registration.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Paths ignored on protected VM and file share resources.
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Paths passed to the Site Recovery replicated VM submodule.
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Reserved for Site Recovery replicated item operations pending AzAPI action/update support for `ignore_body_changes`.
+DESCRIPTION
+}
+
+variable "resource_types" {
+  type = object({
+    authorization_locks                                   = optional(string, "Microsoft.Authorization/locks@2020-05-01")
+    authorization_role_assignments                        = optional(string, "Microsoft.Authorization/roleAssignments@2022-04-01")
+    authorization_role_definitions                        = optional(string, "Microsoft.Authorization/roleDefinitions@2022-05-01-preview")
+    insights_diagnostic_settings                          = optional(string, "Microsoft.Insights/diagnosticSettings@2021-05-01-preview")
+    network_private_endpoints                             = optional(string, "Microsoft.Network/privateEndpoints@2024-05-01")
+    network_private_endpoints_private_dns_zone_groups     = optional(string, "Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-05-01")
+    recoveryservices_vaults                               = optional(string, "Microsoft.RecoveryServices/vaults@2024-10-01")
+    recoveryservices_vaults_backup_resource_guard_proxies = optional(string, "Microsoft.RecoveryServices/vaults/backupResourceGuardProxies@2023-02-01")
+
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(object({
+      recoveryservices_vaults_backup_protected_items                               = optional(string)
+      recoveryservices_vaults_backup_fabrics_protectable_items                     = optional(string)
+      recoveryservices_vaults_backup_fabrics_protection_containers                 = optional(string)
+      recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(string)
+    }), {})
+
+    recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(object({
+      recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(string)
+    }), {})
+  })
+  default     = {}
+  nullable    = false
+  description = <<DESCRIPTION
+AzAPI resource types and API versions used by the module and the converted protection submodules.
+
+- `recoveryservices_vaults` - Resource type and API version for the Recovery Services vault.
+- `insights_diagnostic_settings` - Resource type and API version for diagnostic settings.
+- `authorization_locks` - Resource type and API version for locks.
+- `authorization_role_assignments` - Resource type and API version for role assignments.
+- `authorization_role_definitions` - Resource type and API version for role definition lookups.
+- `recoveryservices_vaults_backup_resource_guard_proxies` - Resource type and API version for Resource Guard proxy associations.
+- `network_private_endpoints` - Resource type and API version for private endpoints.
+- `network_private_endpoints_private_dns_zone_groups` - Resource type and API version for private DNS zone groups.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Resource-type overrides passed to the protected VM and protected file share submodules.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_protected_items` - Resource-type override used to find an existing protected file share.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protectable_items` - Resource-type override used to discover file shares.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protection_containers` - Resource-type override for storage-account registration and inquiry.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Resource-type override for protected VM and file share resources.
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Resource-type overrides passed to the Site Recovery replicated VM submodule.
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Resource-type override for Site Recovery replicated item operations.
+DESCRIPTION
+}
+
+variable "retry" {
+  type = object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+  default     = null
+  description = "Retry configuration applied to the Recovery Services vault and cascaded to the converted protection submodules."
+}
+
+variable "timeouts" {
+  type = object({
+    create = optional(string, "60m")
+    read   = optional(string, "5m")
+    update = optional(string, "60m")
+    delete = optional(string, "60m")
+  })
+  default     = {}
+  nullable    = false
+  description = "Per-operation timeouts applied to the Recovery Services vault and cascaded to the converted protection submodules."
 }
 
 variable "soft_delete_enabled" {

@@ -27,13 +27,6 @@ mock_provider "azapi" {
   }
 }
 
-mock_provider "azurerm" {
-  mock_resource "azurerm_private_endpoint" {
-    defaults = {
-      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/privateEndpoints/pe-test"
-    }
-  }
-}
 mock_provider "modtm" {}
 mock_provider "time" {}
 mock_provider "random" {}
@@ -86,7 +79,7 @@ run "no_lock_by_default" {
   command = apply
 
   assert {
-    condition     = length(azurerm_management_lock.this) == 0
+    condition     = length(azapi_resource.lock) == 0
     error_message = "No management lock should be created when var.lock is null."
   }
 }
@@ -107,12 +100,12 @@ run "lock_created_when_configured" {
   }
 
   assert {
-    condition     = length(azurerm_management_lock.this) == 1
+    condition     = length(azapi_resource.lock) == 1
     error_message = "A management lock should be created when var.lock is supplied."
   }
 
   assert {
-    condition     = azurerm_management_lock.this[0].lock_level == "CanNotDelete"
+    condition     = azapi_resource.lock[0].body.properties.level == "CanNotDelete"
     error_message = "The lock level should match the value supplied via var.lock.kind."
   }
 }
@@ -126,7 +119,7 @@ run "no_role_assignments_by_default" {
   command = apply
 
   assert {
-    condition     = length(azurerm_role_assignment.this) == 0
+    condition     = length(azapi_resource.role_assignments) == 0
     error_message = "No role assignments should be created when var.role_assignments is empty."
   }
 }
@@ -355,12 +348,12 @@ run "resource_guard_association_created" {
   }
 
   assert {
-    condition     = azurerm_recovery_services_vault_resource_guard_association.this[0].vault_id == azapi_resource.this.id
-    error_message = "Resource Guard association vault_id should match the vault resource ID."
+    condition     = azapi_resource.resource_guard_association[0].parent_id == azapi_resource.this.id
+    error_message = "Resource Guard association parent_id should match the vault resource ID."
   }
 
   assert {
-    condition     = azurerm_recovery_services_vault_resource_guard_association.this[0].resource_guard_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg-guard-01"
+    condition     = azapi_resource.resource_guard_association[0].body.properties.resourceGuardResourceId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg-guard-01"
     error_message = "Resource Guard association resource_guard_id should match the supplied variable."
   }
 }
@@ -375,7 +368,7 @@ run "no_resource_guard_association_by_default" {
   command = plan
 
   assert {
-    condition     = length(azurerm_recovery_services_vault_resource_guard_association.this) == 0
+    condition     = length(azapi_resource.resource_guard_association) == 0
     error_message = "No Resource Guard association should be created when resource_guard_id is not supplied."
   }
 }
@@ -384,7 +377,7 @@ run "no_resource_guard_association_by_default" {
 # run: unmanaged_private_endpoints_omit_dns_zone_group
 #
 # When callers manage private DNS zone groups outside the module, the private
-# endpoint resource must omit the inline private_dns_zone_group block entirely.
+# module must omit private DNS zone group actions entirely.
 # This avoids update calls that can fail for Recovery Services Vault private
 # endpoints when centrally managed DNS zone groups are attached separately.
 # ---------------------------------------------------------------------------
@@ -406,22 +399,22 @@ run "unmanaged_private_endpoints_omit_dns_zone_group" {
   }
 
   assert {
-    condition     = length(azurerm_private_endpoint.this_managed_dns_zone_groups) == 0
+    condition     = length(azapi_resource.private_endpoint_managed_dns_zone_groups) == 0
     error_message = "Managed private endpoint resources should not be created when var.private_endpoints_manage_dns_zone_group is false."
   }
 
   assert {
-    condition     = length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups) == 1
+    condition     = length(azapi_resource.private_endpoint_unmanaged_dns_zone_groups) == 1
     error_message = "Exactly one unmanaged private endpoint should be created when DNS zone groups are managed externally."
   }
 
   assert {
-    condition     = length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups["backup"].private_dns_zone_group) == 0
-    error_message = "Unmanaged private endpoints must omit the inline private_dns_zone_group block even when private DNS zone IDs are supplied."
+    condition     = length(azapi_resource_action.private_dns_zone_group) == 0
+    error_message = "Unmanaged private endpoints must not manage private DNS zone groups even when private DNS zone IDs are supplied."
   }
 
   assert {
-    condition     = can(azurerm_private_endpoint_application_security_group_association.this["backup-asg"])
+    condition     = azapi_resource.private_endpoint_unmanaged_dns_zone_groups["backup"].body.properties.applicationSecurityGroups[0].id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/applicationSecurityGroups/asg-test"
     error_message = "Private endpoint ASG associations must target the unmanaged private endpoint resource when DNS zone groups are managed externally."
   }
 }
@@ -430,9 +423,8 @@ run "unmanaged_private_endpoints_omit_dns_zone_group" {
 # run: managed_private_endpoints_include_dns_zone_group
 #
 # When the module manages private DNS zone groups (default), the managed
-# private endpoint resource must be created and must include the inline
-# private_dns_zone_group block when DNS zone IDs are supplied.  The unmanaged
-# resource must be absent.
+# private endpoint resource and its private DNS zone group action must be
+# created when DNS zone IDs are supplied. The unmanaged resource must be absent.
 #
 # This complements the unmanaged_private_endpoints_omit_dns_zone_group test
 # and ensures the two exclusive resource types are not created concurrently,
@@ -454,18 +446,23 @@ run "managed_private_endpoints_include_dns_zone_group" {
   }
 
   assert {
-    condition     = length(azurerm_private_endpoint.this_managed_dns_zone_groups) == 1
+    condition     = length(azapi_resource.private_endpoint_managed_dns_zone_groups) == 1
     error_message = "Exactly one managed private endpoint should be created when var.private_endpoints_manage_dns_zone_group is true."
   }
 
   assert {
-    condition     = length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups) == 0
+    condition     = length(azapi_resource.private_endpoint_unmanaged_dns_zone_groups) == 0
     error_message = "Unmanaged private endpoint resources must not be created when var.private_endpoints_manage_dns_zone_group is true."
   }
 
   assert {
-    condition     = length(azurerm_private_endpoint.this_managed_dns_zone_groups["backup"].private_dns_zone_group) == 1
-    error_message = "Managed private endpoints must include the inline private_dns_zone_group block when private DNS zone IDs are supplied."
+    condition     = length(azapi_resource_action.private_dns_zone_group) == 1
+    error_message = "Managed private endpoints must create a private DNS zone group when private DNS zone IDs are supplied."
+  }
+
+  assert {
+    condition     = azapi_resource_action.private_dns_zone_group["backup"].body.properties.privateDnsZoneConfigs[0].properties.privateDnsZoneId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-dns/providers/Microsoft.Network/privateDnsZones/privatelink.test.windowsazure.com"
+    error_message = "The private DNS zone group must contain the configured private DNS zone ID."
   }
 }
 
@@ -490,12 +487,12 @@ run "managed_private_endpoints_sequence_and_unique_defaults" {
   }
 
   assert {
-    condition     = azurerm_private_endpoint.this_managed_dns_zone_groups["backup"].name == "pep-${var.name}-backup" && azurerm_private_endpoint.this_managed_dns_zone_groups["site_recovery"].name == "pep-${var.name}-site_recovery"
+    condition     = azapi_resource.private_endpoint_managed_dns_zone_groups["backup"].name == "pep-${var.name}-backup" && azapi_resource.private_endpoint_managed_dns_zone_groups["site_recovery"].name == "pep-${var.name}-site_recovery"
     error_message = "When multiple managed private endpoints are configured without explicit names, default names must include the map key to avoid collisions."
   }
 
   assert {
-    condition     = azurerm_private_endpoint.this_managed_dns_zone_groups["backup"].private_service_connection[0].name == "pse-${var.name}-backup" && azurerm_private_endpoint.this_managed_dns_zone_groups["site_recovery"].private_service_connection[0].name == "pse-${var.name}-site_recovery"
+    condition     = azapi_resource.private_endpoint_managed_dns_zone_groups["backup"].body.properties.privateLinkServiceConnections[0].name == "pse-${var.name}-backup" && azapi_resource.private_endpoint_managed_dns_zone_groups["site_recovery"].body.properties.privateLinkServiceConnections[0].name == "pse-${var.name}-site_recovery"
     error_message = "When multiple managed private endpoints are configured without explicit private service connection names, defaults must include the map key to avoid collisions."
   }
 }
