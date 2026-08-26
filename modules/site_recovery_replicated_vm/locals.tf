@@ -79,8 +79,8 @@ locals {
       "ErrorInVMConfigurationAsProtectionFailed",
       "Ensure that the virtual machine is configured for protection successfully",
     ]))
-    interval_seconds     = try(var.retry.interval_seconds, null) != null ? var.retry.interval_seconds : 60
-    max_interval_seconds = try(var.retry.max_interval_seconds, null) != null ? var.retry.max_interval_seconds : 300
+    interval_seconds     = coalesce(try(var.retry.interval_seconds, null), 60)
+    max_interval_seconds = coalesce(try(var.retry.max_interval_seconds, null), 300)
   }
   # Retrying needs a window long enough for the enable-protection job to finish.
   target_settings_timeouts = {
