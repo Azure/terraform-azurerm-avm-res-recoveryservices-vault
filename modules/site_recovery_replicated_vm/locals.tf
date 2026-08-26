@@ -22,7 +22,7 @@ locals {
   ]
   resource_id              = "${var.parent_id}/replicationProtectedItems/${local.resource_name}"
   resource_name            = basename(var.site_recovery_replicated_vm.source_vm_id)
-  target_resource_name     = basename(var.site_recovery_replicated_vm.target_resource_id)
+  target_resource_name     = var.site_recovery_replicated_vm.target_resource_id == null ? null : basename(var.site_recovery_replicated_vm.target_resource_id)
   target_resource_group_id = coalesce(var.site_recovery_replicated_vm.target_resource_group_id, var.site_recovery_replicated_vm.recovery_resource_group_id)
   unmanaged_disks = [
     for disk in values(coalesce(var.site_recovery_replicated_vm.unmanaged_disk, {})) : {
