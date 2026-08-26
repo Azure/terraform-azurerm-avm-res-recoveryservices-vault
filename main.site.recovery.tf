@@ -11,8 +11,8 @@ module "backup_protected_vm" {
   ignore_body_changes = var.ignore_body_changes.backup_protected_vm
   resource_types      = var.resource_types.backup_protected_vm
   retry               = var.retry
-  timeouts            = var.timeouts
   tags                = var.tags
+  timeouts            = var.timeouts
 
   depends_on = [module.recovery_services_vault_vm_policy]
 }
@@ -34,8 +34,8 @@ module "backup_protected_file_share" {
   ignore_body_changes = var.ignore_body_changes.backup_protected_file_share
   resource_types      = var.resource_types.backup_protected_file_share
   retry               = var.retry
-  timeouts            = var.timeouts
   tags                = var.tags
+  timeouts            = var.timeouts
 
   depends_on = [module.recovery_services_vault_file_share_policy, ]
 }
@@ -44,6 +44,9 @@ module "site_recovery_replicated_vm" {
   source   = "./modules/site_recovery_replicated_vm"
   for_each = var.site_recovery_replicated_vm != null ? var.site_recovery_replicated_vm : {}
 
+  ignore_body_changes = var.ignore_body_changes.site_recovery_replicated_vm
+  resource_types      = var.resource_types.site_recovery_replicated_vm
+  retry               = var.retry
   site_recovery_replicated_vm = {
     source_vm_id                           = each.value.source_vm_id
     recovery_vault_name                    = azapi_resource.this.name
@@ -68,8 +71,5 @@ module "site_recovery_replicated_vm" {
     multi_vm_group_name                    = each.value.multi_vm_group_name
     timeouts                               = each.value.timeouts
   }
-  ignore_body_changes = var.ignore_body_changes.site_recovery_replicated_vm
-  resource_types      = var.resource_types.site_recovery_replicated_vm
-  retry               = var.retry
-  timeouts            = var.timeouts
+  timeouts = var.timeouts
 }

@@ -98,6 +98,12 @@ resource "azapi_resource" "this_managed_dns_zone_groups_dns_zone_group" {
 }
 
 # The PE resource when we are **not** managing the private DNS zone group:
+# The AzureRM implementation needed `lifecycle { ignore_changes = [private_dns_zone_group] }`
+# here because the DNS zone group was an inline block of the private endpoint resource,
+# so an externally managed zone group (e.g. created by Azure Policy) appeared as drift.
+# With AzAPI the zone group is a separate ARM child resource
+# (Microsoft.Network/privateEndpoints/privateDnsZoneGroups) that this resource neither
+# declares nor reads, so there is nothing to ignore and the meta-argument is dropped.
 resource "azapi_resource" "this_unmanaged_dns_zone_groups" {
   for_each = local.unmanaged_private_endpoints
 
@@ -148,13 +154,6 @@ resource "azapi_resource" "this_unmanaged_dns_zone_groups" {
       update = timeouts.value.update
     }
   }
-
-  # The AzureRM implementation needed `lifecycle { ignore_changes = [private_dns_zone_group] }`
-  # here because the DNS zone group was an inline block of the private endpoint resource,
-  # so an externally managed zone group (e.g. created by Azure Policy) appeared as drift.
-  # With AzAPI the zone group is a separate ARM child resource
-  # (Microsoft.Network/privateEndpoints/privateDnsZoneGroups) that this resource neither
-  # declares nor reads, so there is nothing to ignore and the meta-argument is dropped.
 
   # depends_on ensures that when switching between managed and unmanaged DNS
   # zone group ownership, the managed endpoints are fully destroyed before the

@@ -8,6 +8,6 @@ module "recovery_services_vault_file_share_policy" {
   ignore_body_changes      = var.ignore_body_changes.recovery_services_vault_file_share_policy
   resource_types           = var.resource_types.recovery_services_vault_file_share_policy
   retry                    = var.retry
-  timeouts                 = var.timeouts
   tags                     = var.tags
+  timeouts                 = var.timeouts
 }
