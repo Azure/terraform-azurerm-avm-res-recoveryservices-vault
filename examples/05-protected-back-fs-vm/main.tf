@@ -1,5 +1,5 @@
 
-data "azurerm_subscription" "this" {}
+data "azapi_client_config" "this" {}
 # This ensures we have unique CAF compliant names for our resources.
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
@@ -18,45 +18,55 @@ module "naming" {
   version = "0.4.3"
 }
 
-resource "azurerm_resource_group" "this" {
-  location = "westus3"              #local.test_regions[random_integer.region_index.result]
-  name     = "rg-westus3-vault-005" #module.naming.resource_group.name_unique
+resource "azapi_resource" "rg_this" {
+  location  = "westus3"              #local.test_regions[random_integer.region_index.result]
+  name      = "rg-westus3-vault-005" #module.naming.resource_group.name_unique
+  parent_id = "/subscriptions/${local.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2021-04-01"
 }
-resource "azurerm_resource_group" "primary_wus1" {
-  location = "westus"
-  name     = "rg-vm-westus-primary-005"
+resource "azapi_resource" "rg_primary_wus1" {
+  location  = "westus"
+  name      = "rg-vm-westus-primary-005"
+  parent_id = "/subscriptions/${local.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2021-04-01"
 }
-resource "azurerm_resource_group" "primary_wus2" {
-  location = "westus2"
-  name     = "rg-vm-westus2-primary-005"
+resource "azapi_resource" "rg_primary_wus2" {
+  location  = "westus2"
+  name      = "rg-vm-westus2-primary-005"
+  parent_id = "/subscriptions/${local.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2021-04-01"
 }
-resource "azurerm_resource_group" "primary_wus3" {
-  location = "westus3"
-  name     = "rg-vm-westus3-primary-005"
+resource "azapi_resource" "rg_primary_wus3" {
+  location  = "westus3"
+  name      = "rg-vm-westus3-primary-005"
+  parent_id = "/subscriptions/${local.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2021-04-01"
 }
-resource "azurerm_resource_group" "secondary_eus" {
-  location = "eastus"
-  name     = "rg-vm-secondary_eus-005"
+resource "azapi_resource" "rg_secondary_eus" {
+  location  = "eastus"
+  name      = "rg-vm-secondary_eus-005"
+  parent_id = "/subscriptions/${local.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2021-04-01"
 }
-resource "azurerm_resource_group" "secondary_eus2" {
-  location = "eastus2"
-  name     = "rg-vm-secondary_eus2-005"
+resource "azapi_resource" "rg_secondary_eus2" {
+  location  = "eastus2"
+  name      = "rg-vm-secondary_eus2-005"
+  parent_id = "/subscriptions/${local.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2021-04-01"
 }
-resource "azurerm_resource_group" "secondary_cus" {
-  location = "centralus"
-  name     = "rg-vm-secondary_cus-005"
+resource "azapi_resource" "rg_secondary_cus" {
+  location  = "centralus"
+  name      = "rg-vm-secondary_cus-005"
+  parent_id = "/subscriptions/${local.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2021-04-01"
 }
 # output "network" {
-#   value = "${data.azurerm_subscription.This.id}/resourceGroups/${azurerm_resource_group.primary_wus1.name}/providers/Microsoft.Network/virtualNetworks/vnet-westus"
+#   value = "${azapi_resource.rg_primary_wus1.id}/providers/Microsoft.Network/virtualNetworks/vnet-westus"
 # }
 locals {
-  test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
-  vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-005"
-}
-
-module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
+  subscription_id = data.azapi_client_config.this.subscription_id
+  test_regions    = ["eastus", "eastus2", "westus3"] #  "westu2",
+  vault_name      = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-005"
 }
 
 module "azure_region" {
@@ -66,61 +76,94 @@ module "azure_region" {
   azure_region = "westus3"
 }
 # must be located in the same region as the VM to be backed up
-resource "azurerm_storage_account" "primary_wus1" {
-  account_replication_type = "GRS"
-  account_tier             = "Standard"
-  location                 = azurerm_resource_group.primary_wus1.location
-  name                     = "srv${azurerm_resource_group.primary_wus1.location}005"
-  resource_group_name      = azurerm_resource_group.primary_wus1.name
+resource "azapi_resource" "sa_primary_wus1" {
+  location  = azapi_resource.rg_primary_wus1.location
+  name      = "srv${azapi_resource.rg_primary_wus1.location}005"
+  parent_id = azapi_resource.rg_primary_wus1.id
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  body = {
+    kind = "StorageV2"
+    sku = {
+      name = "Standard_GRS"
+    }
+    properties = {}
+  }
 }
 
-resource "azurerm_storage_account" "primary_wus2" {
-  account_replication_type = "ZRS"
-  account_tier             = "Standard"
-  location                 = azurerm_resource_group.primary_wus2.location
-  name                     = "srv${azurerm_resource_group.primary_wus2.location}555"
-  resource_group_name      = azurerm_resource_group.primary_wus2.name
+resource "azapi_resource" "sa_primary_wus2" {
+  location  = azapi_resource.rg_primary_wus2.location
+  name      = "srv${azapi_resource.rg_primary_wus2.location}555"
+  parent_id = azapi_resource.rg_primary_wus2.id
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  body = {
+    kind = "StorageV2"
+    sku = {
+      name = "Standard_ZRS"
+    }
+    properties = {}
+  }
 }
-resource "azurerm_storage_account" "primary_wus3" {
-  account_replication_type = "ZRS"
-  account_tier             = "Standard"
-  location                 = azurerm_resource_group.primary_wus3.location
-  name                     = "srv${azurerm_resource_group.primary_wus3.location}555"
-  resource_group_name      = azurerm_resource_group.primary_wus3.name
+resource "azapi_resource" "sa_primary_wus3" {
+  location  = azapi_resource.rg_primary_wus3.location
+  name      = "srv${azapi_resource.rg_primary_wus3.location}555"
+  parent_id = azapi_resource.rg_primary_wus3.id
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  body = {
+    kind = "StorageV2"
+    sku = {
+      name = "Standard_ZRS"
+    }
+    properties = {}
+  }
 }
-resource "azurerm_storage_account" "sa" {
-  account_replication_type = "GRS"
-  account_tier             = "Standard"
-  location                 = azurerm_resource_group.primary_wus3.location
-  name                     = "fsbk${azurerm_resource_group.primary_wus3.location}555"
-  resource_group_name      = azurerm_resource_group.primary_wus3.name
+resource "azapi_resource" "sa" {
+  location  = azapi_resource.rg_primary_wus3.location
+  name      = "fsbk${azapi_resource.rg_primary_wus3.location}555"
+  parent_id = azapi_resource.rg_primary_wus3.id
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  body = {
+    kind = "StorageV2"
+    sku = {
+      name = "Standard_GRS"
+    }
+    properties = {}
+  }
 }
 
-resource "azurerm_storage_share" "this" {
-  name               = "share1"
-  quota              = 50
-  storage_account_id = azurerm_storage_account.sa.id
+# The file share is a control-plane ARM child resource of the storage account's
+# default file service, so it is created with azapi_resource.
+resource "azapi_resource" "share_this" {
+  name      = "share1"
+  parent_id = "${azapi_resource.sa.id}/fileServices/default"
+  type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2023-05-01"
+  body = {
+    properties = {
+      shareQuota = 50
+    }
+  }
 }
-resource "azurerm_user_assigned_identity" "this" {
-  location            = azurerm_resource_group.this.location
-  name                = "uami-${azurerm_resource_group.this.location}-005"
-  resource_group_name = azurerm_resource_group.this.name
+resource "azapi_resource" "uami_this" {
+  location  = azapi_resource.rg_this.location
+  name      = "uami-${azapi_resource.rg_this.location}-005"
+  parent_id = azapi_resource.rg_this.id
+  type      = "Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31"
+  body      = {}
 }
 
 module "recovery_services_vault" {
   source = "../../"
 
-  location                                       = azurerm_resource_group.this.location
+  location                                       = azapi_resource.rg_this.location
   name                                           = local.vault_name #"srv-test-vault-005"
-  resource_group_name                            = azurerm_resource_group.this.name
+  resource_group_name                            = azapi_resource.rg_this.name
   sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
   backup_protected_file_share = {
     protect-share-s1 = {
-      source_storage_account_id = "${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Storage/storageAccounts/fsbk${azurerm_resource_group.primary_wus3.location}005"
-      #"${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Storage/storageAccounts/fsbk${azurerm_resource_group.primary_wus3.location}005"
-      source_file_share_name        = azurerm_storage_share.this.name
+      source_storage_account_id = "/subscriptions/${local.subscription_id}/resourceGroups/${azapi_resource.rg_primary_wus3.name}/providers/Microsoft.Storage/storageAccounts/fsbk${azapi_resource.rg_primary_wus3.location}005"
+      #"/subscriptions/${local.subscription_id}/resourceGroups/${azapi_resource.rg_primary_wus3.name}/providers/Microsoft.Storage/storageAccounts/fsbk${azapi_resource.rg_primary_wus3.location}005"
+      source_file_share_name        = azapi_resource.share_this.name
       backup_file_share_policy_name = "pol-rsv-fileshare-vault-005"
       sleep_timer                   = "30s"
     }
@@ -128,8 +171,8 @@ module "recovery_services_vault" {
   backup_protected_vm = {
     vm-03 = {
       vm_backup_policy_name = "EnhancedPolicy"
-      source_vm_id          = "${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Compute/virtualMachines/vm-${azurerm_resource_group.primary_wus3.location}-005"
-      # azurerm_windows_virtual_machine.vm_wus3.id # nes/vm"
+      source_vm_id          = "/subscriptions/${local.subscription_id}/resourceGroups/${azapi_resource.rg_primary_wus3.name}/providers/Microsoft.Compute/virtualMachines/vm-${azapi_resource.rg_primary_wus3.location}-005"
+      # azapi_resource.vm_wus3.id # nes/vm"
     }
 
   }
@@ -174,7 +217,7 @@ module "recovery_services_vault" {
   }
   managed_identities = {
     system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.this.id, ]
+    user_assigned_resource_ids = [azapi_resource.uami_this.id, ]
   }
   public_network_access_enabled = true
   storage_mode_type             = "GeoRedundant"
@@ -184,5 +227,5 @@ module "recovery_services_vault" {
     dept  = "IT"
   }
 
-  depends_on = [azurerm_storage_account.sa, azurerm_windows_virtual_machine.vm_wus3]
+  depends_on = [azapi_resource.sa, azapi_resource.vm_wus3]
 }

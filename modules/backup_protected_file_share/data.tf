@@ -1,6 +1,10 @@
+data "azapi_client_config" "this" {}
 
-data "azurerm_backup_policy_file_share" "this" {
-  name                = var.backup_protected_file_share.backup_file_share_policy_name
-  recovery_vault_name = var.backup_protected_file_share.vault_name
-  resource_group_name = var.backup_protected_file_share.vault_resource_group_name
+# Looks up the existing Azure Files backup policy by name inside the vault.
+# Replaces the former `data "azurerm_backup_policy_file_share" "this"`.
+data "azapi_resource" "this" {
+  name                   = var.backup_protected_file_share.backup_file_share_policy_name
+  type                   = local.backup_policy_type
+  parent_id              = local.vault_id
+  response_export_values = []
 }

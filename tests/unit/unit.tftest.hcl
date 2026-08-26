@@ -6,8 +6,10 @@
 # 1. The vault is managed as `azapi_resource.this` (the target address of the
 #    `moved` block that migrates state from v0.x `azurerm_recovery_services_vault.this`).
 #
-# 2. Key optional features (locks, role assignments, diagnostic settings) are
-#    conditionally created or omitted as expected.
+# 2. Key optional features (locks, role assignments, diagnostic settings,
+#    private endpoints, resource guard association) are conditionally created or
+#    omitted as expected.  Every one of these is now an AzAPI resource: the root
+#    module contains no azurerm resources at all.
 #
 # To run (using the ./avm wrapper script at the repository root, which runs
 # commands inside the AVM-managed container):
@@ -27,13 +29,6 @@ mock_provider "azapi" {
   }
 }
 
-mock_provider "azurerm" {
-  mock_resource "azurerm_private_endpoint" {
-    defaults = {
-      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/privateEndpoints/pe-test"
-    }
-  }
-}
 mock_provider "modtm" {}
 mock_provider "random" {}
 
@@ -85,7 +80,7 @@ run "no_lock_by_default" {
   command = apply
 
   assert {
-    condition     = length(azurerm_management_lock.this) == 0
+    condition     = length(azapi_resource.lock) == 0
     error_message = "No management lock should be created when var.lock is null."
   }
 }
@@ -93,7 +88,8 @@ run "no_lock_by_default" {
 # ---------------------------------------------------------------------------
 # run: lock_created_when_configured
 #
-# When var.lock is provided a lock resource must be created.
+# When var.lock is provided a lock resource must be created.  The lock is a
+# Microsoft.Authorization/locks extension resource on the vault.
 # ---------------------------------------------------------------------------
 run "lock_created_when_configured" {
   command = apply
@@ -106,27 +102,188 @@ run "lock_created_when_configured" {
   }
 
   assert {
-    condition     = length(azurerm_management_lock.this) == 1
+    condition     = length(azapi_resource.lock) == 1
     error_message = "A management lock should be created when var.lock is supplied."
   }
 
   assert {
-    condition     = azurerm_management_lock.this[0].lock_level == "CanNotDelete"
+    condition     = azapi_resource.lock[0].type == "Microsoft.Authorization/locks@2020-05-01"
+    error_message = "The lock must be declared as a Microsoft.Authorization/locks AzAPI resource."
+  }
+
+  assert {
+    condition     = azapi_resource.lock[0].body.properties.level == "CanNotDelete"
     error_message = "The lock level should match the value supplied via var.lock.kind."
+  }
+
+  assert {
+    condition     = azapi_resource.lock[0].name == "lock-rsv-test"
+    error_message = "The lock name should match the value supplied via var.lock.name."
+  }
+
+  assert {
+    condition     = azapi_resource.lock[0].parent_id == azapi_resource.this.id
+    error_message = "The lock must be scoped to the vault."
   }
 }
 
 # ---------------------------------------------------------------------------
 # run: no_role_assignments_by_default
 #
-# Role assignments are optional.  Verify none are created when not requested.
+# Role assignments are optional.  Verify none are created when not requested,
+# and that the role definition lookup data source is not read either.
 # ---------------------------------------------------------------------------
 run "no_role_assignments_by_default" {
   command = apply
 
   assert {
-    condition     = length(azurerm_role_assignment.this) == 0
+    condition     = length(azapi_resource.role_assignments) == 0
     error_message = "No role assignments should be created when var.role_assignments is empty."
+  }
+
+  assert {
+    condition     = length(data.azapi_resource_list.role_definitions) == 0
+    error_message = "The role definition lookup should not run when there are no role assignments."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: role_assignment_with_role_definition_id
+#
+# When `role_definition_id_or_name` is a fully qualified role definition
+# resource ID it is used verbatim in the ARM body and no role definition lookup
+# is required.  The role assignment name must be a GUID (ARM requirement), which
+# the module derives deterministically with uuidv5.
+# ---------------------------------------------------------------------------
+run "role_assignment_with_role_definition_id" {
+  command = apply
+
+  variables {
+    role_assignments = {
+      contributor = {
+        role_definition_id_or_name = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
+        principal_id               = "00000000-0000-0000-0000-0000000000aa"
+      }
+    }
+  }
+
+  assert {
+    condition     = length(azapi_resource.role_assignments) == 1
+    error_message = "A role assignment should be created for each entry in var.role_assignments."
+  }
+
+  assert {
+    condition     = azapi_resource.role_assignments["contributor"].type == "Microsoft.Authorization/roleAssignments@2022-04-01"
+    error_message = "Role assignments must be declared as Microsoft.Authorization/roleAssignments AzAPI resources."
+  }
+
+  assert {
+    condition     = azapi_resource.role_assignments["contributor"].body.properties.roleDefinitionId == "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
+    error_message = "A fully qualified role definition resource ID must be passed through unchanged."
+  }
+
+  assert {
+    condition     = azapi_resource.role_assignments["contributor"].body.properties.principalId == "00000000-0000-0000-0000-0000000000aa"
+    error_message = "The role assignment principalId should match the supplied principal_id."
+  }
+
+  assert {
+    condition     = azapi_resource.role_assignments["contributor"].parent_id == azapi_resource.this.id
+    error_message = "Role assignments must be scoped to the vault."
+  }
+
+  assert {
+    condition     = length(azapi_resource.role_assignments["contributor"].name) == 36
+    error_message = "The role assignment name must be a GUID, as required by the ARM role assignment API."
+  }
+
+  assert {
+    condition     = length(data.azapi_resource_list.role_definitions) == 0
+    error_message = "The role definition lookup should not run when every role is supplied as a resource ID."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: role_assignment_with_role_name_triggers_lookup
+#
+# AzAPI cannot resolve a role *name* on its own, so the module lists the role
+# definitions available at subscription scope.  The lookup must only be enabled
+# when at least one role assignment is supplied by name.
+# ---------------------------------------------------------------------------
+run "role_assignment_with_role_name_triggers_lookup" {
+  command = plan
+
+  variables {
+    role_assignments = {
+      by_name = {
+        role_definition_id_or_name = "Contributor"
+        principal_id               = "00000000-0000-0000-0000-0000000000aa"
+      }
+    }
+  }
+
+  assert {
+    condition     = length(data.azapi_resource_list.role_definitions) == 1
+    error_message = "The role definition lookup must run when a role assignment is supplied by role name."
+  }
+
+  assert {
+    condition     = data.azapi_resource_list.role_definitions[0].type == "Microsoft.Authorization/roleDefinitions@2022-04-01"
+    error_message = "The role definition lookup must list Microsoft.Authorization/roleDefinitions."
+  }
+
+  assert {
+    condition     = data.azapi_resource_list.role_definitions[0].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000"
+    error_message = "The role definition lookup must be scoped to the subscription hosting the vault."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: diagnostic_settings_created
+#
+# Diagnostic settings are created as Microsoft.Insights/diagnosticSettings
+# extension resources on the vault, with the log groups and metric categories
+# translated into the ARM body.
+# ---------------------------------------------------------------------------
+run "diagnostic_settings_created" {
+  command = apply
+
+  variables {
+    diagnostic_settings = {
+      diag = {
+        workspace_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.OperationalInsights/workspaces/law-test"
+      }
+    }
+  }
+
+  assert {
+    condition     = azapi_resource.diagnostic_settings["diag"].type == "Microsoft.Insights/diagnosticSettings@2021-05-01-preview"
+    error_message = "Diagnostic settings must be declared as Microsoft.Insights/diagnosticSettings AzAPI resources."
+  }
+
+  assert {
+    condition     = azapi_resource.diagnostic_settings["diag"].parent_id == azapi_resource.this.id
+    error_message = "Diagnostic settings must be attached to the vault."
+  }
+
+  assert {
+    condition     = azapi_resource.diagnostic_settings["diag"].name == "diag-${var.name}"
+    error_message = "A diagnostic setting name should be generated from the vault name when none is supplied."
+  }
+
+  assert {
+    condition     = azapi_resource.diagnostic_settings["diag"].body.properties.workspaceId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.OperationalInsights/workspaces/law-test"
+    error_message = "The log analytics workspace resource ID should be sent as properties.workspaceId."
+  }
+
+  assert {
+    condition     = one(azapi_resource.diagnostic_settings["diag"].body.properties.logs).categoryGroup == "allLogs"
+    error_message = "The default log group (allLogs) should be enabled as a categoryGroup entry."
+  }
+
+  assert {
+    condition     = azapi_resource.diagnostic_settings["diag"].body.properties.metrics[0].category == "AllMetrics"
+    error_message = "The default metric category (AllMetrics) should be enabled."
   }
 }
 
@@ -398,13 +555,18 @@ run "resource_guard_association_created" {
   }
 
   assert {
-    condition     = azurerm_recovery_services_vault_resource_guard_association.this[0].vault_id == azapi_resource.this.id
-    error_message = "Resource Guard association vault_id should match the vault resource ID."
+    condition     = azapi_resource.resource_guard_association[0].type == "Microsoft.RecoveryServices/vaults/backupResourceGuardProxies@2024-10-01"
+    error_message = "The Resource Guard association must be declared as a Microsoft.RecoveryServices/vaults/backupResourceGuardProxies AzAPI resource."
   }
 
   assert {
-    condition     = azurerm_recovery_services_vault_resource_guard_association.this[0].resource_guard_id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg-guard-01"
-    error_message = "Resource Guard association resource_guard_id should match the supplied variable."
+    condition     = azapi_resource.resource_guard_association[0].parent_id == azapi_resource.this.id
+    error_message = "Resource Guard association parent_id should match the vault resource ID."
+  }
+
+  assert {
+    condition     = azapi_resource.resource_guard_association[0].body.properties.resourceGuardResourceId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg-guard-01"
+    error_message = "Resource Guard association resourceGuardResourceId should match the supplied variable."
   }
 }
 
@@ -418,7 +580,7 @@ run "no_resource_guard_association_by_default" {
   command = plan
 
   assert {
-    condition     = length(azurerm_recovery_services_vault_resource_guard_association.this) == 0
+    condition     = length(azapi_resource.resource_guard_association) == 0
     error_message = "No Resource Guard association should be created when resource_guard_id is not supplied."
   }
 }
@@ -426,10 +588,12 @@ run "no_resource_guard_association_by_default" {
 # ---------------------------------------------------------------------------
 # run: unmanaged_private_endpoints_omit_dns_zone_group
 #
-# When callers manage private DNS zone groups outside the module, the private
-# endpoint resource must omit the inline private_dns_zone_group block entirely.
-# This avoids update calls that can fail for Recovery Services Vault private
-# endpoints when centrally managed DNS zone groups are attached separately.
+# When callers manage private DNS zone groups outside the module, the module must
+# not create the Microsoft.Network/privateEndpoints/privateDnsZoneGroups child
+# resource at all.  This avoids update calls that can fail for Recovery Services
+# Vault private endpoints when centrally managed DNS zone groups are attached
+# separately.  It also verifies that application security group associations are
+# folded into the private endpoint body, as ARM requires.
 # ---------------------------------------------------------------------------
 run "unmanaged_private_endpoints_omit_dns_zone_group" {
   command = apply
@@ -449,23 +613,28 @@ run "unmanaged_private_endpoints_omit_dns_zone_group" {
   }
 
   assert {
-    condition     = length(azurerm_private_endpoint.this_managed_dns_zone_groups) == 0
+    condition     = length(azapi_resource.this_managed_dns_zone_groups) == 0
     error_message = "Managed private endpoint resources should not be created when var.private_endpoints_manage_dns_zone_group is false."
   }
 
   assert {
-    condition     = length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups) == 1
+    condition     = length(azapi_resource.this_unmanaged_dns_zone_groups) == 1
     error_message = "Exactly one unmanaged private endpoint should be created when DNS zone groups are managed externally."
   }
 
   assert {
-    condition     = length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups["backup"].private_dns_zone_group) == 0
-    error_message = "Unmanaged private endpoints must omit the inline private_dns_zone_group block even when private DNS zone IDs are supplied."
+    condition     = azapi_resource.this_unmanaged_dns_zone_groups["backup"].type == "Microsoft.Network/privateEndpoints@2024-05-01"
+    error_message = "Private endpoints must be declared as Microsoft.Network/privateEndpoints AzAPI resources."
   }
 
   assert {
-    condition     = can(azurerm_private_endpoint_application_security_group_association.this["backup-asg"])
-    error_message = "Private endpoint ASG associations must target the unmanaged private endpoint resource when DNS zone groups are managed externally."
+    condition     = length(azapi_resource.this_managed_dns_zone_groups_dns_zone_group) == 0
+    error_message = "Unmanaged private endpoints must not create a privateDnsZoneGroups child resource even when private DNS zone IDs are supplied."
+  }
+
+  assert {
+    condition     = length(azapi_resource.this_unmanaged_dns_zone_groups["backup"].body.properties.applicationSecurityGroups) == 1 && azapi_resource.this_unmanaged_dns_zone_groups["backup"].body.properties.applicationSecurityGroups[0].id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/applicationSecurityGroups/asg-test"
+    error_message = "Private endpoint ASG associations must be applied to the unmanaged private endpoint body when DNS zone groups are managed externally."
   }
 }
 
@@ -473,9 +642,9 @@ run "unmanaged_private_endpoints_omit_dns_zone_group" {
 # run: managed_private_endpoints_include_dns_zone_group
 #
 # When the module manages private DNS zone groups (default), the managed
-# private endpoint resource must be created and must include the inline
-# private_dns_zone_group block when DNS zone IDs are supplied.  The unmanaged
-# resource must be absent.
+# private endpoint resource must be created together with its
+# privateDnsZoneGroups child resource when DNS zone IDs are supplied.  The
+# unmanaged resource must be absent.
 #
 # This complements the unmanaged_private_endpoints_omit_dns_zone_group test
 # and ensures the two exclusive resource types are not created concurrently,
@@ -497,18 +666,33 @@ run "managed_private_endpoints_include_dns_zone_group" {
   }
 
   assert {
-    condition     = length(azurerm_private_endpoint.this_managed_dns_zone_groups) == 1
+    condition     = length(azapi_resource.this_managed_dns_zone_groups) == 1
     error_message = "Exactly one managed private endpoint should be created when var.private_endpoints_manage_dns_zone_group is true."
   }
 
   assert {
-    condition     = length(azurerm_private_endpoint.this_unmanaged_dns_zone_groups) == 0
+    condition     = length(azapi_resource.this_unmanaged_dns_zone_groups) == 0
     error_message = "Unmanaged private endpoint resources must not be created when var.private_endpoints_manage_dns_zone_group is true."
   }
 
   assert {
-    condition     = length(azurerm_private_endpoint.this_managed_dns_zone_groups["backup"].private_dns_zone_group) == 1
-    error_message = "Managed private endpoints must include the inline private_dns_zone_group block when private DNS zone IDs are supplied."
+    condition     = length(azapi_resource.this_managed_dns_zone_groups_dns_zone_group) == 1
+    error_message = "Managed private endpoints must create a privateDnsZoneGroups child resource when private DNS zone IDs are supplied."
+  }
+
+  assert {
+    condition     = azapi_resource.this_managed_dns_zone_groups_dns_zone_group["backup"].type == "Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-05-01"
+    error_message = "The DNS zone group must be declared as a Microsoft.Network/privateEndpoints/privateDnsZoneGroups AzAPI resource."
+  }
+
+  assert {
+    condition     = azapi_resource.this_managed_dns_zone_groups_dns_zone_group["backup"].name == "default"
+    error_message = "The DNS zone group name should default to 'default'."
+  }
+
+  assert {
+    condition     = length(azapi_resource.this_managed_dns_zone_groups_dns_zone_group["backup"].body.properties.privateDnsZoneConfigs) == 1 && azapi_resource.this_managed_dns_zone_groups_dns_zone_group["backup"].body.properties.privateDnsZoneConfigs[0].properties.privateDnsZoneId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-dns/providers/Microsoft.Network/privateDnsZones/privatelink.test.windowsazure.com"
+    error_message = "The DNS zone group must contain a config for each supplied private DNS zone resource ID."
   }
 }
 
@@ -533,13 +717,18 @@ run "managed_private_endpoints_sequence_and_unique_defaults" {
   }
 
   assert {
-    condition     = azurerm_private_endpoint.this_managed_dns_zone_groups["backup"].name == "pep-${var.name}-backup" && azurerm_private_endpoint.this_managed_dns_zone_groups["site_recovery"].name == "pep-${var.name}-site_recovery"
+    condition     = azapi_resource.this_managed_dns_zone_groups["backup"].name == "pep-${var.name}-backup" && azapi_resource.this_managed_dns_zone_groups["site_recovery"].name == "pep-${var.name}-site_recovery"
     error_message = "When multiple managed private endpoints are configured without explicit names, default names must include the map key to avoid collisions."
   }
 
   assert {
-    condition     = azurerm_private_endpoint.this_managed_dns_zone_groups["backup"].private_service_connection[0].name == "pse-${var.name}-backup" && azurerm_private_endpoint.this_managed_dns_zone_groups["site_recovery"].private_service_connection[0].name == "pse-${var.name}-site_recovery"
+    condition     = azapi_resource.this_managed_dns_zone_groups["backup"].body.properties.privateLinkServiceConnections[0].name == "pse-${var.name}-backup" && azapi_resource.this_managed_dns_zone_groups["site_recovery"].body.properties.privateLinkServiceConnections[0].name == "pse-${var.name}-site_recovery"
     error_message = "When multiple managed private endpoints are configured without explicit private service connection names, defaults must include the map key to avoid collisions."
+  }
+
+  assert {
+    condition     = azapi_resource.this_managed_dns_zone_groups["backup"].body.properties.privateLinkServiceConnections[0].properties.privateLinkServiceId == azapi_resource.this.id
+    error_message = "The private link service connection must target the vault."
   }
 }
 

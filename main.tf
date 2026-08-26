@@ -80,69 +80,152 @@ resource "azapi_resource" "this" {
 }
 
 # diagnostics and settings
-resource "azurerm_monitor_diagnostic_setting" "this" {
+#
+# `Microsoft.Insights/diagnosticSettings` is an extension resource: the parent_id is
+# the resource the diagnostic setting is attached to (the vault).
+resource "azapi_resource" "diagnostic_settings" {
   for_each = var.diagnostic_settings
 
-  name                           = each.value.name != null ? each.value.name : "diag-${var.name}"
-  target_resource_id             = azapi_resource.this.id
-  eventhub_authorization_rule_id = each.value.event_hub_authorization_rule_resource_id
-  eventhub_name                  = each.value.event_hub_name
-  log_analytics_destination_type = each.value.log_analytics_destination_type
-  log_analytics_workspace_id     = each.value.workspace_resource_id
-  partner_solution_id            = each.value.marketplace_partner_resource_id
-  storage_account_id             = each.value.storage_account_resource_id
-
-  dynamic "enabled_log" {
-    for_each = each.value.log_categories
-
-    content {
-      category = enabled_log.value
+  name      = each.value.name != null ? each.value.name : "diag-${var.name}"
+  parent_id = azapi_resource.this.id
+  type      = "Microsoft.Insights/diagnosticSettings@2021-05-01-preview"
+  body = {
+    properties = {
+      eventHubAuthorizationRuleId = each.value.event_hub_authorization_rule_resource_id
+      eventHubName                = each.value.event_hub_name
+      logAnalyticsDestinationType = each.value.log_analytics_destination_type
+      marketplacePartnerId        = each.value.marketplace_partner_resource_id
+      storageAccountId            = each.value.storage_account_resource_id
+      workspaceId                 = each.value.workspace_resource_id
+      logs = setunion(
+        [
+          for log_group in each.value.log_groups : {
+            category      = null
+            categoryGroup = log_group
+            enabled       = true
+          }
+        ],
+        [
+          for log_category in each.value.log_categories : {
+            category      = log_category
+            categoryGroup = null
+            enabled       = true
+          }
+        ]
+      )
+      metrics = length(each.value.metric_categories) > 0 ? [
+        for metric_category in each.value.metric_categories : {
+          category = metric_category
+          enabled  = true
+        }
+      ] : null
     }
   }
-  dynamic "enabled_log" {
-    for_each = each.value.log_groups
+  replace_triggers_refs  = []
+  response_export_values = ["*"]
+}
 
-    content {
-      category_group = enabled_log.value
-    }
-  }
-
-  dynamic "enabled_metric" {
-    for_each = each.value.metric_categories
-
-    content {
-      category = enabled_metric.value
-    }
-  }
+# Keep existing state from v1.x releases where diagnostic settings were managed as
+# azurerm_monitor_diagnostic_setting.this.
+moved {
+  from = azurerm_monitor_diagnostic_setting.this
+  to   = azapi_resource.diagnostic_settings
 }
 
 # apply lock to created resource when enabled
-resource "azurerm_management_lock" "this" {
+resource "azapi_resource" "lock" {
   count = var.lock != null ? 1 : 0
 
-  lock_level = var.lock.kind
-  name       = coalesce(var.lock.name, "lock-${var.name}")
-  scope      = azapi_resource.this.id
+  name      = coalesce(var.lock.name, "lock-${var.name}")
+  parent_id = azapi_resource.this.id
+  type      = "Microsoft.Authorization/locks@2020-05-01"
+  body = {
+    properties = {
+      level = var.lock.kind
+    }
+  }
+  replace_triggers_refs  = []
+  response_export_values = ["*"]
+}
+
+# Keep existing state from v1.x releases where the lock was managed as
+# azurerm_management_lock.this.
+moved {
+  from = azurerm_management_lock.this
+  to   = azapi_resource.lock
+}
+
+# Look up role definitions by name so that `role_definition_id_or_name` can continue
+# to accept a role name as well as a role definition resource ID. The ARM role
+# assignment API only accepts a role definition resource ID.
+data "azapi_resource_list" "role_definitions" {
+  count = local.role_definition_lookup_enabled ? 1 : 0
+
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type      = "Microsoft.Authorization/roleDefinitions@2022-04-01"
+  response_export_values = {
+    results = "value[].{id: id, role_name: properties.roleName}"
+  }
 }
 
 # set rbac when defined
-resource "azurerm_role_assignment" "this" {
+#
+# NOTE: ARM has no equivalent of the AzureRM `skip_service_principal_aad_check` flag.
+# Supplying `principalType` is the ARM mechanism that skips the Entra ID principal
+# existence check, so the flag is mapped onto it when no explicit principal type is
+# supplied.
+resource "azapi_resource" "role_assignments" {
   for_each = var.role_assignments
 
-  principal_id                           = each.value.principal_id
-  scope                                  = azapi_resource.this.id
-  condition                              = each.value.condition
-  condition_version                      = each.value.condition_version
-  delegated_managed_identity_resource_id = each.value.delegated_managed_identity_resource_id
-  role_definition_id                     = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : null
-  role_definition_name                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? null : each.value.role_definition_id_or_name
-  skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
+  # ARM requires the role assignment name to be a GUID. A deterministic uuidv5 of the
+  # scope, principal and role definition keeps the name stable across plans (unlike
+  # random_uuid, which requires additional state) while remaining unique per assignment.
+  name      = uuidv5("url", "${azapi_resource.this.id}|${each.value.principal_id}|${local.role_assignment_role_definition_resource_ids[each.key]}")
+  parent_id = azapi_resource.this.id
+  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
+  body = {
+    properties = {
+      condition                          = each.value.condition
+      conditionVersion                   = each.value.condition_version
+      delegatedManagedIdentityResourceId = each.value.delegated_managed_identity_resource_id
+      description                        = each.value.description
+      principalId                        = each.value.principal_id
+      principalType                      = each.value.principal_type != null ? each.value.principal_type : (each.value.skip_service_principal_aad_check ? "ServicePrincipal" : null)
+      roleDefinitionId                   = local.role_assignment_role_definition_resource_ids[each.key]
+    }
+  }
+  replace_triggers_refs  = []
+  response_export_values = ["*"]
+}
+
+# Keep existing state from v1.x releases where role assignments were managed as
+# azurerm_role_assignment.this.
+moved {
+  from = azurerm_role_assignment.this
+  to   = azapi_resource.role_assignments
 }
 
 # associate resource guard when specified
-resource "azurerm_recovery_services_vault_resource_guard_association" "this" {
+resource "azapi_resource" "resource_guard_association" {
   count = var.resource_guard_id != null ? 1 : 0
 
-  resource_guard_id = var.resource_guard_id
-  vault_id          = azapi_resource.this.id
+  # `RecoveryServicesVault` is the fixed proxy name that the AzureRM provider used, so
+  # the association keeps the same ARM resource ID after the state move.
+  name      = "RecoveryServicesVault"
+  parent_id = azapi_resource.this.id
+  type      = "Microsoft.RecoveryServices/vaults/backupResourceGuardProxies@2024-10-01"
+  body = {
+    properties = {
+      resourceGuardResourceId = var.resource_guard_id
+    }
+  }
+  replace_triggers_refs  = []
+  response_export_values = ["*"]
+}
+
+# Keep existing state from v1.x releases where the resource guard association was
+# managed as azurerm_recovery_services_vault_resource_guard_association.this.
+moved {
+  from = azurerm_recovery_services_vault_resource_guard_association.this
+  to   = azapi_resource.resource_guard_association
 }

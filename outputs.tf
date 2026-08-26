@@ -5,9 +5,9 @@ output "backup_protected_vm" {
 
 output "private_endpoints" {
   description = <<DESCRIPTION
-  A map of private endpoints. The map key is the supplied input to var.private_endpoints. The map value is the entire azurerm_private_endpoint resource."
+  A map of private endpoints. The map key is the supplied input to var.private_endpoints. The map value is the entire `azapi_resource` (`Microsoft.Network/privateEndpoints`) resource, including its `output` attribute with the ARM response body.
   DESCRIPTION
-  value       = var.private_endpoints_manage_dns_zone_group ? azurerm_private_endpoint.this_managed_dns_zone_groups : azurerm_private_endpoint.this_unmanaged_dns_zone_groups
+  value       = var.private_endpoints_manage_dns_zone_group ? azapi_resource.this_managed_dns_zone_groups : azapi_resource.this_unmanaged_dns_zone_groups
 }
 
 output "recovery_services_vault_file_share_policy" {
@@ -16,8 +16,8 @@ output "recovery_services_vault_file_share_policy" {
 }
 
 output "recovery_services_vault_resource_guard_association" {
-  description = "Resource Guard association for the Recovery Services Vault"
-  value       = try(azurerm_recovery_services_vault_resource_guard_association.this[0], null)
+  description = "Resource Guard association for the Recovery Services Vault, as the entire `azapi_resource` (`Microsoft.RecoveryServices/vaults/backupResourceGuardProxies`) resource, or `null` when `var.resource_guard_id` is not supplied."
+  value       = try(azapi_resource.resource_guard_association[0], null)
 }
 
 output "recovery_services_vault_vm_policy" {

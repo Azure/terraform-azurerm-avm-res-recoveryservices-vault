@@ -1,41 +1,20 @@
-resource "azurerm_site_recovery_replicated_vm" "this" {
-  name                                      = basename(var.site_recovery_replicated_vm.source_vm_id)
-  resource_group_name                       = var.site_recovery_replicated_vm.vault_resource_group_name
-  recovery_vault_name                       = var.site_recovery_replicated_vm.recovery_vault_name
-  source_vm_id                              = var.site_recovery_replicated_vm.source_vm_id
-  source_recovery_fabric_name               = var.site_recovery_replicated_vm.source_recovery_fabric_name
-  source_recovery_protection_container_name = var.site_recovery_replicated_vm.source_protection_container_name
-  recovery_replication_policy_id            = var.site_recovery_replicated_vm.recovery_replication_policy_id
-  target_resource_group_id                  = coalesce(var.site_recovery_replicated_vm.target_resource_group_id, var.site_recovery_replicated_vm.recovery_resource_group_id)
-  target_recovery_fabric_id                 = var.site_recovery_replicated_vm.target_recovery_fabric_id
-  target_recovery_protection_container_id   = var.site_recovery_replicated_vm.target_protection_container_id
-  target_virtual_machine_size               = var.site_recovery_replicated_vm.target_virtual_machine_size
-  target_network_id                         = var.site_recovery_replicated_vm.target_network_id
-  test_network_id                           = var.site_recovery_replicated_vm.test_network_id
-  multi_vm_group_name                       = var.site_recovery_replicated_vm.multi_vm_group_name
-
-  dynamic "managed_disk" {
-    for_each = var.site_recovery_replicated_vm.managed_disk != null ? var.site_recovery_replicated_vm.managed_disk : {}
-
-    content {
-      disk_id                       = managed_disk.value.disk_id
-      staging_storage_account_id    = managed_disk.value.staging_storage_account_id
-      target_resource_group_id      = coalesce(managed_disk.value.target_resource_group_id, var.site_recovery_replicated_vm.target_resource_group_id, var.site_recovery_replicated_vm.recovery_resource_group_id)
-      target_disk_type              = managed_disk.value.target_disk_type
-      target_replica_disk_type      = managed_disk.value.target_replica_disk_type
-      target_disk_encryption_set_id = managed_disk.value.target_disk_encryption_set_id != null ? managed_disk.value.target_disk_encryption_set_id : var.site_recovery_replicated_vm.recovery_target_disk_encryption_set_id
+# Enables Azure Site Recovery (A2A) replication for a virtual machine.
+# Replaces the former `resource "azurerm_site_recovery_replicated_vm" "this"`.
+resource "azapi_resource" "this" {
+  name      = basename(var.site_recovery_replicated_vm.source_vm_id)
+  parent_id = local.source_protection_container_id
+  type      = local.replication_protected_item_type
+  body = {
+    properties = {
+      policyId                = var.site_recovery_replicated_vm.recovery_replication_policy_id
+      providerSpecificDetails = local.provider_specific_details
     }
   }
-
-  dynamic "unmanaged_disk" {
-    for_each = var.site_recovery_replicated_vm.unmanaged_disk != null ? var.site_recovery_replicated_vm.unmanaged_disk : {}
-
-    content {
-      disk_uri                   = unmanaged_disk.value.disk_uri
-      staging_storage_account_id = unmanaged_disk.value.staging_storage_account_id != null ? unmanaged_disk.value.staging_storage_account_id : var.site_recovery_replicated_vm.recovery_storage_account_id
-      target_storage_account_id  = unmanaged_disk.value.target_storage_account_id != null ? unmanaged_disk.value.target_storage_account_id : var.site_recovery_replicated_vm.recovery_storage_account_id
-    }
+  read_query_parameters = {
+    "api-version" = ["2024-10-01"]
   }
+  replace_triggers_refs  = ["properties.providerSpecificDetails.fabricObjectId"]
+  response_export_values = ["*"]
 
   dynamic "timeouts" {
     for_each = var.site_recovery_replicated_vm.timeouts == null ? [] : [var.site_recovery_replicated_vm.timeouts]
@@ -50,12 +29,47 @@ resource "azurerm_site_recovery_replicated_vm" "this" {
 
   # Azure Site Recovery mutates these fields after enablement.
   # Ignoring them avoids perpetual replacement loops in subsequent plans.
+  # The disk collections are the body-relative equivalents of the former
+  # `managed_disk` / `unmanaged_disk` blocks; the NIC details (`vmNics`) are
+  # response-only under AzAPI and therefore never part of the configured body.
   lifecycle {
     ignore_changes = [
-      managed_disk,
-      network_interface,
-      target_virtual_machine_size,
-      test_network_id,
+      body.properties.providerSpecificDetails.vmManagedDisks,
+      body.properties.providerSpecificDetails.vmDisks,
     ]
+  }
+}
+
+# `target_virtual_machine_size` and `test_network_id` are read-only on the
+# enable-protection (PUT) contract, so Azure Site Recovery only accepts them
+# through the update (PATCH) contract after replication has been enabled. This
+# mirrors what the AzureRM provider did internally with a follow-up update call.
+# Because the action is not refreshed from Azure, later ASR-side changes to the
+# target size or test network do not produce drift, preserving the intent of the
+# former `lifecycle.ignore_changes` on those two attributes.
+resource "azapi_resource_action" "target_settings" {
+  count = length(local.post_enablement_settings) > 0 ? 1 : 0
+
+  resource_id = azapi_resource.this.id
+  type        = local.replication_protected_item_type
+  body = {
+    properties = merge(local.post_enablement_settings, {
+      providerSpecificDetails = {
+        instanceType = "A2A"
+      }
+    })
+  }
+  method                 = "PATCH"
+  response_export_values = []
+
+  dynamic "timeouts" {
+    for_each = var.site_recovery_replicated_vm.timeouts == null ? [] : [var.site_recovery_replicated_vm.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
   }
 }

@@ -510,12 +510,13 @@ variable "role_assignments" {
   description = <<DESCRIPTION
 A map of role assignments to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
-- `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
+- `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal. Names are resolved to role definition resource IDs by listing the role definitions available at the subscription scope of the vault.
 - `principal_id` - The ID of the principal to assign the role to.
 - `description` - The description of the role assignment.
-- `skip_service_principal_aad_check` - If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
+- `skip_service_principal_aad_check` - If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false. This is implemented by sending `principalType = "ServicePrincipal"` in the ARM request when `principal_type` is not set.
 - `condition` - The condition which will be used to scope the role assignment.
 - `condition_version` - The version of the condition syntax. Valid values are '2.0'.
+- `principal_type` - (Optional) The type of the principal, e.g. `User`, `Group`, `ServicePrincipal`. Sending this value allows Azure to skip the principal existence check.
 
 > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
 DESCRIPTION
