@@ -172,6 +172,12 @@ See <https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/r
 DESCRIPTION
 }
 
+variable "tags" {
+  type        = map(string)
+  default     = null
+  description = "(Optional) Tags of the resource."
+}
+
 variable "timeouts" {
   type = object({
     create = optional(string)

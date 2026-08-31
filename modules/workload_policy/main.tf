@@ -141,6 +141,7 @@ resource "azapi_resource" "this" {
   # No response values are consumed by this submodule's outputs
   response_export_values = []
   retry                  = var.retry
+  tags                   = var.tags
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -151,5 +152,9 @@ resource "azapi_resource" "this" {
       read   = timeouts.value.read
       update = timeouts.value.update
     }
+  }
+
+  lifecycle {
+    ignore_changes = [tags]
   }
 }

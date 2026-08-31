@@ -217,6 +217,14 @@ object({
 
 Default: `null`
 
+### <a name="input_tags"></a> [tags](#input\_tags)
+
+Description: (Optional) Tags of the resource.
+
+Type: `map(string)`
+
+Default: `null`
+
 ### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
 
 Description: Default per-operation timeouts applied to every `azapi` resource created by this module. Defaults to `null` (provider defaults). Each value is a Go duration string (e.g. `30m`, `1h`).
