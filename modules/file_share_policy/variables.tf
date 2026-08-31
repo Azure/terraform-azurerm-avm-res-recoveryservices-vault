@@ -136,3 +136,73 @@ variable "file_share_backup_policy" {
     error_message = "snapshot_retention_in_days must be less than retention_daily count when backup_tier is 'vault-standard'."
   }
 }
+
+variable "ignore_body_changes" {
+  type = object({
+    recoveryservices_vaults_backup_policies = optional(list(string), [])
+  })
+  default     = {}
+  description = <<DESCRIPTION
+Body-relative paths to ignore for each AzAPI resource managed by this submodule. Paths use dot notation, for example `properties.schedulePolicy`.
+List indices are not supported; ignore the whole list property instead.
+This argument is provider-private, so changes take effect only after apply, and ignored configuration is not sent to Azure until the path is removed.
+
+- `recoveryservices_vaults_backup_policies` - Body-relative paths ignored on the `Microsoft.RecoveryServices/vaults/backupPolicies` resource.
+DESCRIPTION
+  nullable    = false
+}
+
+variable "resource_types" {
+  type = object({
+    recoveryservices_vaults_backup_policies = optional(string, "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01")
+  })
+  default     = {}
+  description = <<DESCRIPTION
+AzAPI resource types and API versions used by this submodule.
+
+- `recoveryservices_vaults_backup_policies` - Resource type and API version for the file share backup policy.
+DESCRIPTION
+  nullable    = false
+}
+
+variable "retry" {
+  type = object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+  default     = null
+  description = <<DESCRIPTION
+Retry configuration applied to every `azapi` resource created by this module. Defaults to `null` (no custom retry).
+
+- `error_message_regex`  - (Optional) A list of regex patterns matching error messages that trigger a retry.
+- `interval_seconds`     - (Optional) Initial interval between retries in seconds.
+- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
+
+See <https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource#retry> for full semantics.
+DESCRIPTION
+}
+
+variable "tags" {
+  type        = map(string)
+  default     = null
+  description = "(Optional) Tags of the resource."
+}
+
+variable "timeouts" {
+  type = object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+  default     = null
+  description = <<DESCRIPTION
+Default per-operation timeouts applied to every `azapi` resource created by this module. Defaults to `null` (provider defaults). Each value is a Go duration string (e.g. `30m`, `1h`).
+
+- `create` - (Optional) Timeout for create operations.
+- `read`   - (Optional) Timeout for read operations.
+- `update` - (Optional) Timeout for update operations.
+- `delete` - (Optional) Timeout for delete operations.
+DESCRIPTION
+}

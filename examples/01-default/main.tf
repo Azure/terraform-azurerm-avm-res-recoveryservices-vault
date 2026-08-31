@@ -18,9 +18,13 @@ module "naming" {
   version = "0.4.3"
 }
 
-resource "azurerm_resource_group" "this" {
-  location = local.test_regions[random_integer.region_index.result]
-  name     = module.naming.resource_group.name_unique
+data "azapi_client_config" "this" {}
+
+resource "azapi_resource" "this" {
+  location  = local.test_regions[random_integer.region_index.result]
+  name      = module.naming.resource_group.name_unique
+  parent_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2021-04-01"
 }
 
 locals {
@@ -28,14 +32,9 @@ locals {
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
 }
 
-module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
-}
-
 module "azure_region" {
   source  = "claranet/regions/azurerm"
-  version = "9.0.0"
+  version = "8.0.6"
 
   azure_region = "westus3"
 }
@@ -43,9 +42,9 @@ module "azure_region" {
 module "recovery_services_vault" {
   source = "../../"
 
-  location                                       = azurerm_resource_group.this.location
+  location                                       = azapi_resource.this.location
   name                                           = local.vault_name #"rsv-test-vault-001"
-  resource_group_name                            = azurerm_resource_group.this.name
+  resource_group_name                            = azapi_resource.this.name
   sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true

@@ -1,6 +1,10 @@
+data "azapi_client_config" "this" {}
 
-data "azurerm_backup_policy_vm" "this" {
-  name                = var.backup_protected_vm.vm_backup_policy_name
-  recovery_vault_name = var.backup_protected_vm.vault_name
-  resource_group_name = var.backup_protected_vm.vault_resource_group_name
+# Looks up the existing VM backup policy by name inside the vault.
+# Replaces the former `data "azurerm_backup_policy_vm" "this"`.
+data "azapi_resource" "this" {
+  name                   = var.backup_protected_vm.vm_backup_policy_name
+  type                   = var.resource_types.recoveryservices_vaults_backup_policies
+  parent_id              = local.vault_id
+  response_export_values = []
 }

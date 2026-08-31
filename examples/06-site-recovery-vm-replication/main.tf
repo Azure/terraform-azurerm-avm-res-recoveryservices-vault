@@ -1,13 +1,17 @@
-data "azurerm_subscription" "this" {}
+data "azapi_client_config" "this" {}
 
-resource "azurerm_resource_group" "this" {
-  location = "westus2"
-  name     = "rg-site-recovery-${random_integer.region_seed.result}"
+resource "azapi_resource" "rg_this" {
+  location  = "westus2"
+  name      = "rg-site-recovery-${random_integer.region_seed.result}"
+  parent_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2021-04-01"
 }
 
-resource "azurerm_resource_group" "target" {
-  location = "westcentralus"
-  name     = "rg-site-recovery-target-${random_integer.region_seed.result}"
+resource "azapi_resource" "rg_target" {
+  location  = "westcentralus"
+  name      = "rg-site-recovery-target-${random_integer.region_seed.result}"
+  parent_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2021-04-01"
 }
 
 resource "random_integer" "region_seed" {
@@ -32,8 +36,24 @@ resource "random_password" "vm_admin" {
 locals {
   primary_vault_name   = "rsv-site-recovery-primary-${random_integer.region_seed.result}"
   secondary_vault_name = "rsv-site-recovery-secondary-${random_integer.region_seed.result}"
+  # Built from known-at-plan values instead of `azapi_resource.vnet_target.id`.
+  # The AzAPI provider does not refine its `id` attribute as non-null while it is
+  # unknown, so passing it directly would make the `test_network_id != null`
+  # condition in the replicated VM submodule undecidable during plan.
+  vnet_target_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}/resourceGroups/${azapi_resource.rg_target.name}/providers/Microsoft.Network/virtualNetworks/${azapi_resource.vnet_target.name}"
+  # Built-in role definition IDs referenced by their well-known GUIDs.
+  role_definition_ids = {
+    # Storage Account Contributor
+    storage_account_contributor = "/subscriptions/${data.azapi_client_config.this.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/17d1049b-9a84-46fb-8f53-869881c3d3ab"
+    # Storage Blob Data Contributor
+    storage_blob_data_contributor = "/subscriptions/${data.azapi_client_config.this.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/ba92f5b4-2d11-453d-a403-e96b0029c9fe"
+    # Storage Queue Data Contributor
+    storage_queue_data_contributor = "/subscriptions/${data.azapi_client_config.this.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/974c5e8b-45b9-4653-ba55-5f855dd0fb88"
+  }
 
   source_vms = var.source_vms
+  # Availability zone for the source virtual machines and their data disks.
+  source_vm_zone = "1"
 
   source_vm_data_disks = merge([
     for vm_key, vm in local.source_vms : {
@@ -47,123 +67,198 @@ locals {
   ]...)
 }
 
-resource "azurerm_virtual_network" "source" {
-  address_space       = ["10.10.0.0/16"]
-  location            = azurerm_resource_group.this.location
-  name                = "vnet-source-${random_integer.region_seed.result}"
-  resource_group_name = azurerm_resource_group.this.name
+resource "azapi_resource" "vnet_source" {
+  location  = azapi_resource.rg_this.location
+  name      = "vnet-source-${random_integer.region_seed.result}"
+  parent_id = azapi_resource.rg_this.id
+  type      = "Microsoft.Network/virtualNetworks@2024-05-01"
+  body = {
+    properties = {
+      addressSpace = {
+        addressPrefixes = ["10.10.0.0/16"]
+      }
+    }
+  }
 }
 
-resource "azurerm_virtual_network" "target" {
-  address_space       = ["10.20.0.0/16"]
-  location            = azurerm_resource_group.target.location
-  name                = "vnet-target-${random_integer.region_seed.result}"
-  resource_group_name = azurerm_resource_group.target.name
+resource "azapi_resource" "vnet_target" {
+  location  = azapi_resource.rg_target.location
+  name      = "vnet-target-${random_integer.region_seed.result}"
+  parent_id = azapi_resource.rg_target.id
+  type      = "Microsoft.Network/virtualNetworks@2024-05-01"
+  body = {
+    properties = {
+      addressSpace = {
+        addressPrefixes = ["10.20.0.0/16"]
+      }
+    }
+  }
 }
 
-resource "azurerm_subnet" "source" {
-  address_prefixes     = ["10.10.1.0/24"]
-  name                 = "snet-source"
-  resource_group_name  = azurerm_resource_group.this.name
-  virtual_network_name = azurerm_virtual_network.source.name
+resource "azapi_resource" "snet_source" {
+  name      = "snet-source"
+  parent_id = azapi_resource.vnet_source.id
+  type      = "Microsoft.Network/virtualNetworks/subnets@2024-05-01"
+  body = {
+    properties = {
+      addressPrefix = "10.10.1.0/24"
+    }
+  }
 }
 
-resource "azurerm_subnet" "target" {
-  address_prefixes     = ["10.20.1.0/24"]
-  name                 = "snet-target"
-  resource_group_name  = azurerm_resource_group.target.name
-  virtual_network_name = azurerm_virtual_network.target.name
+resource "azapi_resource" "snet_target" {
+  name      = "snet-target"
+  parent_id = local.vnet_target_id
+  type      = "Microsoft.Network/virtualNetworks/subnets@2024-05-01"
+  body = {
+    properties = {
+      addressPrefix = "10.20.1.0/24"
+    }
+  }
 }
 
-resource "azurerm_network_interface" "source" {
+resource "azapi_resource" "nic_source" {
   for_each = local.source_vms
 
-  location            = azurerm_resource_group.this.location
-  name                = "nic-${each.key}-${random_integer.region_seed.result}"
-  resource_group_name = azurerm_resource_group.this.name
-
-  ip_configuration {
-    name                          = "ipconfig1"
-    private_ip_address_allocation = "Dynamic"
-    subnet_id                     = azurerm_subnet.source.id
+  location  = azapi_resource.rg_this.location
+  name      = "nic-${each.key}-${random_integer.region_seed.result}"
+  parent_id = azapi_resource.rg_this.id
+  type      = "Microsoft.Network/networkInterfaces@2024-05-01"
+  body = {
+    properties = {
+      ipConfigurations = [
+        {
+          name = "ipconfig1"
+          properties = {
+            privateIPAllocationMethod = "Dynamic"
+            subnet = {
+              id = azapi_resource.snet_source.id
+            }
+          }
+        }
+      ]
+    }
   }
 }
 
-resource "azurerm_windows_virtual_machine" "source" {
+resource "azapi_resource" "vm_source" {
   for_each = local.source_vms
 
-  admin_password        = random_password.vm_admin.result
-  admin_username        = "azureadmin"
-  location              = azurerm_resource_group.this.location
-  name                  = "vm-source-${each.key}-${random_integer.region_seed.result}"
-  computer_name         = substr(replace("src-${each.key}-${random_integer.region_seed.result}", "-", ""), 0, 15)
-  network_interface_ids = [azurerm_network_interface.source[each.key].id]
-  resource_group_name   = azurerm_resource_group.this.name
-  size                  = var.source_vm_size
-
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Premium_LRS"
+  location  = azapi_resource.rg_this.location
+  name      = "vm-source-${each.key}-${random_integer.region_seed.result}"
+  parent_id = azapi_resource.rg_this.id
+  type      = "Microsoft.Compute/virtualMachines@2024-07-01"
+  body = {
+    # Zonal placement is required by the Azure Proactive Resiliency Library policy
+    # checks. The data disks below are pinned to the same zone so they can attach.
+    zones = [local.source_vm_zone]
+    identity = {
+      type = "SystemAssigned"
+    }
+    properties = {
+      hardwareProfile = {
+        vmSize = var.source_vm_size
+      }
+      networkProfile = {
+        networkInterfaces = [
+          {
+            id = azapi_resource.nic_source[each.key].id
+          }
+        ]
+      }
+      osProfile = {
+        adminUsername = "azureadmin"
+        computerName  = substr(replace("src-${each.key}-${random_integer.region_seed.result}", "-", ""), 0, 15)
+      }
+      storageProfile = {
+        # The data disks are attached in-line instead of through a separate
+        # attachment resource, ordered by LUN.
+        dataDisks = [
+          for disk_key, disk in each.value.data_disks : {
+            caching      = "ReadWrite"
+            createOption = "Attach"
+            lun          = disk.lun
+            managedDisk = {
+              id = azapi_resource.disk_source_data["${each.key}-${disk_key}"].id
+            }
+          }
+        ]
+        imageReference = {
+          offer     = "WindowsServer"
+          publisher = "MicrosoftWindowsServer"
+          sku       = "2022-datacenter-azure-edition"
+          version   = "latest"
+        }
+        osDisk = {
+          caching      = "ReadWrite"
+          createOption = "FromImage"
+          name         = "disk-source-${each.key}-os-${random_integer.region_seed.result}"
+          managedDisk = {
+            storageAccountType = "Premium_LRS"
+          }
+        }
+      }
+    }
   }
-
-  source_image_reference {
-    offer     = "WindowsServer"
-    publisher = "MicrosoftWindowsServer"
-    sku       = "2022-datacenter-azure-edition"
-    version   = "latest"
-  }
-
-  identity {
-    type = "SystemAssigned"
+  # Exported so the replicated VM module can consume the OS disk resource ID.
+  response_export_values = ["properties.storageProfile.osDisk.managedDisk.id"]
+  # The admin password is write-only and must never be placed in `body`.
+  sensitive_body = {
+    properties = {
+      osProfile = {
+        adminPassword = random_password.vm_admin.result
+      }
+    }
   }
 }
 
-resource "azurerm_managed_disk" "source_data" {
+resource "azapi_resource" "disk_source_data" {
   for_each = local.source_vm_data_disks
 
-  create_option        = "Empty"
-  disk_size_gb         = each.value.size_gb
-  location             = azurerm_resource_group.this.location
-  name                 = "disk-source-${each.value.vm_key}-${each.value.disk_key}-${random_integer.region_seed.result}"
-  resource_group_name  = azurerm_resource_group.this.name
-  storage_account_type = "Premium_LRS"
+  location  = azapi_resource.rg_this.location
+  name      = "disk-source-${each.value.vm_key}-${each.value.disk_key}-${random_integer.region_seed.result}"
+  parent_id = azapi_resource.rg_this.id
+  type      = "Microsoft.Compute/disks@2023-04-02"
+  body = {
+    # Must match the zone of the virtual machine the disk is attached to.
+    zones = [local.source_vm_zone]
+    sku = {
+      name = "Premium_LRS"
+    }
+    properties = {
+      creationData = {
+        createOption = "Empty"
+      }
+      diskSizeGB = each.value.size_gb
+    }
+  }
 }
 
-resource "azurerm_virtual_machine_data_disk_attachment" "source_data" {
-  for_each = local.source_vm_data_disks
-
-  caching            = "ReadWrite"
-  lun                = each.value.lun
-  managed_disk_id    = azurerm_managed_disk.source_data[each.key].id
-  virtual_machine_id = azurerm_windows_virtual_machine.source[each.value.vm_key].id
-}
-
-data "azurerm_managed_disk" "source_os" {
-  for_each = local.source_vms
-
-  name                = azurerm_windows_virtual_machine.source[each.key].os_disk[0].name
-  resource_group_name = azurerm_resource_group.this.name
-}
-
-resource "azurerm_storage_account" "staging" {
-  account_kind                    = "StorageV2"
-  account_replication_type        = "GRS"
-  account_tier                    = "Standard"
-  allow_nested_items_to_be_public = false
-  public_network_access_enabled   = true
-  shared_access_key_enabled       = false
-  location                        = azurerm_resource_group.this.location
-  name                            = "stasr${random_integer.region_seed.result}${random_string.storage_suffix.result}"
-  resource_group_name             = azurerm_resource_group.this.name
+resource "azapi_resource" "sa_staging" {
+  location  = azapi_resource.rg_this.location
+  name      = "stasr${random_integer.region_seed.result}${random_string.storage_suffix.result}"
+  parent_id = azapi_resource.rg_this.id
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  body = {
+    kind = "StorageV2"
+    sku = {
+      name = "Standard_GRS"
+    }
+    properties = {
+      allowBlobPublicAccess = false
+      allowSharedKeyAccess  = false
+      publicNetworkAccess   = "Enabled"
+    }
+  }
 }
 
 # Recovery Services Vault with Site Recovery VM replication enabled
 module "recovery_services_vault_primary" {
   source = "../../"
 
-  location            = azurerm_resource_group.target.location
+  location            = azapi_resource.rg_target.location
   name                = local.primary_vault_name
-  resource_group_name = azurerm_resource_group.target.name
+  resource_group_name = azapi_resource.rg_target.name
   sku                 = "RS0"
   managed_identities = {
     system_assigned = true
@@ -173,102 +268,166 @@ module "recovery_services_vault_primary" {
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
 
-  depends_on = [azurerm_resource_group.target]
+  depends_on = [azapi_resource.rg_target]
 }
 
 module "recovery_services_vault_secondary" {
   source = "../../"
 
-  location                                       = azurerm_resource_group.this.location
+  location                                       = azapi_resource.rg_this.location
   name                                           = local.secondary_vault_name
-  resource_group_name                            = azurerm_resource_group.this.name
+  resource_group_name                            = azapi_resource.rg_this.name
   sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
 
-  depends_on = [azurerm_resource_group.this]
+  depends_on = [azapi_resource.rg_this]
 }
 
-resource "azurerm_role_assignment" "asr_vault_msi_storage_account_contributor" {
-  principal_id         = module.recovery_services_vault_primary.resource.output.identity.principalId
-  role_definition_name = "Storage Account Contributor"
-  scope                = azurerm_storage_account.staging.id
+# Storage Account Contributor on the ASR staging storage account.
+resource "azapi_resource" "ra_storage_account_contributor" {
+  name = uuidv5("url", "${azapi_resource.sa_staging.id}|${module.recovery_services_vault_primary.system_assigned_mi_principal_id}|${local.role_definition_ids.storage_account_contributor}")
+  # The role assignment is scoped to the staging storage account.
+  parent_id = azapi_resource.sa_staging.id
+  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
+  body = {
+    properties = {
+      principalId      = module.recovery_services_vault_primary.system_assigned_mi_principal_id
+      principalType    = "ServicePrincipal"
+      roleDefinitionId = local.role_definition_ids.storage_account_contributor
+    }
+  }
 }
 
-resource "azurerm_role_assignment" "asr_vault_msi_blob_data_contributor" {
-  principal_id         = module.recovery_services_vault_primary.resource.output.identity.principalId
-  role_definition_name = "Storage Blob Data Contributor"
-  scope                = azurerm_storage_account.staging.id
+# Storage Blob Data Contributor on the ASR staging storage account.
+resource "azapi_resource" "ra_storage_blob_data_contributor" {
+  name      = uuidv5("url", "${azapi_resource.sa_staging.id}|${module.recovery_services_vault_primary.system_assigned_mi_principal_id}|${local.role_definition_ids.storage_blob_data_contributor}")
+  parent_id = azapi_resource.sa_staging.id
+  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
+  body = {
+    properties = {
+      principalId      = module.recovery_services_vault_primary.system_assigned_mi_principal_id
+      principalType    = "ServicePrincipal"
+      roleDefinitionId = local.role_definition_ids.storage_blob_data_contributor
+    }
+  }
 }
 
-resource "azurerm_role_assignment" "asr_vault_msi_queue_data_contributor" {
-  principal_id         = module.recovery_services_vault_primary.resource.output.identity.principalId
-  role_definition_name = "Storage Queue Data Contributor"
-  scope                = azurerm_storage_account.staging.id
+# Storage Queue Data Contributor on the ASR staging storage account.
+resource "azapi_resource" "ra_storage_queue_data_contributor" {
+  name      = uuidv5("url", "${azapi_resource.sa_staging.id}|${module.recovery_services_vault_primary.system_assigned_mi_principal_id}|${local.role_definition_ids.storage_queue_data_contributor}")
+  parent_id = azapi_resource.sa_staging.id
+  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
+  body = {
+    properties = {
+      principalId      = module.recovery_services_vault_primary.system_assigned_mi_principal_id
+      principalType    = "ServicePrincipal"
+      roleDefinitionId = local.role_definition_ids.storage_queue_data_contributor
+    }
+  }
 }
 
-resource "azurerm_site_recovery_fabric" "primary" {
-  location            = azurerm_resource_group.this.location
-  name                = "fabric-primary-${random_integer.region_seed.result}"
-  recovery_vault_name = local.primary_vault_name
-  resource_group_name = azurerm_resource_group.target.name
+resource "azapi_resource" "fabric_primary" {
+  name      = "fabric-primary-${random_integer.region_seed.result}"
+  parent_id = module.recovery_services_vault_primary.resource_id
+  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics@2024-04-01"
+  body = {
+    properties = {
+      customDetails = {
+        instanceType = "Azure"
+        location     = azapi_resource.rg_this.location
+      }
+    }
+  }
 
   depends_on = [module.recovery_services_vault_primary]
 }
 
-resource "azurerm_site_recovery_fabric" "secondary" {
-  location            = azurerm_resource_group.target.location
-  name                = "fabric-secondary-${random_integer.region_seed.result}"
-  recovery_vault_name = local.primary_vault_name
-  resource_group_name = azurerm_resource_group.target.name
+resource "azapi_resource" "fabric_secondary" {
+  name      = "fabric-secondary-${random_integer.region_seed.result}"
+  parent_id = module.recovery_services_vault_primary.resource_id
+  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics@2024-04-01"
+  body = {
+    properties = {
+      customDetails = {
+        instanceType = "Azure"
+        location     = azapi_resource.rg_target.location
+      }
+    }
+  }
 
   depends_on = [module.recovery_services_vault_primary]
 }
 
-resource "azurerm_site_recovery_protection_container" "primary" {
-  name                 = "pc-primary-${random_integer.region_seed.result}"
-  recovery_fabric_name = azurerm_site_recovery_fabric.primary.name
-  recovery_vault_name  = local.primary_vault_name
-  resource_group_name  = azurerm_resource_group.target.name
+resource "azapi_resource" "container_primary" {
+  name      = "pc-primary-${random_integer.region_seed.result}"
+  parent_id = azapi_resource.fabric_primary.id
+  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers@2024-04-01"
+  body = {
+    properties = {}
+  }
 }
 
-resource "azurerm_site_recovery_protection_container" "secondary" {
-  name                 = "pc-secondary-${random_integer.region_seed.result}"
-  recovery_fabric_name = azurerm_site_recovery_fabric.secondary.name
-  recovery_vault_name  = local.primary_vault_name
-  resource_group_name  = azurerm_resource_group.target.name
+resource "azapi_resource" "container_secondary" {
+  name      = "pc-secondary-${random_integer.region_seed.result}"
+  parent_id = azapi_resource.fabric_secondary.id
+  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers@2024-04-01"
+  body = {
+    properties = {}
+  }
 }
 
-resource "azurerm_site_recovery_replication_policy" "this" {
-  application_consistent_snapshot_frequency_in_minutes = 240
-  name                                                 = "replication-policy-${random_integer.region_seed.result}"
-  recovery_point_retention_in_minutes                  = 1440
-  recovery_vault_name                                  = local.primary_vault_name
-  resource_group_name                                  = azurerm_resource_group.target.name
+resource "azapi_resource" "replication_policy" {
+  name      = "replication-policy-${random_integer.region_seed.result}"
+  parent_id = module.recovery_services_vault_primary.resource_id
+  type      = "Microsoft.RecoveryServices/vaults/replicationPolicies@2024-04-01"
+  body = {
+    properties = {
+      providerSpecificInput = {
+        instanceType                    = "A2A"
+        appConsistentFrequencyInMinutes = 240
+        multiVmSyncStatus               = "Enable"
+        recoveryPointHistory            = 1440
+      }
+    }
+  }
 
   depends_on = [module.recovery_services_vault_primary]
 }
 
-resource "azurerm_site_recovery_protection_container_mapping" "primary_to_secondary" {
-  name                                      = "pcm-primary-secondary-${random_integer.region_seed.result}"
-  recovery_fabric_name                      = azurerm_site_recovery_fabric.primary.name
-  recovery_replication_policy_id            = azurerm_site_recovery_replication_policy.this.id
-  recovery_source_protection_container_name = azurerm_site_recovery_protection_container.primary.name
-  recovery_target_protection_container_id   = azurerm_site_recovery_protection_container.secondary.id
-  recovery_vault_name                       = local.primary_vault_name
-  resource_group_name                       = azurerm_resource_group.target.name
+resource "azapi_resource" "container_mapping_primary_to_secondary" {
+  name      = "pcm-primary-secondary-${random_integer.region_seed.result}"
+  parent_id = azapi_resource.container_primary.id
+  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectionContainerMappings@2024-04-01"
+  body = {
+    properties = {
+      policyId                    = azapi_resource.replication_policy.id
+      targetProtectionContainerId = azapi_resource.container_secondary.id
+      providerSpecificInput = {
+        instanceType = "A2A"
+      }
+    }
+  }
 }
 
-resource "azurerm_site_recovery_network_mapping" "primary_to_secondary" {
-  name                        = "nm-primary-secondary-${random_integer.region_seed.result}"
-  recovery_vault_name         = local.primary_vault_name
-  resource_group_name         = azurerm_resource_group.target.name
-  source_network_id           = azurerm_virtual_network.source.id
-  source_recovery_fabric_name = azurerm_site_recovery_fabric.primary.name
-  target_network_id           = azurerm_virtual_network.target.id
-  target_recovery_fabric_name = azurerm_site_recovery_fabric.secondary.name
+resource "azapi_resource" "network_mapping_primary_to_secondary" {
+  name = "nm-primary-secondary-${random_integer.region_seed.result}"
+  # For an Azure fabric the replication network is identified by the source
+  # virtual network name.
+  parent_id = "${azapi_resource.fabric_primary.id}/replicationNetworks/${azapi_resource.vnet_source.name}"
+  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationNetworks/replicationNetworkMappings@2024-04-01"
+  body = {
+    properties = {
+      recoveryFabricName = azapi_resource.fabric_secondary.name
+      recoveryNetworkId  = local.vnet_target_id
+      fabricSpecificDetails = {
+        instanceType     = "AzureToAzure"
+        primaryNetworkId = azapi_resource.vnet_source.id
+      }
+    }
+  }
 }
 
 module "site_recovery_replicated_vm" {
@@ -279,34 +438,34 @@ module "site_recovery_replicated_vm" {
   site_recovery_replicated_vm = {
     managed_disk = {
       os = {
-        disk_id                    = data.azurerm_managed_disk.source_os[each.key].id
-        staging_storage_account_id = azurerm_storage_account.staging.id
-        target_resource_group_id   = azurerm_resource_group.target.id
+        disk_id                    = azapi_resource.vm_source[each.key].output.properties.storageProfile.osDisk.managedDisk.id
+        staging_storage_account_id = azapi_resource.sa_staging.id
+        target_resource_group_id   = azapi_resource.rg_target.id
         target_disk_type           = "Premium_LRS"
         target_replica_disk_type   = "Premium_LRS"
       }
     }
-    recovery_replication_policy_id   = azurerm_site_recovery_replication_policy.this.id
+    recovery_replication_policy_id   = azapi_resource.replication_policy.id
     recovery_vault_name              = local.primary_vault_name
-    source_protection_container_name = azurerm_site_recovery_protection_container.primary.name
-    source_recovery_fabric_name      = azurerm_site_recovery_fabric.primary.name
-    source_vm_id                     = azurerm_windows_virtual_machine.source[each.key].id
-    target_network_id                = azurerm_virtual_network.target.id
-    target_protection_container_id   = azurerm_site_recovery_protection_container.secondary.id
-    target_recovery_fabric_id        = azurerm_site_recovery_fabric.secondary.id
-    target_resource_group_id         = azurerm_resource_group.target.id
-    target_resource_id               = "/subscriptions/${data.azurerm_subscription.this.subscription_id}/resourceGroups/${azurerm_resource_group.target.name}/providers/Microsoft.Compute/virtualMachines/vm-target-${each.key}-${random_integer.region_seed.result}"
+    source_protection_container_name = azapi_resource.container_primary.name
+    source_recovery_fabric_name      = azapi_resource.fabric_primary.name
+    source_vm_id                     = azapi_resource.vm_source[each.key].id
+    target_network_id                = local.vnet_target_id
+    target_protection_container_id   = azapi_resource.container_secondary.id
+    target_recovery_fabric_id        = azapi_resource.fabric_secondary.id
+    target_resource_group_id         = azapi_resource.rg_target.id
+    target_resource_id               = "/subscriptions/${data.azapi_client_config.this.subscription_id}/resourceGroups/${azapi_resource.rg_target.name}/providers/Microsoft.Compute/virtualMachines/vm-target-${each.key}-${random_integer.region_seed.result}"
     target_virtual_machine_size      = var.target_vm_size
-    target_subnet_name               = azurerm_subnet.target.name
-    test_network_id                  = azurerm_virtual_network.target.id
-    test_subnet_name                 = azurerm_subnet.target.name
+    target_subnet_name               = azapi_resource.snet_target.name
+    test_network_id                  = local.vnet_target_id
+    test_subnet_name                 = azapi_resource.snet_target.name
     timeouts                         = var.site_recovery_replication_timeouts
-    vault_resource_group_name        = azurerm_resource_group.target.name
+    vault_resource_group_name        = azapi_resource.rg_target.name
   }
 
   depends_on = [
-    azurerm_virtual_machine_data_disk_attachment.source_data,
-    azurerm_site_recovery_network_mapping.primary_to_secondary,
-    azurerm_site_recovery_protection_container_mapping.primary_to_secondary
+    azapi_resource.vm_source,
+    azapi_resource.network_mapping_primary_to_secondary,
+    azapi_resource.container_mapping_primary_to_secondary
   ]
 }

@@ -13,15 +13,17 @@ The software may collect information about you and your use of the software and 
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.50, < 5.4)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
 ## Resources
 
 The following resources are used by this module:
 
-- [azurerm_site_recovery_replicated_vm.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/site_recovery_replicated_vm) (resource)
+- [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource_action.target_settings](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
+- [azapi_client_config.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -31,6 +33,61 @@ No required inputs.
 ## Optional Inputs
 
 The following input variables are optional (have default values):
+
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative paths to ignore for the AzAPI resource owned by this module. Paths use dot notation, e.g. `properties.policyId`.  
+Changes take effect only after apply. Ignored configuration is not sent to Azure until the path is removed.
+
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Paths ignored on the replication protected item resource.
+
+Type:
+
+```hcl
+object({
+    recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(list(string), [])
+  })
+```
+
+Default: `{}`
+
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: AzAPI resource types and API versions used by this module.
+
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Resource type and API version for the Azure Site Recovery replication protected item and its post-enablement update action.
+
+Type:
+
+```hcl
+object({
+    recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(string, "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectedItems@2024-10-01")
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration applied to every `azapi` resource created by this module. Defaults to `null` (no custom retry).
+
+- `error_message_regex`  - (Optional) A list of regex patterns matching error messages that trigger a retry.
+- `interval_seconds`     - (Optional) Initial interval between retries in seconds.
+- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
+
+See <https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource#retry> for full semantics.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+```
+
+Default: `null`
 
 ### <a name="input_site_recovery_replicated_vm"></a> [site\_recovery\_replicated\_vm](#input\_site\_recovery\_replicated\_vm)
 
@@ -84,17 +141,47 @@ object({
 
 Default: `null`
 
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: Default per-operation timeouts applied to every `azapi` resource created by this module. Defaults to `null` (provider defaults). Each value is a Go duration string (e.g. `30m`, `1h`).
+
+- `create` - (Optional) Timeout for create operations.
+- `read`   - (Optional) Timeout for read operations.
+- `update` - (Optional) Timeout for update operations.
+- `delete` - (Optional) Timeout for delete operations.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+```
+
+Default: `null`
+
 ## Outputs
 
 The following outputs are exported:
 
-### <a name="output_resource"></a> [resource](#output\_resource)
+### <a name="output_body"></a> [body](#output\_body)
 
-Description: The site recovery replicated VM resource
+Description: The configured AzAPI request body sent to Azure for the Azure Site Recovery replication protected item.
+
+### <a name="output_name"></a> [name](#output\_name)
+
+Description: The name of the Azure Site Recovery replication protected item.
+
+### <a name="output_parent_id"></a> [parent\_id](#output\_parent\_id)
+
+Description: The ARM resource ID of the source replication protection container that contains the replication protected item.
 
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
-Description: The resource ID of the site recovery replicated VM
+Description: The ARM resource ID of the Azure Site Recovery replication protected item.
 
 ## Modules
 

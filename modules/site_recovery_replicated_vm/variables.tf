@@ -52,3 +52,66 @@ variable "site_recovery_replicated_vm" {
     error_message = "site_recovery_replicated_vm.target_resource_group_id (or legacy fallback site_recovery_replicated_vm.recovery_resource_group_id) must be provided."
   }
 }
+
+variable "ignore_body_changes" {
+  type = object({
+    recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(list(string), [])
+  })
+  default     = {}
+  description = <<DESCRIPTION
+Body-relative paths to ignore for the AzAPI resource owned by this module. Paths use dot notation, e.g. `properties.policyId`.
+Changes take effect only after apply. Ignored configuration is not sent to Azure until the path is removed.
+
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Paths ignored on the replication protected item resource.
+DESCRIPTION
+  nullable    = false
+}
+
+variable "resource_types" {
+  type = object({
+    recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(string, "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectedItems@2024-10-01")
+  })
+  default     = {}
+  description = <<DESCRIPTION
+AzAPI resource types and API versions used by this module.
+
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Resource type and API version for the Azure Site Recovery replication protected item and its post-enablement update action.
+DESCRIPTION
+  nullable    = false
+}
+
+variable "retry" {
+  type = object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+  default     = null
+  description = <<DESCRIPTION
+Retry configuration applied to every `azapi` resource created by this module. Defaults to `null` (no custom retry).
+
+- `error_message_regex`  - (Optional) A list of regex patterns matching error messages that trigger a retry.
+- `interval_seconds`     - (Optional) Initial interval between retries in seconds.
+- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
+
+See <https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource#retry> for full semantics.
+DESCRIPTION
+}
+
+variable "timeouts" {
+  type = object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+  default     = null
+  description = <<DESCRIPTION
+Default per-operation timeouts applied to every `azapi` resource created by this module. Defaults to `null` (provider defaults). Each value is a Go duration string (e.g. `30m`, `1h`).
+
+- `create` - (Optional) Timeout for create operations.
+- `read`   - (Optional) Timeout for read operations.
+- `update` - (Optional) Timeout for update operations.
+- `delete` - (Optional) Timeout for delete operations.
+DESCRIPTION
+}
