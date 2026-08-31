@@ -134,9 +134,13 @@ resource "azapi_resource" "diagnostic_settings" {
       ] : null
     }
   }
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.insights_diagnostic_settings) > 0 ? var.ignore_body_changes.insights_diagnostic_settings : null
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = []
   retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -148,10 +152,6 @@ resource "azapi_resource" "diagnostic_settings" {
       update = timeouts.value.update
     }
   }
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # Keep existing state from v1.x releases where diagnostic settings were managed as
@@ -174,9 +174,13 @@ resource "azapi_resource" "lock" {
       notes = var.lock.notes
     }
   }
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = []
   retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -188,10 +192,6 @@ resource "azapi_resource" "lock" {
       update = timeouts.value.update
     }
   }
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # Keep existing state from v1.x releases where the lock was managed as
@@ -241,9 +241,13 @@ resource "azapi_resource" "role_assignments" {
       roleDefinitionId                   = local.role_assignment_role_definition_resource_ids[each.key]
     }
   }
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = []
   retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -255,10 +259,6 @@ resource "azapi_resource" "role_assignments" {
       update = timeouts.value.update
     }
   }
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # Keep existing state from v1.x releases where role assignments were managed as
@@ -283,10 +283,14 @@ resource "azapi_resource" "resource_guard_association" {
       resourceGuardResourceId = var.resource_guard_id
     }
   }
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.recoveryservices_vaults_backup_resource_guard_proxies) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_resource_guard_proxies : null
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = []
   retry                  = var.retry
   tags                   = var.tags
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -298,10 +302,6 @@ resource "azapi_resource" "resource_guard_association" {
       update = timeouts.value.update
     }
   }
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # Keep existing state from v1.x releases where the resource guard association was
