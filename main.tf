@@ -148,6 +148,10 @@ resource "azapi_resource" "diagnostic_settings" {
       update = timeouts.value.update
     }
   }
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # Keep existing state from v1.x releases where diagnostic settings were managed as
@@ -184,6 +188,10 @@ resource "azapi_resource" "lock" {
       update = timeouts.value.update
     }
   }
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # Keep existing state from v1.x releases where the lock was managed as
@@ -247,6 +255,10 @@ resource "azapi_resource" "role_assignments" {
       update = timeouts.value.update
     }
   }
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # Keep existing state from v1.x releases where role assignments were managed as
@@ -286,6 +298,10 @@ resource "azapi_resource" "resource_guard_association" {
       update = timeouts.value.update
     }
   }
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # Keep existing state from v1.x releases where the resource guard association was
