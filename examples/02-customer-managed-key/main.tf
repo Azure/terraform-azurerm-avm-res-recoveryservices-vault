@@ -54,7 +54,7 @@ module "recovery_services_vault" {
   cross_region_restore_enabled                   = false
   customer_managed_key = {
     key_vault_resource_id = azapi_resource.key_vault.id
-    key_name              = azapi_resource.key_vault_key.output.properties.keyUriWithVersion
+    key_name              = azapi_resource_action.key_vault_key.output.properties.keyUriWithVersion
     user_assigned_identity = {
       resource_id = azapi_resource.user_assigned_identity.id
     }
@@ -71,7 +71,7 @@ module "recovery_services_vault" {
     dept  = "IT"
   }
 
-  depends_on = [azapi_resource.key_vault_key, azapi_resource.key_vault, ]
+  depends_on = [azapi_resource_action.key_vault_key, azapi_resource.key_vault, ]
 }
 
 resource "azapi_resource" "user_assigned_identity" {
@@ -92,10 +92,19 @@ resource "time_sleep" "wait_for_kv" {
 }
 
 # Create a customer-managed key for a Recovery Services Vault.
-resource "azapi_resource" "key_vault_key" {
+data "azapi_resource_id" "key_vault_key" {
   name      = module.naming.key_vault_key.name_unique
   parent_id = azapi_resource.key_vault.id
   type      = "Microsoft.KeyVault/vaults/keys@2023-07-01"
+}
+
+resource "azapi_resource_action" "key_vault_key" {
+  type        = "Microsoft.KeyVault/vaults/keys@2023-07-01"
+  resource_id = data.azapi_resource_id.key_vault_key.id
+  method      = "PUT"
+  when        = "apply"
+
+  # Key Vault keys don't support management-plane DELETE.
   body = {
     properties = {
       kty     = "RSA"
