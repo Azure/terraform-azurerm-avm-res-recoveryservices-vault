@@ -27,24 +27,9 @@ resource "azapi_resource" "this" {
   type      = "Microsoft.Resources/resourceGroups@2021-04-01"
 }
 
-resource "azapi_resource" "resource_guard" {
-  location  = azapi_resource.this.location
-  name      = "rg-${random_string.this.result}"
-  parent_id = azapi_resource.this.id
-  type      = "Microsoft.DataProtection/resourceGuards@2024-04-01"
-  body = {
-    properties = {}
-  }
-}
-
 locals {
-  # Built from known-at-plan values instead of `azapi_resource.resource_guard.id`.
-  # The AzAPI provider does not refine its `id` attribute as non-null while it is
-  # unknown, so passing it directly would make the module's
-  # `resource_guard_id != null` count condition undecidable during plan.
-  resource_guard_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}/resourceGroups/${azapi_resource.this.name}/providers/Microsoft.DataProtection/resourceGuards/${azapi_resource.resource_guard.name}"
-  test_regions      = ["eastus", "eastus2", "westus3"] #  "westu2",
-  vault_name        = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
+  test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
+  vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
 }
 
 module "azure_region" {
@@ -67,7 +52,6 @@ module "recovery_services_vault" {
   cross_region_restore_enabled                   = false
   public_network_access_enabled                  = true
   storage_mode_type                              = "GeoRedundant"
-  resource_guard_id                              = local.resource_guard_id
   tags = {
     env   = "Prod"
     owner = "ABREG0"
