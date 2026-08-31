@@ -180,7 +180,6 @@ resource "azapi_resource" "lock" {
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = []
   retry                  = var.retry
-  tags                   = var.tags
   update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
@@ -192,10 +191,6 @@ resource "azapi_resource" "lock" {
       read   = timeouts.value.read
       update = timeouts.value.update
     }
-  }
-
-  lifecycle {
-    ignore_changes = [tags]
   }
 }
 
@@ -294,6 +289,7 @@ resource "azapi_resource" "resource_guard_association" {
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = []
   retry                  = var.retry
+  tags                   = var.tags
   update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
@@ -305,6 +301,10 @@ resource "azapi_resource" "resource_guard_association" {
       read   = timeouts.value.read
       update = timeouts.value.update
     }
+  }
+
+  lifecycle {
+    ignore_changes = [tags]
   }
 }
 
