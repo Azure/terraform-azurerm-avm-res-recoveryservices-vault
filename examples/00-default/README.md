@@ -66,7 +66,7 @@ module "regions" {
 
 module "azure_region" {
   source  = "claranet/regions/azurerm"
-  version = "8.0.6"
+  version = "9.0.0"
 
   azure_region = "westus3"
 }
@@ -386,7 +386,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.34.0, < 5.1.1)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.34.0, < 5.3.1)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
 
@@ -421,7 +421,7 @@ The following Modules are called:
 
 Source: claranet/regions/azurerm
 
-Version: 8.0.6
+Version: 9.0.0
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 

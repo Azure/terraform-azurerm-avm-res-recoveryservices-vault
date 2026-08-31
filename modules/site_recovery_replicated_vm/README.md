@@ -15,7 +15,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.50, < 5.2)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.50, < 5.4)
 
 ## Resources
 
