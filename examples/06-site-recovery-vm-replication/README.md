@@ -568,11 +568,11 @@ Default:
 
 ### <a name="input_source_vm_size"></a> [source\_vm\_size](#input\_source\_vm\_size)
 
-Description: VM SKU for source VMs used in the Site Recovery example.
+Description: VM SKU for source VMs used in the Site Recovery example. Defaults to Standard_D2s_v5 (Intel) instead of the Standard_D2as_v5 (AMD) family, which repeatedly hits SkuNotAvailable capacity restrictions in the pinned test zone.
 
 Type: `string`
 
-Default: `"Standard_D2as_v5"`
+Default: `"Standard_D2s_v5"`
 
 ### <a name="input_source_vms"></a> [source\_vms](#input\_source\_vms)
 
@@ -626,7 +626,7 @@ Description: VM SKU used for failover target replicated VMs. Must be compatible 
 
 Type: `string`
 
-Default: `"Standard_D2as_v5"`
+Default: `"Standard_D2s_v5"`
 
 ## Outputs
 
