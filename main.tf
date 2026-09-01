@@ -305,7 +305,7 @@ resource "azapi_resource" "resource_guard_association" {
 # Resource Guard protects the proxy from a normal DELETE. Unlock it before the
 # association resource is deleted, mirroring the AzureRM provider behavior.
 resource "azapi_resource_action" "resource_guard_association_unlock_delete" {
-  for_each = azapi_resource.resource_guard_association
+  for_each = { for index, association in azapi_resource.resource_guard_association : index => association }
 
   type        = var.resource_types.recoveryservices_vaults_backup_resource_guard_proxies
   resource_id = each.value.id
