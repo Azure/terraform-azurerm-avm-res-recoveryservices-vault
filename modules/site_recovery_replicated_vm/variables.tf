@@ -2,8 +2,8 @@ variable "ignore_body_changes" {
   type = object({
     recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(list(string), [])
   })
-  default  = {}
-  nullable = false
+  default     = {}
+  nullable    = false
   description = <<DESCRIPTION
 Body-relative paths reserved for the replicated item operations. Paths use dot notation.
 Changes take effect only after apply. Ignored configuration is not sent to Azure until the path is removed.
@@ -27,8 +27,8 @@ variable "resource_types" {
   type = object({
     recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(string, "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectedItems@2024-04-01")
   })
-  default  = {}
-  nullable = false
+  default     = {}
+  nullable    = false
   description = <<DESCRIPTION
 AzAPI resource types and API versions used by the replicated virtual machine submodule.
 

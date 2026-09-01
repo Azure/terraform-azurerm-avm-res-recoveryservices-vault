@@ -26,11 +26,10 @@ removed {
 resource "azapi_resource" "private_endpoint_managed_dns_zone_groups" {
   for_each = local.managed_private_endpoints
 
-  type      = var.resource_types.network_private_endpoints
+  location  = each.value.location != null ? each.value.location : var.location
   name      = each.value.name != null ? each.value.name : length(local.managed_private_endpoints) > 1 ? "pep-${var.name}-${each.key}" : "pep-${var.name}"
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${each.value.resource_group_name != null ? each.value.resource_group_name : var.resource_group_name}"
-  location  = each.value.location != null ? each.value.location : var.location
-
+  type      = var.resource_types.network_private_endpoints
   body = {
     properties = {
       applicationSecurityGroups = [
@@ -63,7 +62,6 @@ resource "azapi_resource" "private_endpoint_managed_dns_zone_groups" {
       }
     }
   }
-
   ignore_body_changes    = length(var.ignore_body_changes.network_private_endpoints) > 0 ? var.ignore_body_changes.network_private_endpoints : null
   ignore_null_property   = true
   replace_triggers_refs  = []
@@ -81,16 +79,19 @@ resource "azapi_resource" "private_endpoint_managed_dns_zone_groups" {
       delete = timeouts.value.delete
     }
   }
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 resource "azapi_resource" "private_endpoint_unmanaged_dns_zone_groups" {
   for_each = local.unmanaged_private_endpoints
 
-  type      = var.resource_types.network_private_endpoints
+  location  = each.value.location != null ? each.value.location : var.location
   name      = each.value.name != null ? each.value.name : length(local.unmanaged_private_endpoints) > 1 ? "pep-${var.name}-${each.key}" : "pep-${var.name}"
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${each.value.resource_group_name != null ? each.value.resource_group_name : var.resource_group_name}"
-  location  = each.value.location != null ? each.value.location : var.location
-
+  type      = var.resource_types.network_private_endpoints
   body = {
     properties = {
       applicationSecurityGroups = [
@@ -123,7 +124,6 @@ resource "azapi_resource" "private_endpoint_unmanaged_dns_zone_groups" {
       }
     }
   }
-
   ignore_body_changes    = length(var.ignore_body_changes.network_private_endpoints) > 0 ? var.ignore_body_changes.network_private_endpoints : null
   ignore_null_property   = true
   replace_triggers_refs  = []
@@ -144,7 +144,11 @@ resource "azapi_resource" "private_endpoint_unmanaged_dns_zone_groups" {
 
   # Serialize ownership switches so Azure does not cancel overlapping private
   # DNS zone group operations on the same private endpoint.
-  depends_on = [azapi_resource.private_endpoint_managed_dns_zone_groups]
+  depends_on     = [azapi_resource.private_endpoint_managed_dns_zone_groups]
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # AzAPI resource actions perform a PUT without requiring an import when an
@@ -155,10 +159,9 @@ resource "azapi_resource_action" "private_dns_zone_group" {
     if length(endpoint.private_dns_zone_resource_ids) > 0
   }
 
-  type        = var.resource_types.network_private_endpoints_private_dns_zone_groups
-  resource_id = "${azapi_resource.private_endpoint_managed_dns_zone_groups[each.key].id}/privateDnsZoneGroups/${each.value.private_dns_zone_group_name}"
   method      = "PUT"
-
+  resource_id = "${azapi_resource.private_endpoint_managed_dns_zone_groups[each.key].id}/privateDnsZoneGroups/${each.value.private_dns_zone_group_name}"
+  type        = var.resource_types.network_private_endpoints_private_dns_zone_groups
   body = {
     properties = {
       privateDnsZoneConfigs = [
@@ -171,7 +174,6 @@ resource "azapi_resource_action" "private_dns_zone_group" {
       ]
     }
   }
-
   response_export_values = []
   retry                  = var.retry
 
@@ -192,14 +194,13 @@ resource "azapi_resource_action" "private_dns_zone_group" {
 resource "azapi_resource_action" "private_dns_zone_group_delete" {
   for_each = azapi_resource_action.private_dns_zone_group
 
-  type             = var.resource_types.network_private_endpoints_private_dns_zone_groups
-  resource_id      = each.value.resource_id
-  ignore_not_found = true
-  method           = "DELETE"
-  when             = "destroy"
-
+  method                 = "DELETE"
+  resource_id            = each.value.resource_id
+  type                   = var.resource_types.network_private_endpoints_private_dns_zone_groups
+  ignore_not_found       = true
   response_export_values = []
   retry                  = var.retry
+  when                   = "destroy"
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]

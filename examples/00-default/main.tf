@@ -21,8 +21,8 @@ module "naming" {
 data "azapi_client_config" "current" {}
 
 resource "azapi_resource" "resource_group" {
-  location = local.test_regions[random_integer.region_index.result]
-  name     = module.naming.resource_group.name_unique
+  location  = local.test_regions[random_integer.region_index.result]
+  name      = module.naming.resource_group.name_unique
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
   type      = "Microsoft.Resources/resourceGroups@2024-03-01"
   body      = {}

@@ -7,8 +7,8 @@ module "backup_protected_vm" {
     sleep_timer      = each.value.sleep_timer
     source_vm_id     = each.value.source_vm_id
   }
-  ignore_body_changes = var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   parent_id           = "${azapi_resource.this.id}/backupFabrics/Azure/protectionContainers/iaasvmcontainer;iaasvmcontainerv2;${split("/", each.value.source_vm_id)[4]};${basename(each.value.source_vm_id)}"
+  ignore_body_changes = var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   resource_types      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   retry               = var.retry
   timeouts            = var.timeouts
@@ -27,8 +27,8 @@ module "backup_protected_file_share" {
     source_file_share_name    = each.value.source_file_share_name
     source_storage_account_id = each.value.source_storage_account_id
   }
-  ignore_body_changes = var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   parent_id           = "${azapi_resource.this.id}/backupFabrics/Azure/protectionContainers/StorageContainer;storage;${split("/", each.value.source_storage_account_id)[4]};${basename(each.value.source_storage_account_id)}"
+  ignore_body_changes = var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   resource_types      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   retry               = var.retry
   timeouts            = var.timeouts
@@ -40,6 +40,7 @@ module "site_recovery_replicated_vm" {
   source   = "./modules/site_recovery_replicated_vm"
   for_each = var.site_recovery_replicated_vm != null ? var.site_recovery_replicated_vm : {}
 
+  parent_id = "${azapi_resource.this.id}/replicationFabrics/${each.value.source_recovery_fabric_name}/replicationProtectionContainers/${each.value.source_protection_container_name}"
   site_recovery_replicated_vm = {
     managed_disk                           = each.value.managed_disk
     multi_vm_group_name                    = each.value.multi_vm_group_name
@@ -61,7 +62,6 @@ module "site_recovery_replicated_vm" {
     unmanaged_disk                         = each.value.unmanaged_disk
   }
   ignore_body_changes = var.ignore_body_changes.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items
-  parent_id           = "${azapi_resource.this.id}/replicationFabrics/${each.value.source_recovery_fabric_name}/replicationProtectionContainers/${each.value.source_protection_container_name}"
   resource_types      = var.resource_types.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items
   retry               = var.retry
   timeouts            = each.value.timeouts == null ? var.timeouts : each.value.timeouts

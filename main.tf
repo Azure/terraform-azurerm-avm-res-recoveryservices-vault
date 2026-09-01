@@ -125,13 +125,11 @@ data "azapi_resource_list" "role_definitions" {
     if !strcontains(lower(assignment.role_definition_id_or_name), lower(local.role_definition_resource_substring))
   }
 
-  type      = var.resource_types.authorization_role_definitions
   parent_id = azapi_resource.this.id
-
   query_parameters = {
     "$filter" = ["roleName eq '${replace(each.value.role_definition_id_or_name, "'", "''")}'"]
   }
-
+  type                   = var.resource_types.authorization_role_definitions
   response_export_values = ["value"]
   retry                  = var.retry
 
@@ -147,10 +145,9 @@ data "azapi_resource_list" "role_definitions" {
 resource "azapi_resource" "diagnostic_settings" {
   for_each = var.diagnostic_settings
 
-  type      = var.resource_types.insights_diagnostic_settings
   name      = each.value.name != null ? each.value.name : "diag-${var.name}"
   parent_id = azapi_resource.this.id
-
+  type      = var.resource_types.insights_diagnostic_settings
   body = {
     properties = {
       eventHubAuthorizationRuleId = each.value.event_hub_authorization_rule_resource_id
@@ -177,7 +174,6 @@ resource "azapi_resource" "diagnostic_settings" {
       ]
     }
   }
-
   ignore_body_changes    = length(var.ignore_body_changes.insights_diagnostic_settings) > 0 ? var.ignore_body_changes.insights_diagnostic_settings : null
   ignore_null_property   = true
   replace_triggers_refs  = []
@@ -194,22 +190,24 @@ resource "azapi_resource" "diagnostic_settings" {
       delete = timeouts.value.delete
     }
   }
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # Apply a lock to the vault when enabled.
 resource "azapi_resource" "lock" {
   count = var.lock != null ? 1 : 0
 
-  type      = var.resource_types.authorization_locks
   name      = coalesce(var.lock.name, "lock-${var.name}")
   parent_id = azapi_resource.this.id
-
+  type      = var.resource_types.authorization_locks
   body = {
     properties = {
       level = var.lock.kind
     }
   }
-
   ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
   replace_triggers_refs  = []
   response_export_values = ["properties.level"]
@@ -225,16 +223,19 @@ resource "azapi_resource" "lock" {
       delete = timeouts.value.delete
     }
   }
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # Set RBAC assignments when defined.
 resource "azapi_resource" "role_assignments" {
   for_each = var.role_assignments
 
-  type      = var.resource_types.authorization_role_assignments
   name      = uuidv5("6ba7b810-9dad-11d1-80b4-00c04fd430c8", "${azapi_resource.this.id}|${each.value.role_definition_id_or_name}|${each.value.principal_id}")
   parent_id = azapi_resource.this.id
-
+  type      = var.resource_types.authorization_role_assignments
   body = {
     properties = {
       condition                          = each.value.condition
@@ -246,7 +247,6 @@ resource "azapi_resource" "role_assignments" {
       roleDefinitionId                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : one(data.azapi_resource_list.role_definitions[each.key].output.value).id
     }
   }
-
   ignore_body_changes    = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
   ignore_null_property   = true
   replace_triggers_refs  = []
@@ -268,22 +268,24 @@ resource "azapi_resource" "role_assignments" {
     # Preserve the provider-generated UUID from the AzureRM state during migration.
     ignore_changes = [name]
   }
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # Associate a Resource Guard when explicitly enabled.
 resource "azapi_resource" "resource_guard_association" {
   count = var.resource_guard_association_enabled ? 1 : 0
 
-  type      = var.resource_types.recoveryservices_vaults_backup_resource_guard_proxies
   name      = "VaultProxy"
   parent_id = azapi_resource.this.id
-
+  type      = var.resource_types.recoveryservices_vaults_backup_resource_guard_proxies
   body = {
     properties = {
       resourceGuardResourceId = var.resource_guard_id
     }
   }
-
   ignore_body_changes    = length(var.ignore_body_changes.recoveryservices_vaults_backup_resource_guard_proxies) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_resource_guard_proxies : null
   ignore_null_property   = true
   replace_triggers_refs  = []
@@ -300,6 +302,10 @@ resource "azapi_resource" "resource_guard_association" {
       delete = timeouts.value.delete
     }
   }
+  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
 
 # Resource Guard protects the proxy from a normal DELETE. Unlock it before the
@@ -307,20 +313,18 @@ resource "azapi_resource" "resource_guard_association" {
 resource "azapi_resource_action" "resource_guard_association_unlock_delete" {
   for_each = { for index, association in azapi_resource.resource_guard_association : index => association }
 
-  type        = var.resource_types.recoveryservices_vaults_backup_resource_guard_proxies
-  resource_id = each.value.id
   action      = "unlockDelete"
   method      = "POST"
-  when        = "destroy"
-
+  resource_id = each.value.id
+  type        = var.resource_types.recoveryservices_vaults_backup_resource_guard_proxies
   body = {
     resourceGuardOperationRequests = [
       "${var.resource_guard_id}/deleteResourceGuardProxyRequests/default",
     ]
   }
-
   response_export_values = []
   retry                  = var.retry
+  when                   = "destroy"
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]

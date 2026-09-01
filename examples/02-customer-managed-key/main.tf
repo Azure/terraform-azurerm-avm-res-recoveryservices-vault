@@ -21,16 +21,16 @@ module "naming" {
 data "azapi_client_config" "current" {}
 
 resource "azapi_resource" "resource_group" {
-  location = local.test_regions[random_integer.region_index.result]
-  name     = module.naming.resource_group.name_unique
+  location  = local.test_regions[random_integer.region_index.result]
+  name      = module.naming.resource_group.name_unique
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
   type      = "Microsoft.Resources/resourceGroups@2024-03-01"
   body      = {}
 }
 
 locals {
-  test_regions               = ["eastus", "eastus2", "westus3"] #  "westu2",
-  vault_name                 = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-002"
+  test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
+  vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-002"
   key_vault_role_assignments = {
     deployment_user = {
       principal_id       = data.azapi_client_config.current.object_id
@@ -107,7 +107,7 @@ resource "azapi_resource" "key_vault_key" {
   type      = "Microsoft.KeyVault/vaults/keys@2023-02-01"
   body = {
     properties = {
-      keyOps  = [
+      keyOps = [
         "decrypt",
         "encrypt",
         "sign",
@@ -134,11 +134,11 @@ resource "azapi_resource" "key_vault" {
     properties = {
       enableRbacAuthorization = true
       publicNetworkAccess     = "Enabled"
-      sku                     = {
+      sku = {
         family = "A"
         name   = "standard"
       }
-      tenantId                = data.azapi_client_config.current.tenant_id
+      tenantId = data.azapi_client_config.current.tenant_id
     }
   }
   tags = {

@@ -39,16 +39,16 @@ module "naming" {
 data "azapi_client_config" "current" {}
 
 resource "azapi_resource" "resource_group" {
-  location = local.test_regions[random_integer.region_index.result]
-  name     = module.naming.resource_group.name_unique
+  location  = local.test_regions[random_integer.region_index.result]
+  name      = module.naming.resource_group.name_unique
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
   type      = "Microsoft.Resources/resourceGroups@2024-03-01"
   body      = {}
 }
 
 locals {
-  test_regions               = ["eastus", "eastus2", "westus3"] #  "westu2",
-  vault_name                 = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-002"
+  test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
+  vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-002"
   key_vault_role_assignments = {
     deployment_user = {
       principal_id       = data.azapi_client_config.current.object_id
@@ -59,11 +59,6 @@ locals {
       role_definition_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/14b46e9e-c2b7-41b4-b07b-48a6ebf60603"
     }
   }
-}
-
-module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
 }
 
 module "azure_region" {
@@ -130,7 +125,7 @@ resource "azapi_resource" "key_vault_key" {
   type      = "Microsoft.KeyVault/vaults/keys@2023-02-01"
   body = {
     properties = {
-      keyOps  = [
+      keyOps = [
         "decrypt",
         "encrypt",
         "sign",
@@ -157,11 +152,11 @@ resource "azapi_resource" "key_vault" {
     properties = {
       enableRbacAuthorization = true
       publicNetworkAccess     = "Enabled"
-      sku                     = {
+      sku = {
         family = "A"
         name   = "standard"
       }
-      tenantId                = data.azapi_client_config.current.tenant_id
+      tenantId = data.azapi_client_config.current.tenant_id
     }
   }
   tags = {
@@ -188,7 +183,6 @@ resource "azapi_resource" "key_vault_role_assignment" {
     }
   }
 }
-
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -253,12 +247,6 @@ Version: 0.4.3
 Source: ../../
 
 Version:
-
-### <a name="module_regions"></a> [regions](#module\_regions)
-
-Source: Azure/regions/azurerm
-
-Version: 0.8.2
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
