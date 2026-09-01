@@ -46,3 +46,13 @@ DESCRIPTION
     error_message = "`source_vm_id` must be the resource ID of an Azure virtual machine."
   }
 }
+
+variable "retry" {
+  type = object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+  default     = null
+  description = "Retry configuration applied to every managed AzAPI resource in the submodule."
+}

@@ -49,6 +49,7 @@ resource "azapi_resource" "container" {
     }
   }
   response_export_values = ["*"]
+  retry                  = var.retry
 
   dynamic "timeouts" {
     for_each = var.backup_protected_workload.timeouts == null ? [] : [var.backup_protected_workload.timeouts]
@@ -75,6 +76,9 @@ resource "azapi_resource_action" "inquire" {
     "$filter" = ["workloadType eq '${local.workload_types[var.backup_protected_workload.workload_type]}'"]
   }
   when = "apply"
+
+  response_export_values = []
+  retry                  = var.retry
 }
 
 # Registration and discovery are asynchronous, the discovered items are not immediately
@@ -104,6 +108,7 @@ resource "azapi_resource" "protected_item" {
     }
   }
   response_export_values = ["*"]
+  retry                  = var.retry
 
   dynamic "timeouts" {
     for_each = var.backup_protected_workload.timeouts == null ? [] : [var.backup_protected_workload.timeouts]

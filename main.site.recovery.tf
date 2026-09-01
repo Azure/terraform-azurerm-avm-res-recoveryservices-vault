@@ -82,6 +82,7 @@ module "backup_protected_workload" {
     sleep_timer               = each.value.sleep_timer
     protected_databases       = each.value.protected_databases
   }
+  retry = var.retry
 
   depends_on = [module.recovery_workload_policy]
 }
