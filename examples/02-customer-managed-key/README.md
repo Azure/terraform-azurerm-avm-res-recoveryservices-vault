@@ -81,7 +81,7 @@ module "recovery_services_vault" {
   cross_region_restore_enabled                   = false
   customer_managed_key = {
     key_vault_resource_id = azapi_resource.key_vault.id
-    key_name              = azapi_resource.key_vault_key.output.properties.keyUriWithVersion
+    key_name              = azapi_data_plane_resource.key_vault_key.output.key.kid
     user_assigned_identity = {
       resource_id = azapi_resource.this_identity.id
     }
@@ -98,7 +98,7 @@ module "recovery_services_vault" {
     dept  = "IT"
   }
 
-  depends_on = [azapi_resource.key_vault_key, azapi_resource.key_vault]
+  depends_on = [azapi_data_plane_resource.key_vault_key, azapi_resource.key_vault]
 }
 
 resource "azapi_resource" "this_identity" {
@@ -119,28 +119,19 @@ resource "time_sleep" "wait_for_kv" {
 }
 
 # Create a customer-managed key for a Recovery Services Vault.
-resource "azapi_resource" "key_vault_key" {
+resource "azapi_data_plane_resource" "key_vault_key" {
   name      = module.naming.key_vault_key.name_unique
-  parent_id = azapi_resource.key_vault.id
-  type      = "Microsoft.KeyVault/vaults/keys@2023-02-01"
+  parent_id = trimsuffix(trimprefix(azapi_resource.key_vault.output.properties.vaultUri, "https://"), "/")
+  type      = "Microsoft.KeyVault/vaults/keys@7.4"
   body = {
-    properties = {
-      keyOps = [
-        "decrypt",
-        "encrypt",
-        "sign",
-        "unwrapKey",
-        "verify",
-        "wrapKey",
-      ]
-      keySize = 2048
-      kty     = "RSA"
-    }
+    key_ops  = ["decrypt", "encrypt", "sign", "unwrapKey", "verify", "wrapKey"]
+    key_size = 2048
+    kty      = "RSA"
   }
 
   depends_on = [time_sleep.wait_for_kv]
 
-  response_export_values = ["properties.keyUriWithVersion"]
+  response_export_values = ["key.kid"]
 }
 
 resource "azapi_resource" "key_vault" {
@@ -151,12 +142,15 @@ resource "azapi_resource" "key_vault" {
   body = {
     properties = {
       enableRbacAuthorization = true
+      enablePurgeProtection   = true
+      enableSoftDelete        = true
       publicNetworkAccess     = "Enabled"
       sku = {
         family = "A"
         name   = "standard"
       }
-      tenantId = data.azapi_client_config.current.tenant_id
+      softDeleteRetentionInDays = 7
+      tenantId                  = data.azapi_client_config.current.tenant_id
     }
   }
   tags = {
@@ -202,8 +196,8 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_data_plane_resource.key_vault_key](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/data_plane_resource) (resource)
 - [azapi_resource.key_vault](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
-- [azapi_resource.key_vault_key](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.key_vault_role_assignment](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.resource_group](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this_identity](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
