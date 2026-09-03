@@ -21,14 +21,17 @@ This example demonstrates cross-region Azure Site Recovery replication for Windo
 data "azapi_client_config" "this" {}
 
 resource "azapi_resource" "rg_this" {
-  location  = "westus2"
+  # westus2 repeatedly hit SkuNotAvailable capacity restrictions for every VM
+  # SKU tried (D-series, B-series). eastus2/centralus is used elsewhere in
+  # this repo's examples as a reliable region pair.
+  location  = "eastus2"
   name      = "rg-site-recovery-${random_integer.region_seed.result}"
   parent_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}"
   type      = "Microsoft.Resources/resourceGroups@2021-04-01"
 }
 
 resource "azapi_resource" "rg_target" {
-  location  = "westcentralus"
+  location  = "centralus"
   name      = "rg-site-recovery-target-${random_integer.region_seed.result}"
   parent_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}"
   type      = "Microsoft.Resources/resourceGroups@2021-04-01"
