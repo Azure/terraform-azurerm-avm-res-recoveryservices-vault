@@ -160,6 +160,7 @@ resource "azapi_resource" "no_internet_rule" {
 resource "azapi_resource" "private_dns_zone" {
   for_each = local.endpoints_dns_zones
 
+  location  = "global"
   name      = each.value == "blob" || each.value == "queue" ? "privatelink.${each.value}.core.windows.net" : each.value == "AzureBackup" ? replace("privatelink.${each.value}.windowsazure.com", "AzureBackup", "${module.azure_region.location_short}.backup") : replace("privatelink.${each.value}.windowsazure.com", "AzureSiteRecovery", "siterecovery")
   parent_id = azapi_resource.resource_group.id
   type      = "Microsoft.Network/privateDnsZones@2024-06-01"
