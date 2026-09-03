@@ -2,66 +2,137 @@
 
 # This file contains the configuration for the Windows Virtual Machine in the West US 3 region.
 # It includes the creation of a virtual machine, network interface, managed disk, and public IP address.
-resource "azurerm_windows_virtual_machine" "vm_wus3" {
-  admin_password        = "P@$$w0rd1234!"
-  admin_username        = "adminuser"
-  location              = azurerm_resource_group.primary_wus3.location
-  name                  = "vm-${azurerm_resource_group.primary_wus3.location}-005"
-  network_interface_ids = [azurerm_network_interface.vm_wus3.id]
-  resource_group_name   = azurerm_resource_group.primary_wus3.name
-  size                  = "Standard_D4s_v5" # Standard_D11_v2_Promo 
-
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Premium_ZRS"
+resource "azapi_resource" "vm_wus3" {
+  location  = azapi_resource.rg_primary_wus3.location
+  name      = "vm-${azapi_resource.rg_primary_wus3.location}-005"
+  parent_id = azapi_resource.rg_primary_wus3.id
+  type      = "Microsoft.Compute/virtualMachines@2024-07-01"
+  body = {
+    identity = {
+      type = "SystemAssigned, UserAssigned"
+      userAssignedIdentities = {
+        (azapi_resource.uami_this.id) = {}
+      }
+    }
+    properties = {
+      hardwareProfile = {
+        vmSize = "Standard_D4s_v5" # Standard_D11_v2_Promo
+      }
+      networkProfile = {
+        networkInterfaces = [
+          {
+            id = azapi_resource.nic_vm_wus3.id
+          }
+        ]
+      }
+      osProfile = {
+        adminUsername = "adminuser"
+        computerName  = substr("vm-${azapi_resource.rg_primary_wus3.location}-005", 0, 15)
+      }
+      storageProfile = {
+        dataDisks = [
+          {
+            caching      = "ReadWrite"
+            createOption = "Attach"
+            lun          = 10
+            managedDisk = {
+              id = azapi_resource.disk_vm_wus3.id
+            }
+          }
+        ]
+        imageReference = {
+          offer     = "WindowsServer"
+          publisher = "MicrosoftWindowsServer"
+          sku       = "2016-Datacenter"
+          version   = "latest"
+        }
+        osDisk = {
+          caching      = "ReadWrite"
+          createOption = "FromImage"
+          name         = "vm-${azapi_resource.rg_primary_wus3.location}-005-osdisk"
+          managedDisk = {
+            storageAccountType = "Premium_ZRS"
+          }
+        }
+      }
+    }
   }
-  identity {
-    type         = "SystemAssigned, UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.this.id]
-  }
-  source_image_reference {
-    offer     = "WindowsServer"
-    publisher = "MicrosoftWindowsServer"
-    sku       = "2016-Datacenter"
-    version   = "latest"
-  }
-
-  lifecycle {
-    ignore_changes = [identity, ]
+  # The admin password is write-only and must never be placed in `body`.
+  sensitive_body = {
+    properties = {
+      osProfile = {
+        adminPassword = random_password.vm_wus3.result
+      }
+    }
   }
 }
-resource "azurerm_network_interface" "vm_wus3" {
-  location            = azurerm_resource_group.primary_wus3.location
-  name                = "vm-${azurerm_resource_group.primary_wus3.location}-nic"
-  resource_group_name = azurerm_resource_group.primary_wus3.name
 
-  ip_configuration {
-    name                          = "vm_wus3"
-    private_ip_address_allocation = "Dynamic"
-    # public_ip_address_id          = azurerm_public_ip.westus3.id
-    subnet_id = azurerm_subnet.westus3.id
+# The VM administrator password is generated rather than hardcoded.
+resource "random_password" "vm_wus3" {
+  length           = 20
+  min_lower        = 2
+  min_numeric      = 2
+  min_special      = 2
+  min_upper        = 2
+  override_special = "!@#$%&*()-_=+[]{}<>:?"
+  special          = true
+}
+
+resource "azapi_resource" "nic_vm_wus3" {
+  location  = azapi_resource.rg_primary_wus3.location
+  name      = "vm-${azapi_resource.rg_primary_wus3.location}-nic"
+  parent_id = azapi_resource.rg_primary_wus3.id
+  type      = "Microsoft.Network/networkInterfaces@2024-05-01"
+  body = {
+    properties = {
+      ipConfigurations = [
+        {
+          name = "vm_wus3"
+          properties = {
+            privateIPAllocationMethod = "Dynamic"
+            # publicIPAddress = { id = azapi_resource.pip_westus3.id }
+            subnet = {
+              id = azapi_resource.snet_westus3.id
+            }
+          }
+        }
+      ]
+    }
   }
 }
 
-resource "azurerm_managed_disk" "vm_wus3" {
-  create_option        = "Empty"
-  location             = azurerm_resource_group.primary_wus3.location
-  name                 = "data-${azurerm_resource_group.primary_wus3.location}-disk"
-  resource_group_name  = azurerm_resource_group.primary_wus3.name
-  storage_account_type = "Premium_ZRS"
-  disk_size_gb         = 10
+resource "azapi_resource" "disk_vm_wus3" {
+  location  = azapi_resource.rg_primary_wus3.location
+  name      = "data-${azapi_resource.rg_primary_wus3.location}-disk"
+  parent_id = azapi_resource.rg_primary_wus3.id
+  type      = "Microsoft.Compute/disks@2023-04-02"
+  body = {
+    sku = {
+      name = "Premium_ZRS"
+    }
+    properties = {
+      creationData = {
+        createOption = "Empty"
+      }
+      diskSizeGB = 10
+    }
+  }
 }
-resource "azurerm_virtual_machine_data_disk_attachment" "vm_wus3" {
-  caching            = "ReadWrite"
-  lun                = "10"
-  managed_disk_id    = azurerm_managed_disk.vm_wus3.id
-  virtual_machine_id = azurerm_windows_virtual_machine.vm_wus3.id
-}
-# resource "azurerm_public_ip" "westus3" {
-#   allocation_method   = "Static"
-#   location            = azurerm_resource_group.primary_wus3.location
-#   name                = "vm-public-ip-${azurerm_resource_group.primary_wus3.location}"
-#   resource_group_name = azurerm_resource_group.primary_wus3.name
-#   sku                 = "Standard"
-#   zones               = ["1", "2", "3"]
+# The data disk is attached through the virtual machine body
+# (properties.storageProfile.dataDisks) with createOption = "Attach".
+
+# resource "azapi_resource" "pip_westus3" {
+#   location  = azapi_resource.rg_primary_wus3.location
+#   name      = "vm-public-ip-${azapi_resource.rg_primary_wus3.location}"
+#   parent_id = azapi_resource.rg_primary_wus3.id
+#   type      = "Microsoft.Network/publicIPAddresses@2024-05-01"
+#   body = {
+#     sku = {
+#       name = "Standard"
+#     }
+#     zones = ["1", "2", "3"]
+#     properties = {
+#       publicIPAllocationMethod = "Static"
+#     }
+#   }
 # }

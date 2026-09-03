@@ -36,27 +36,30 @@ module "naming" {
   version = "0.4.3"
 }
 
-resource "azurerm_resource_group" "this" {
-  location = local.test_regions[random_integer.region_index.result]
-  name     = module.naming.resource_group.name_unique
+data "azapi_client_config" "this" {}
+
+resource "azapi_resource" "this" {
+  location  = local.test_regions[random_integer.region_index.result]
+  name      = module.naming.resource_group.name_unique
+  parent_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2024-11-01"
 }
 
-resource "azurerm_resource_group" "primary" {
-  location = "westus3"
-  name     = "${module.naming.resource_group.name_unique}-wus3"
+resource "azapi_resource" "primary" {
+  location  = "westus3"
+  name      = "${module.naming.resource_group.name_unique}-wus3"
+  parent_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2024-11-01"
 }
-resource "azurerm_resource_group" "secondary" {
-  location = "Central US"
-  name     = "${module.naming.resource_group.name_unique}-cus"
+resource "azapi_resource" "secondary" {
+  location  = "Central US"
+  name      = "${module.naming.resource_group.name_unique}-cus"
+  parent_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2024-11-01"
 }
 locals {
   test_regions = ["eastus", "eastus2", "westus2"]
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
-}
-
-module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
 }
 
 module "azure_region" {
@@ -65,19 +68,20 @@ module "azure_region" {
 
   azure_region = "westus3"
 }
-resource "azurerm_user_assigned_identity" "this_identity" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this.name
+resource "azapi_resource" "this_identity" {
+  location  = azapi_resource.this.location
+  name      = module.naming.user_assigned_identity.name_unique
+  parent_id = azapi_resource.this.id
+  type      = "Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31"
 }
 
 
 module "recovery_services_vault" {
   source = "../../"
 
-  location                                       = azurerm_resource_group.this.location
+  location                                       = azapi_resource.this.location
   name                                           = local.vault_name
-  resource_group_name                            = azurerm_resource_group.this.name
+  resource_group_name                            = azapi_resource.this.name
   sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
@@ -148,7 +152,7 @@ module "recovery_services_vault" {
   }
   managed_identities = {
     system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
+    user_assigned_resource_ids = [azapi_resource.this_identity.id]
   }
   public_network_access_enabled = true
   storage_mode_type             = "GeoRedundant"
@@ -309,9 +313,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
-
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7, < 5.1.1)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
 
@@ -319,12 +321,13 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_resource_group.primary](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_resource_group.secondary](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_user_assigned_identity.this_identity](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
+- [azapi_resource.primary](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.secondary](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.this_identity](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_string.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) (resource)
+- [azapi_client_config.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -360,12 +363,6 @@ Version: 0.4.3
 Source: ../../
 
 Version:
-
-### <a name="module_regions"></a> [regions](#module\_regions)
-
-Source: Azure/regions/azurerm
-
-Version: 0.8.2
 
 ### <a name="module_this"></a> [this](#module\_this)
 

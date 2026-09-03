@@ -1,5 +1,6 @@
 locals {
-  backup = merge(local.full, local.log, local.diff)
+  api_version = split("@", var.resource_types.recoveryservices_vaults_backup_policies)[1]
+  backup      = merge(local.full, local.log, local.diff)
   diff = var.workload_backup_policy == null ? {} : { for key_index, value in var.workload_backup_policy.protection_policy :
     (key_index) => value
     if key_index == "differential" && var.workload_backup_policy["backup_frequency"] == "Weekly"
@@ -21,7 +22,7 @@ resource "azapi_resource" "this" {
 
   name      = var.workload_backup_policy.name
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.RecoveryServices/vaults/${var.recovery_vault_name}"
-  type      = "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01"
+  type      = var.resource_types.recoveryservices_vaults_backup_policies
   body = {
     properties = {
       backupManagementType = "AzureWorkload"
@@ -132,12 +133,28 @@ resource "azapi_resource" "this" {
     }
   }
 
+  ignore_body_changes = length(var.ignore_body_changes.recoveryservices_vaults_backup_policies) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_policies : null
   # Include api-version in both type and read query parameters to ensure Azure API accepts the read request
   read_query_parameters = {
-    "api-version" = ["2024-10-01"]
+    "api-version" = [local.api_version]
+  }
+  # No response values are consumed by this submodule's outputs
+  response_export_values = []
+  retry                  = var.retry
+  tags                   = var.tags
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
   }
 
-  # For workload policies, only export the resource ID to avoid API read errors
-  # The Azure API may not support reading full response for all workload types
-  response_export_values = ["id", "name", "type", "properties"]
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }

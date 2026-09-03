@@ -1,4 +1,5 @@
 locals {
+  api_version = split("@", var.resource_types.recoveryservices_vaults_backup_policies)[1]
   retention_policy = {
     retentionPolicyType = "LongTermRetentionPolicy"
     dailySchedule = var.vm_backup_policy.frequency != "Weekly" && var.vm_backup_policy.retention_daily != null ? {
@@ -114,12 +115,30 @@ data "azapi_client_config" "current" {}
 resource "azapi_resource" "this" {
   name      = var.vm_backup_policy.name
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.RecoveryServices/vaults/${var.recovery_vault_name}"
-  type      = "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01"
+  type      = var.resource_types.recoveryservices_vaults_backup_policies
   body = {
     properties = local.properties
   }
+  ignore_body_changes = length(var.ignore_body_changes.recoveryservices_vaults_backup_policies) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_policies : null
   read_query_parameters = {
-    "api-version" = ["2024-10-01"]
+    "api-version" = [local.api_version]
   }
-  response_export_values = ["*"]
+  response_export_values = []
+  retry                  = var.retry
+  tags                   = var.tags
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
