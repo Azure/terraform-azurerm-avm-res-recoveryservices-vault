@@ -385,21 +385,20 @@ resource "azapi_resource" "site_recovery_fabric_primary" {
   response_export_values = ["*"]
 }
 
-resource "azapi_resource" "site_recovery_fabric_secondary" {
-  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics@2024-10-01"
-  name      = "fabric-secondary-${random_integer.region_seed.result}"
+data "azapi_resource_list" "site_recovery_fabrics" {
   parent_id = module.recovery_services_vault_primary.resource_id
+  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics@2024-10-01"
 
-  body = {
-    properties = {
-      customDetails = {
-        instanceType = "Azure"
-        location     = azapi_resource.resource_group_target.location
-      }
-    }
-  }
+  response_export_values = ["value"]
 
-  response_export_values = ["*"]
+  depends_on = [azapi_resource.site_recovery_fabric_primary]
+}
+
+locals {
+  site_recovery_fabric_secondary = one([
+    for fabric in data.azapi_resource_list.site_recovery_fabrics.output.value : fabric
+    if fabric.properties.customDetails.location == azapi_resource.resource_group_target.location
+  ])
 }
 
 resource "azapi_resource" "site_recovery_protection_container_primary" {
@@ -417,7 +416,7 @@ resource "azapi_resource" "site_recovery_protection_container_primary" {
 resource "azapi_resource" "site_recovery_protection_container_secondary" {
   type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers@2024-10-01"
   name      = "pc-secondary-${random_integer.region_seed.result}"
-  parent_id = azapi_resource.site_recovery_fabric_secondary.id
+  parent_id = local.site_recovery_fabric_secondary.id
 
   body = {
     properties = {}
@@ -474,7 +473,7 @@ resource "azapi_resource" "site_recovery_network_mapping" {
         instanceType     = "AzureToAzure"
         primaryNetworkId = azapi_resource.virtual_network_source.id
       }
-      recoveryFabricName = azapi_resource.site_recovery_fabric_secondary.name
+      recoveryFabricName = local.site_recovery_fabric_secondary.name
       recoveryNetworkId  = azapi_resource.virtual_network_target.id
     }
   }
@@ -576,7 +575,6 @@ The following resources are used by this module:
 - [azapi_resource.resource_group_source](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.resource_group_target](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.site_recovery_fabric_primary](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
-- [azapi_resource.site_recovery_fabric_secondary](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.site_recovery_network_mapping](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.site_recovery_protection_container_mapping](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.site_recovery_protection_container_primary](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
@@ -600,6 +598,7 @@ The following resources are used by this module:
 - [random_uuid.storage_blob_data_contributor_assignment](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [random_uuid.storage_queue_data_contributor_assignment](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [azapi_client_config.current](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
+- [azapi_resource_list.site_recovery_fabrics](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource_list) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
