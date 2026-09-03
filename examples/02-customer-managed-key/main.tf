@@ -18,19 +18,20 @@ module "naming" {
   version = "0.4.3"
 }
 
-resource "azurerm_resource_group" "this" {
-  location = local.test_regions[random_integer.region_index.result]
-  name     = module.naming.resource_group.name_unique
+data "azapi_client_config" "this" {}
+
+resource "azapi_resource" "this" {
+  location  = local.test_regions[random_integer.region_index.result]
+  name      = module.naming.resource_group.name_unique
+  parent_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2021-04-01"
 }
 
 locals {
-  test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
-  vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-002"
-}
-
-module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
+  key_vault_administrator_role_definition_id  = "/subscriptions/${data.azapi_client_config.this.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/00482a5a-887f-4fb3-b363-3b7fe8e74483"
+  key_vault_crypto_officer_role_definition_id = "/subscriptions/${data.azapi_client_config.this.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/14b46e9e-c2b7-41b4-b07b-48a6ebf60603"
+  test_regions                                = ["eastus", "eastus2", "westus3"] #  "westu2",
+  vault_name                                  = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-002"
 }
 
 module "azure_region" {
@@ -43,24 +44,24 @@ module "azure_region" {
 module "recovery_services_vault" {
   source = "../../"
 
-  location                                       = azurerm_resource_group.this.location
+  location                                       = azapi_resource.this.location
   name                                           = local.vault_name #"rsv-test-vault-001"
-  resource_group_name                            = azurerm_resource_group.this.name
+  resource_group_name                            = azapi_resource.this.name
   sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
   customer_managed_key = {
-    key_vault_resource_id = module.avm_res_keyvault_vault.resource_id
-    key_name              = azurerm_key_vault_key.this.id
+    key_vault_resource_id = azapi_resource.key_vault.id
+    key_name              = azapi_resource.key_vault_key.output.properties.keyUriWithVersion
     user_assigned_identity = {
-      resource_id = azurerm_user_assigned_identity.this_identity.id
+      resource_id = azapi_resource.user_assigned_identity.id
     }
   }
   managed_identities = {
     system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
+    user_assigned_resource_ids = [azapi_resource.user_assigned_identity.id]
   }
   public_network_access_enabled = true
   storage_mode_type             = "GeoRedundant"
@@ -70,68 +71,110 @@ module "recovery_services_vault" {
     dept  = "IT"
   }
 
-  depends_on = [azurerm_key_vault_key.this, module.avm_res_keyvault_vault, ]
+  depends_on = [azapi_resource.key_vault_key, azapi_resource.key_vault, ]
 }
 
-data "azurerm_client_config" "current" {}
-
-resource "azurerm_user_assigned_identity" "this_identity" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this.name
+resource "azapi_resource" "user_assigned_identity" {
+  location  = azapi_resource.this.location
+  name      = module.naming.user_assigned_identity.name_unique
+  parent_id = azapi_resource.this.id
+  type      = "Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31"
+  response_export_values = [
+    "properties.principalId",
+  ]
 }
 
 # Wait for Key Vault network settings to take effect before creating the key.
 resource "time_sleep" "wait_for_kv" {
   create_duration = "3m"
 
-  depends_on = [module.avm_res_keyvault_vault]
+  depends_on = [azapi_resource.key_vault]
 }
 
 # Create a customer-managed key for a Recovery Services Vault.
-resource "azurerm_key_vault_key" "this" {
-  key_opts = [
-    "decrypt",
-    "encrypt",
-    "sign",
-    "unwrapKey",
-    "verify",
-    "wrapKey"
+resource "azapi_resource" "key_vault_key" {
+  name      = module.naming.key_vault_key.name_unique
+  parent_id = azapi_resource.key_vault.id
+  type      = "Microsoft.KeyVault/vaults/keys@2023-07-01"
+  body = {
+    properties = {
+      kty     = "RSA"
+      keySize = 2048
+      keyOps = [
+        "decrypt",
+        "encrypt",
+        "sign",
+        "unwrapKey",
+        "verify",
+        "wrapKey"
+      ]
+    }
+  }
+  response_export_values = [
+    "properties.keyUriWithVersion",
   ]
-  key_type     = "RSA"
-  key_vault_id = module.avm_res_keyvault_vault.resource_id
-  name         = module.naming.key_vault_key.name_unique
-  key_size     = 2048
 
   depends_on = [time_sleep.wait_for_kv]
 }
 
 #create a keyvault for storing the credential with RBAC for the deployment user
-module "avm_res_keyvault_vault" {
-  source  = "Azure/avm-res-keyvault-vault/azurerm"
-  version = "0.11.0"
-
-  location            = azurerm_resource_group.this.location
-  name                = "${module.naming.key_vault.name_unique}-002"
-  resource_group_name = azurerm_resource_group.this.name
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  network_acls        = null
-  role_assignments = {
-    deployment_user_secrets = {
-      role_definition_id_or_name = "Key Vault Administrator"
-      principal_id               = data.azurerm_client_config.current.object_id
-    }
-
-    customer_managed_key = {
-      role_definition_id_or_name = "Key Vault Crypto Officer"
-      principal_id               = azurerm_user_assigned_identity.this_identity.principal_id
+resource "azapi_resource" "key_vault" {
+  location  = azapi_resource.this.location
+  name      = "${module.naming.key_vault.name_unique}-002"
+  parent_id = azapi_resource.this.id
+  type      = "Microsoft.KeyVault/vaults@2023-07-01"
+  body = {
+    properties = {
+      tenantId = data.azapi_client_config.this.tenant_id
+      sku = {
+        family = "A"
+        name   = "standard"
+      }
+      enableRbacAuthorization = true
+      enableSoftDelete        = true
+      # Recovery Services vault CMK encryption requires purge protection on the key vault.
+      enablePurgeProtection     = true
+      softDeleteRetentionInDays = 7
+      publicNetworkAccess       = "Enabled"
+      networkAcls = {
+        bypass        = "AzureServices"
+        defaultAction = "Allow"
+      }
     }
   }
+  response_export_values = [
+    "properties.vaultUri",
+  ]
   tags = {
     Dep = "IT"
   }
-  wait_for_rbac_before_secret_operations = {
-    create = "60s"
-  }
 }
 
+# Grants the deployment user data-plane administration on the key vault.
+resource "azapi_resource" "key_vault_administrator" {
+  name      = uuidv5("url", "${azapi_resource.key_vault.id}${data.azapi_client_config.this.object_id}${local.key_vault_administrator_role_definition_id}")
+  parent_id = azapi_resource.key_vault.id
+  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
+  body = {
+    properties = {
+      principalId      = data.azapi_client_config.this.object_id
+      roleDefinitionId = local.key_vault_administrator_role_definition_id
+    }
+  }
+  response_export_values = []
+}
+
+# Grants the user-assigned identity access to the customer-managed key.
+resource "azapi_resource" "key_vault_crypto_officer" {
+  name      = uuidv5("url", "${azapi_resource.key_vault.id}${azapi_resource.user_assigned_identity.output.properties.principalId}${local.key_vault_crypto_officer_role_definition_id}")
+  parent_id = azapi_resource.key_vault.id
+  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
+  body = {
+    properties = {
+      principalId      = azapi_resource.user_assigned_identity.output.properties.principalId
+      principalType    = "ServicePrincipal"
+      roleDefinitionId = local.key_vault_crypto_officer_role_definition_id
+    }
+  }
+  response_export_values = []
+}

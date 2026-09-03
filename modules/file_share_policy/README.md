@@ -15,7 +15,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
 ## Resources
 
@@ -161,17 +161,107 @@ object({
 
 Default: `null`
 
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative paths to ignore for each AzAPI resource managed by this submodule. Paths use dot notation, for example `properties.schedulePolicy`.  
+List indices are not supported; ignore the whole list property instead.  
+This argument is provider-private, so changes take effect only after apply, and ignored configuration is not sent to Azure until the path is removed.
+
+- `recoveryservices_vaults_backup_policies` - Body-relative paths ignored on the `Microsoft.RecoveryServices/vaults/backupPolicies` resource.
+
+Type:
+
+```hcl
+object({
+    recoveryservices_vaults_backup_policies = optional(list(string), [])
+  })
+```
+
+Default: `{}`
+
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: AzAPI resource types and API versions used by this submodule.
+
+- `recoveryservices_vaults_backup_policies` - Resource type and API version for the file share backup policy.
+
+Type:
+
+```hcl
+object({
+    recoveryservices_vaults_backup_policies = optional(string, "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01")
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration applied to every `azapi` resource created by this module. Defaults to `null` (no custom retry).
+
+- `error_message_regex`  - (Optional) A list of regex patterns matching error messages that trigger a retry.
+- `interval_seconds`     - (Optional) Initial interval between retries in seconds.
+- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
+
+See <https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource#retry> for full semantics.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+```
+
+Default: `null`
+
+### <a name="input_tags"></a> [tags](#input\_tags)
+
+Description: (Optional) Tags of the resource.
+
+Type: `map(string)`
+
+Default: `null`
+
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: Default per-operation timeouts applied to every `azapi` resource created by this module. Defaults to `null` (provider defaults). Each value is a Go duration string (e.g. `30m`, `1h`).
+
+- `create` - (Optional) Timeout for create operations.
+- `read`   - (Optional) Timeout for read operations.
+- `update` - (Optional) Timeout for update operations.
+- `delete` - (Optional) Timeout for delete operations.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+```
+
+Default: `null`
+
 ## Outputs
 
 The following outputs are exported:
 
-### <a name="output_resource"></a> [resource](#output\_resource)
+### <a name="output_body"></a> [body](#output\_body)
 
-Description: resource Id output
+Description: The configured AzAPI request body sent to Azure for the file share backup policy.
+
+### <a name="output_name"></a> [name](#output\_name)
+
+Description: The name of the file share backup policy.
 
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
-Description: resource Id output
+Description: The resource ID of the file share backup policy.
 
 ## Modules
 

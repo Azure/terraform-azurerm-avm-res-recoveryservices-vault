@@ -15,7 +15,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7, < 5.1.1)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
 - <a name="requirement_time"></a> [time](#requirement\_time) (~> 0.14.0)
 
@@ -23,9 +23,10 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_backup_protected_vm.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_protected_vm) (resource)
+- [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [time_sleep.wait_pre](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) (resource)
-- [azurerm_backup_policy_vm.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/backup_policy_vm) (data source)
+- [azapi_client_config.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
+- [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -62,17 +63,116 @@ object({
 
 Default: `null`
 
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative paths to ignore for each AzAPI resource owned by this module. Paths use dot notation, e.g. `properties.policyId`.  
+Changes take effect only after apply. Ignored configuration is not sent to Azure until the path is removed.
+
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Paths ignored on the Azure Backup protected item resource.
+
+Type:
+
+```hcl
+object({
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(list(string), [])
+  })
+```
+
+Default: `{}`
+
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: AzAPI resource types and API versions used by this module.
+
+- `recoveryservices_vaults_backup_policies` - Resource type and API version used to look up the existing VM backup policy.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Resource type and API version for the Azure Backup protected item.
+
+Type:
+
+```hcl
+object({
+    recoveryservices_vaults_backup_policies                                      = optional(string, "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01")
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(string, "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01")
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration applied to every `azapi` resource created by this module. Defaults to `null` (no custom retry).
+
+- `error_message_regex`  - (Optional) A list of regex patterns matching error messages that trigger a retry.
+- `interval_seconds`     - (Optional) Initial interval between retries in seconds.
+- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
+
+See <https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource#retry> for full semantics.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+```
+
+Default: `null`
+
+### <a name="input_tags"></a> [tags](#input\_tags)
+
+Description: (Optional) Tags of the resource.
+
+Type: `map(string)`
+
+Default: `null`
+
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: Default per-operation timeouts applied to every `azapi` resource created by this module. Defaults to `null` (provider defaults). Each value is a Go duration string (e.g. `30m`, `1h`).
+
+- `create` - (Optional) Timeout for create operations.
+- `read`   - (Optional) Timeout for read operations.
+- `update` - (Optional) Timeout for update operations.
+- `delete` - (Optional) Timeout for delete operations.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+```
+
+Default: `null`
+
 ## Outputs
 
 The following outputs are exported:
 
-### <a name="output_resource"></a> [resource](#output\_resource)
+### <a name="output_body"></a> [body](#output\_body)
 
-Description: resource Id output
+Description: The configured AzAPI request body sent to Azure for the Azure Backup protected item.
+
+### <a name="output_name"></a> [name](#output\_name)
+
+Description: The name of the Azure Backup protected item.
+
+### <a name="output_parent_id"></a> [parent\_id](#output\_parent\_id)
+
+Description: The ARM resource ID of the protection container that contains the Azure Backup protected item.
+
+### <a name="output_policy_id"></a> [policy\_id](#output\_policy\_id)
+
+Description: The ARM resource ID of the backup policy applied to the Azure Backup protected item.
 
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
-Description: resource Id output
+Description: The ARM resource ID of the Azure Backup protected item.
 
 ## Modules
 

@@ -1,11 +1,14 @@
-output "resource" {
-  description = "resource Id output"
-  value       = azapi_resource.this
+output "body" {
+  description = "The configured AzAPI request body sent to Azure for the file share backup policy."
+  value       = azapi_resource.this.body
 }
 
-# Module owners should include the full resource via a 'resource' output
-# https://azure.github.io/Azure-Verified-Modules/specs/terraform/#id-tffr2---category-outputs---additional-terraform-outputs
+output "name" {
+  description = "The name of the file share backup policy."
+  value       = azapi_resource.this.name
+}
+
 output "resource_id" {
-  description = "resource Id output"
+  description = "The resource ID of the file share backup policy."
   value       = azapi_resource.this.id
 }

@@ -4,5 +4,10 @@ module "recovery_workload_policy" {
 
   recovery_vault_name    = azapi_resource.this.name
   resource_group_name    = var.resource_group_name
+  ignore_body_changes    = var.ignore_body_changes.recovery_workload_policy
+  resource_types         = var.resource_types.recovery_workload_policy
+  retry                  = var.retry
+  tags                   = var.tags
+  timeouts               = var.timeouts
   workload_backup_policy = each.value
 }
