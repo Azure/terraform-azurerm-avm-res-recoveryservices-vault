@@ -18,19 +18,25 @@ module "naming" {
   version = "0.4.3"
 }
 
-resource "azurerm_resource_group" "this" {
-  location = local.test_regions[random_integer.region_index.result]
-  name     = module.naming.resource_group.name_unique
+data "azapi_client_config" "current" {}
+
+data "azapi_resource" "contributor_role_definition" {
+  name      = "b24988ac-6180-42a0-ab88-20f7382dd24c"
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type      = "Microsoft.Authorization/roleDefinitions@2022-04-01"
+}
+
+resource "azapi_resource" "resource_group" {
+  location  = local.test_regions[random_integer.region_index.result]
+  name      = module.naming.resource_group.name_unique
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2024-03-01"
+  body      = {}
 }
 
 locals {
   test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-003"
-}
-
-module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
 }
 
 module "azure_region" {
@@ -47,9 +53,9 @@ locals {
 module "recovery_services_vault" {
   source = "../../"
 
-  location                                       = azurerm_resource_group.this.location
+  location                                       = azapi_resource.resource_group.location
   name                                           = local.vault_name
-  resource_group_name                            = azurerm_resource_group.this.name
+  resource_group_name                            = azapi_resource.resource_group.name
   sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
@@ -57,7 +63,7 @@ module "recovery_services_vault" {
   cross_region_restore_enabled                   = false
   managed_identities = {
     system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
+    user_assigned_resource_ids = [azapi_resource.this_identity.id]
   }
   #create a private endpoint for each endpoint type
   private_endpoints = {
@@ -66,9 +72,9 @@ module "recovery_services_vault" {
 
       # the name must be set to avoid conflicting resources.
       name                          = "pe-${endpoint}-${local.vault_name}"
-      subnet_resource_id            = azurerm_subnet.private.id
+      subnet_resource_id            = azapi_resource.private_subnet.id
       subresource_name              = endpoint
-      private_dns_zone_resource_ids = [azurerm_private_dns_zone.this[endpoint].id]
+      private_dns_zone_resource_ids = [azapi_resource.private_dns_zone[endpoint].id]
 
       # these are optional but illustrate making well-aligned service connection & NIC names.
       private_service_connection_name = "psc-${endpoint}-${local.vault_name}"
@@ -84,8 +90,8 @@ module "recovery_services_vault" {
 
       role_assignments = {
         role_assignment_1 = {
-          role_definition_id_or_name = data.azurerm_role_definition.this.id
-          principal_id               = data.azurerm_client_config.current.object_id
+          role_definition_id_or_name = data.azapi_resource.contributor_role_definition.id
+          principal_id               = data.azapi_client_config.current.object_id
         }
       }
     }
@@ -96,72 +102,92 @@ module "recovery_services_vault" {
   storage_mode_type             = "GeoRedundant"
 }
 
-resource "azurerm_virtual_network" "vnet" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.virtual_network.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-  address_space       = ["192.168.0.0/16"]
+resource "azapi_resource" "vnet" {
+  location  = azapi_resource.resource_group.location
+  name      = module.naming.virtual_network.name_unique
+  parent_id = azapi_resource.resource_group.id
+  type      = "Microsoft.Network/virtualNetworks@2024-05-01"
+  body = {
+    properties = {
+      addressSpace = {
+        addressPrefixes = ["192.168.0.0/16"]
+      }
+    }
+  }
 }
 
-resource "azurerm_subnet" "private" {
-  address_prefixes     = ["192.168.0.0/24"]
-  name                 = module.naming.subnet.name_unique
-  resource_group_name  = azurerm_resource_group.this.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
+resource "azapi_resource" "nsg" {
+  location  = azapi_resource.resource_group.location
+  name      = module.naming.network_security_group.name_unique
+  parent_id = azapi_resource.resource_group.id
+  type      = "Microsoft.Network/networkSecurityGroups@2024-05-01"
+  body = {
+    properties = {}
+  }
 }
 
-resource "azurerm_network_security_group" "nsg" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.network_security_group.name_unique
-  resource_group_name = azurerm_resource_group.this.name
+resource "azapi_resource" "private_subnet" {
+  name      = module.naming.subnet.name_unique
+  parent_id = azapi_resource.vnet.id
+  type      = "Microsoft.Network/virtualNetworks/subnets@2024-05-01"
+  body = {
+    properties = {
+      addressPrefix                  = "192.168.0.0/24"
+      networkSecurityGroup           = { id = azapi_resource.nsg.id }
+      privateEndpointNetworkPolicies = "Disabled"
+    }
+  }
 }
 
-resource "azurerm_subnet_network_security_group_association" "private" {
-  network_security_group_id = azurerm_network_security_group.nsg.id
-  subnet_id                 = azurerm_subnet.private.id
+resource "azapi_resource" "no_internet_rule" {
+  name      = module.naming.network_security_rule.name_unique
+  parent_id = azapi_resource.nsg.id
+  type      = "Microsoft.Network/networkSecurityGroups/securityRules@2024-05-01"
+  body = {
+    properties = {
+      access                   = "Deny"
+      destinationAddressPrefix = "Internet"
+      destinationPortRange     = "*"
+      direction                = "Outbound"
+      priority                 = 100
+      protocol                 = "*"
+      sourceAddressPrefix      = "192.168.0.0/24"
+      sourcePortRange          = "*"
+    }
+  }
 }
 
-resource "azurerm_network_security_rule" "no_internet" {
-  access                      = "Deny"
-  direction                   = "Outbound"
-  name                        = module.naming.network_security_rule.name_unique
-  network_security_group_name = azurerm_network_security_group.nsg.name
-  priority                    = 100
-  protocol                    = "*"
-  resource_group_name         = azurerm_resource_group.this.name
-  destination_address_prefix  = "Internet"
-  destination_port_range      = "*"
-  source_address_prefix       = azurerm_subnet.private.address_prefixes[0]
-  source_port_range           = "*"
-}
-
-resource "azurerm_private_dns_zone" "this" {
+resource "azapi_resource" "private_dns_zone" {
   for_each = local.endpoints_dns_zones
 
-  name                = each.value == "blob" || each.value == "queue" ? "privatelink.${each.value}.core.windows.net" : each.value == "AzureBackup" ? replace("privatelink.${each.value}.windowsazure.com", "AzureBackup", "${module.azure_region.location_short}.backup") : replace("privatelink.${each.value}.windowsazure.com", "AzureSiteRecovery", "siterecovery")
-  resource_group_name = azurerm_resource_group.this.name
+  location  = "global"
+  name      = each.value == "blob" || each.value == "queue" ? "privatelink.${each.value}.core.windows.net" : each.value == "AzureBackup" ? replace("privatelink.${each.value}.windowsazure.com", "AzureBackup", "${module.azure_region.location_short}.backup") : replace("privatelink.${each.value}.windowsazure.com", "AzureSiteRecovery", "siterecovery")
+  parent_id = azapi_resource.resource_group.id
+  type      = "Microsoft.Network/privateDnsZones@2024-06-01"
+  body      = {}
   tags = {
     env = "Dev"
   }
 }
 
-resource "azurerm_private_dns_zone_virtual_network_link" "private_links" {
-  for_each = azurerm_private_dns_zone.this
+resource "azapi_resource" "private_dns_zone_virtual_network_link" {
+  for_each = azapi_resource.private_dns_zone
 
-  name                  = "${each.key}_${azurerm_virtual_network.vnet.name}-link"
-  private_dns_zone_name = azurerm_private_dns_zone.this[each.key].name
-  resource_group_name   = azurerm_resource_group.this.name
-  virtual_network_id    = azurerm_virtual_network.vnet.id
+  name      = "${each.key}_${azapi_resource.vnet.name}-link"
+  parent_id = azapi_resource.private_dns_zone[each.key].id
+  type      = "Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01"
+  body = {
+    properties = {
+      registrationEnabled = false
+      virtualNetwork      = { id = azapi_resource.vnet.id }
+    }
+  }
 }
 
-data "azurerm_client_config" "current" {}
-
-resource "azurerm_user_assigned_identity" "this_identity" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-}
-
-data "azurerm_role_definition" "this" {
-  name = "Contributor"
+resource "azapi_resource" "this_identity" {
+  location  = azapi_resource.resource_group.location
+  name      = module.naming.user_assigned_identity.name_unique
+  parent_id = azapi_resource.resource_group.id
+  type      = "Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31"
+  body      = {}
 }

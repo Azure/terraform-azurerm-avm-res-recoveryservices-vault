@@ -3,11 +3,16 @@ output "backup_protected_vm" {
   value       = module.backup_protected_vm
 }
 
+output "backup_protected_workload" {
+  description = "The workload (SQL Server on Azure VM) protection containers and protected items"
+  value       = module.backup_protected_workload
+}
+
 output "private_endpoints" {
   description = <<DESCRIPTION
-  A map of private endpoints. The map key is the supplied input to var.private_endpoints. The map value is the entire azurerm_private_endpoint resource."
+  A map of private endpoints. The map key is the supplied input to var.private_endpoints. The map value is the entire azapi_resource private endpoint resource.
   DESCRIPTION
-  value       = var.private_endpoints_manage_dns_zone_group ? azurerm_private_endpoint.this_managed_dns_zone_groups : azurerm_private_endpoint.this_unmanaged_dns_zone_groups
+  value       = var.private_endpoints_manage_dns_zone_group ? azapi_resource.private_endpoint_managed_dns_zone_groups : azapi_resource.private_endpoint_unmanaged_dns_zone_groups
 }
 
 output "recovery_services_vault_file_share_policy" {
@@ -17,7 +22,7 @@ output "recovery_services_vault_file_share_policy" {
 
 output "recovery_services_vault_resource_guard_association" {
   description = "Resource Guard association for the Recovery Services Vault"
-  value       = try(azurerm_recovery_services_vault_resource_guard_association.this[0], null)
+  value       = try(azapi_resource.resource_guard_association[0], null)
 }
 
 output "recovery_services_vault_vm_policy" {

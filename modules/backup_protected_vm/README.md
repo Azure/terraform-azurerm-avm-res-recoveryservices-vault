@@ -15,7 +15,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7, < 5.1.1)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
 - <a name="requirement_time"></a> [time](#requirement\_time) (~> 0.14.0)
 
@@ -23,40 +23,99 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_backup_protected_vm.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_protected_vm) (resource)
+- [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [time_sleep.wait_pre](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) (resource)
-- [azurerm_backup_policy_vm.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/backup_policy_vm) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
 
-No required inputs.
-
-## Optional Inputs
-
-The following input variables are optional (have default values):
+The following input variables are required:
 
 ### <a name="input_backup_protected_vm"></a> [backup\_protected\_vm](#input\_backup\_protected\_vm)
 
-Description: values for backup\_protected\_vm module
+Description: Configuration for protecting one Azure virtual machine with Azure Backup.
 
 Type:
 
 ```hcl
 object({
-    source_vm_id              = string
-    vm_backup_policy_name     = string
-    vault_name                = string
-    vault_resource_group_name = string
-    sleep_timer               = optional(string, "60s")
-    timeouts = optional(map(object({
-      # The timeouts block allows you to specify a duration for the create, delete, read, and update operations.
-      create = optional(string, "60m")
-      delete = optional(string, "60m")
-      read   = optional(string, "60m")
-      update = optional(string, "60m")
-    })))
+    backup_policy_id = string
+    sleep_timer      = optional(string, "60s")
+    source_vm_id     = string
+  })
+```
 
+### <a name="input_parent_id"></a> [parent\_id](#input\_parent\_id)
+
+Description: The fully-qualified ARM resource ID of the Azure Backup protection container that will contain the protected virtual machine.
+
+Type: `string`
+
+## Optional Inputs
+
+The following input variables are optional (have default values):
+
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative paths ignored on the protected item resource. Paths use dot notation.  
+Changes take effect only after apply. Ignored configuration is not sent to Azure until the path is removed.
+
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Paths ignored on the protected virtual machine resource.
+
+Type:
+
+```hcl
+object({
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(list(string), [])
+  })
+```
+
+Default: `{}`
+
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: AzAPI resource types and API versions used by the protected virtual machine submodule.
+
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Resource type and API version for the protected virtual machine.
+
+Type:
+
+```hcl
+object({
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(string, "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01")
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration applied to the protected virtual machine AzAPI resource.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+```
+
+Default: `null`
+
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: Per-operation timeouts applied to the protected virtual machine AzAPI resource.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
   })
 ```
 
@@ -66,13 +125,17 @@ Default: `null`
 
 The following outputs are exported:
 
+### <a name="output_protection_state"></a> [protection\_state](#output\_protection\_state)
+
+Description: The protection state returned by Azure Backup.
+
 ### <a name="output_resource"></a> [resource](#output\_resource)
 
-Description: resource Id output
+Description: The protected virtual machine resource.
 
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
-Description: resource Id output
+Description: The resource ID of the protected virtual machine.
 
 ## Modules
 

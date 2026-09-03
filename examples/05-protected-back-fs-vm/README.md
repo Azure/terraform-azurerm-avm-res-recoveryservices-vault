@@ -16,8 +16,8 @@ This example creates protected backup items in the vault for both an Azure file 
 The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the [repository](https://aka.ms/avm/telemetry). There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft’s privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
 
 ```hcl
+data "azapi_client_config" "current" {}
 
-data "azurerm_subscription" "this" {}
 # This ensures we have unique CAF compliant names for our resources.
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
@@ -36,45 +36,85 @@ module "naming" {
   version = "0.4.3"
 }
 
-resource "azurerm_resource_group" "this" {
-  location = "westus3"              #local.test_regions[random_integer.region_index.result]
-  name     = "rg-westus3-vault-005" #module.naming.resource_group.name_unique
+resource "azapi_resource" "resource_group" {
+  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
+  name      = "rg-westus3-vault-005"
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  location  = "westus3"
+
+  body = {}
+
+  response_export_values = ["*"]
 }
-resource "azurerm_resource_group" "primary_wus1" {
-  location = "westus"
-  name     = "rg-vm-westus-primary-005"
+
+resource "azapi_resource" "resource_group_primary_wus1" {
+  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
+  name      = "rg-vm-westus-primary-005"
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  location  = "westus"
+
+  body = {}
+
+  response_export_values = ["*"]
 }
-resource "azurerm_resource_group" "primary_wus2" {
-  location = "westus2"
-  name     = "rg-vm-westus2-primary-005"
+
+resource "azapi_resource" "resource_group_primary_wus2" {
+  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
+  name      = "rg-vm-westus2-primary-005"
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  location  = "westus2"
+
+  body = {}
+
+  response_export_values = ["*"]
 }
-resource "azurerm_resource_group" "primary_wus3" {
-  location = "westus3"
-  name     = "rg-vm-westus3-primary-005"
+
+resource "azapi_resource" "resource_group_primary_wus3" {
+  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
+  name      = "rg-vm-westus3-primary-005"
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  location  = "westus3"
+
+  body = {}
+
+  response_export_values = ["*"]
 }
-resource "azurerm_resource_group" "secondary_eus" {
-  location = "eastus"
-  name     = "rg-vm-secondary_eus-005"
+
+resource "azapi_resource" "resource_group_secondary_eus" {
+  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
+  name      = "rg-vm-secondary_eus-005"
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  location  = "eastus"
+
+  body = {}
+
+  response_export_values = ["*"]
 }
-resource "azurerm_resource_group" "secondary_eus2" {
-  location = "eastus2"
-  name     = "rg-vm-secondary_eus2-005"
+
+resource "azapi_resource" "resource_group_secondary_eus2" {
+  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
+  name      = "rg-vm-secondary_eus2-005"
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  location  = "eastus2"
+
+  body = {}
+
+  response_export_values = ["*"]
 }
-resource "azurerm_resource_group" "secondary_cus" {
-  location = "centralus"
-  name     = "rg-vm-secondary_cus-005"
+
+resource "azapi_resource" "resource_group_secondary_cus" {
+  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
+  name      = "rg-vm-secondary_cus-005"
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  location  = "centralus"
+
+  body = {}
+
+  response_export_values = ["*"]
 }
-# output "network" {
-#   value = "${data.azurerm_subscription.This.id}/resourceGroups/${azurerm_resource_group.primary_wus1.name}/providers/Microsoft.Network/virtualNetworks/vnet-westus"
-# }
 locals {
   test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-005"
-}
-
-module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
 }
 
 module "azure_region" {
@@ -83,62 +123,115 @@ module "azure_region" {
 
   azure_region = "westus3"
 }
-# must be located in the same region as the VM to be backed up
-resource "azurerm_storage_account" "primary_wus1" {
-  account_replication_type = "GRS"
-  account_tier             = "Standard"
-  location                 = azurerm_resource_group.primary_wus1.location
-  name                     = "srv${azurerm_resource_group.primary_wus1.location}005"
-  resource_group_name      = azurerm_resource_group.primary_wus1.name
+# Must be located in the same region as the VM to be backed up.
+resource "azapi_resource" "storage_account_primary_wus1" {
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  name      = "srv${azapi_resource.resource_group_primary_wus1.location}005"
+  parent_id = azapi_resource.resource_group_primary_wus1.id
+  location  = azapi_resource.resource_group_primary_wus1.location
+
+  body = {
+    kind = "StorageV2"
+    sku = {
+      name = "Standard_GRS"
+    }
+  }
+
+  response_export_values = ["*"]
 }
 
-resource "azurerm_storage_account" "primary_wus2" {
-  account_replication_type = "ZRS"
-  account_tier             = "Standard"
-  location                 = azurerm_resource_group.primary_wus2.location
-  name                     = "srv${azurerm_resource_group.primary_wus2.location}555"
-  resource_group_name      = azurerm_resource_group.primary_wus2.name
-}
-resource "azurerm_storage_account" "primary_wus3" {
-  account_replication_type = "ZRS"
-  account_tier             = "Standard"
-  location                 = azurerm_resource_group.primary_wus3.location
-  name                     = "srv${azurerm_resource_group.primary_wus3.location}555"
-  resource_group_name      = azurerm_resource_group.primary_wus3.name
-}
-resource "azurerm_storage_account" "sa" {
-  account_replication_type = "GRS"
-  account_tier             = "Standard"
-  location                 = azurerm_resource_group.primary_wus3.location
-  name                     = "fsbk${azurerm_resource_group.primary_wus3.location}555"
-  resource_group_name      = azurerm_resource_group.primary_wus3.name
+resource "azapi_resource" "storage_account_primary_wus2" {
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  name      = "srv${azapi_resource.resource_group_primary_wus2.location}555"
+  parent_id = azapi_resource.resource_group_primary_wus2.id
+  location  = azapi_resource.resource_group_primary_wus2.location
+
+  body = {
+    kind = "StorageV2"
+    sku = {
+      name = "Standard_ZRS"
+    }
+  }
+
+  response_export_values = ["*"]
 }
 
-resource "azurerm_storage_share" "this" {
-  name               = "share1"
-  quota              = 50
-  storage_account_id = azurerm_storage_account.sa.id
+resource "azapi_resource" "storage_account_primary_wus3" {
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  name      = "srv${azapi_resource.resource_group_primary_wus3.location}555"
+  parent_id = azapi_resource.resource_group_primary_wus3.id
+  location  = azapi_resource.resource_group_primary_wus3.location
+
+  body = {
+    kind = "StorageV2"
+    sku = {
+      name = "Standard_ZRS"
+    }
+  }
+
+  response_export_values = ["*"]
 }
-resource "azurerm_user_assigned_identity" "this" {
-  location            = azurerm_resource_group.this.location
-  name                = "uami-${azurerm_resource_group.this.location}-005"
-  resource_group_name = azurerm_resource_group.this.name
+
+resource "azapi_resource" "storage_account_file_share" {
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  name      = "fsbk${azapi_resource.resource_group_primary_wus3.location}555"
+  parent_id = azapi_resource.resource_group_primary_wus3.id
+  location  = azapi_resource.resource_group_primary_wus3.location
+
+  body = {
+    kind = "StorageV2"
+    sku = {
+      name = "Standard_GRS"
+    }
+  }
+
+  response_export_values = ["*"]
+}
+
+resource "azapi_resource" "storage_share" {
+  type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2023-05-01"
+  name      = "share1"
+  parent_id = "${azapi_resource.storage_account_file_share.id}/fileServices/default"
+
+  body = {
+    properties = {
+      shareQuota = 50
+    }
+  }
+
+  response_export_values = ["*"]
+}
+
+resource "azapi_resource" "user_assigned_identity" {
+  type      = "Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31"
+  name      = "uami-${azapi_resource.resource_group.location}-005"
+  parent_id = azapi_resource.resource_group.id
+  location  = azapi_resource.resource_group.location
+
+  body = {}
+
+  response_export_values = ["*"]
+}
+
+resource "random_password" "vm_admin" {
+  length           = 20
+  special          = true
+  override_special = "!@#$%&*()-_=+[]{}<>:?"
 }
 
 module "recovery_services_vault" {
   source = "../../"
 
-  location                                       = azurerm_resource_group.this.location
+  location                                       = azapi_resource.resource_group.location
   name                                           = local.vault_name #"srv-test-vault-005"
-  resource_group_name                            = azurerm_resource_group.this.name
+  resource_group_name                            = azapi_resource.resource_group.name
   sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
   backup_protected_file_share = {
     protect-share-s1 = {
-      source_storage_account_id = "${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Storage/storageAccounts/fsbk${azurerm_resource_group.primary_wus3.location}005"
-      #"${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Storage/storageAccounts/fsbk${azurerm_resource_group.primary_wus3.location}005"
-      source_file_share_name        = azurerm_storage_share.this.name
+      source_storage_account_id     = azapi_resource.storage_account_file_share.id
+      source_file_share_name        = azapi_resource.storage_share.name
       backup_file_share_policy_name = "pol-rsv-fileshare-vault-005"
       sleep_timer                   = "30s"
     }
@@ -146,8 +239,7 @@ module "recovery_services_vault" {
   backup_protected_vm = {
     vm-03 = {
       vm_backup_policy_name = "EnhancedPolicy"
-      source_vm_id          = "${data.azurerm_subscription.this.id}/resourceGroups/${azurerm_resource_group.primary_wus3.name}/providers/Microsoft.Compute/virtualMachines/vm-${azurerm_resource_group.primary_wus3.location}-005"
-      # azurerm_windows_virtual_machine.vm_wus3.id # nes/vm"
+      source_vm_id          = azapi_resource.virtual_machine_wus3.id
     }
 
   }
@@ -192,7 +284,7 @@ module "recovery_services_vault" {
   }
   managed_identities = {
     system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.this.id, ]
+    user_assigned_resource_ids = [azapi_resource.user_assigned_identity.id]
   }
   public_network_access_enabled = true
   storage_mode_type             = "GeoRedundant"
@@ -202,7 +294,7 @@ module "recovery_services_vault" {
     dept  = "IT"
   }
 
-  depends_on = [azurerm_storage_account.sa, azurerm_windows_virtual_machine.vm_wus3]
+  depends_on = [azapi_resource.storage_account_file_share, azapi_resource.virtual_machine_wus3]
 }
 ```
 
@@ -213,9 +305,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
-
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7, < 5.1.1)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
 
@@ -223,38 +313,38 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_managed_disk.vm_wus3](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/managed_disk) (resource)
-- [azurerm_network_interface.vm_wus3](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface) (resource)
-- [azurerm_resource_group.primary_wus1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_resource_group.primary_wus2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_resource_group.primary_wus3](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_resource_group.secondary_cus](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_resource_group.secondary_eus](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_resource_group.secondary_eus2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_storage_account.primary_wus1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) (resource)
-- [azurerm_storage_account.primary_wus2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) (resource)
-- [azurerm_storage_account.primary_wus3](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) (resource)
-- [azurerm_storage_account.sa](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) (resource)
-- [azurerm_storage_share.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_share) (resource)
-- [azurerm_subnet.centralus](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_subnet.eastus1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_subnet.eastus2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_subnet.westus1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_subnet.westus2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_subnet.westus3](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_user_assigned_identity.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
-- [azurerm_virtual_machine_data_disk_attachment.vm_wus3](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_machine_data_disk_attachment) (resource)
-- [azurerm_virtual_network.centralus](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
-- [azurerm_virtual_network.eastus1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
-- [azurerm_virtual_network.eastus2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
-- [azurerm_virtual_network.westus1](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
-- [azurerm_virtual_network.westus2](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
-- [azurerm_virtual_network.westus3](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
-- [azurerm_windows_virtual_machine.vm_wus3](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/windows_virtual_machine) (resource)
+- [azapi_resource.managed_disk_wus3](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.network_interface_wus3](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.resource_group](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.resource_group_primary_wus1](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.resource_group_primary_wus2](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.resource_group_primary_wus3](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.resource_group_secondary_cus](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.resource_group_secondary_eus](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.resource_group_secondary_eus2](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.storage_account_file_share](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.storage_account_primary_wus1](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.storage_account_primary_wus2](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.storage_account_primary_wus3](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.storage_share](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.subnet_centralus](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.subnet_eastus1](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.subnet_eastus2](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.subnet_westus1](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.subnet_westus2](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.subnet_westus3](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.user_assigned_identity](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.virtual_machine_wus3](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.virtual_network_centralus](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.virtual_network_eastus1](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.virtual_network_eastus2](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.virtual_network_westus1](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.virtual_network_westus2](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.virtual_network_westus3](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
+- [random_password.vm_admin](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) (resource)
 - [random_string.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) (resource)
-- [azurerm_subscription.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/subscription) (data source)
+- [azapi_client_config.current](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -294,12 +384,6 @@ Version: 0.4.3
 Source: ../../
 
 Version:
-
-### <a name="module_regions"></a> [regions](#module\_regions)
-
-Source: Azure/regions/azurerm
-
-Version: 0.8.2
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

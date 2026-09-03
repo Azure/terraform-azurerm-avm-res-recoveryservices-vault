@@ -1,5 +1,4 @@
 
-
 # This ensures we have unique CAF compliant names for our resources.
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
@@ -18,27 +17,44 @@ module "naming" {
   version = "0.4.3"
 }
 
-resource "azurerm_resource_group" "this" {
-  location = local.test_regions[random_integer.region_index.result]
-  name     = module.naming.resource_group.name_unique
+data "azapi_client_config" "current" {}
+
+resource "azapi_resource" "resource_group" {
+  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
+  name      = module.naming.resource_group.name_unique
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  location  = local.test_regions[random_integer.region_index.result]
+
+  body = {}
+
+  response_export_values = ["*"]
 }
 
-resource "azurerm_resource_group" "primary" {
-  location = "westus3"
-  name     = "${module.naming.resource_group.name_unique}-wus3"
+resource "azapi_resource" "resource_group_primary" {
+  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
+  name      = "${module.naming.resource_group.name_unique}-wus3"
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  location  = "westus3"
+
+  body = {}
+
+  response_export_values = ["*"]
 }
-resource "azurerm_resource_group" "secondary" {
-  location = "Central US"
-  name     = "${module.naming.resource_group.name_unique}-cus"
+
+resource "azapi_resource" "resource_group_secondary" {
+  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
+  name      = "${module.naming.resource_group.name_unique}-cus"
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  location  = "Central US"
+
+  body = {}
+
+  response_export_values = ["*"]
 }
+
 locals {
   test_regions = ["eastus", "eastus2", "westus2"]
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
-}
-
-module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
 }
 
 module "azure_region" {
@@ -47,19 +63,25 @@ module "azure_region" {
 
   azure_region = "westus3"
 }
-resource "azurerm_user_assigned_identity" "this_identity" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this.name
+
+resource "azapi_resource" "user_assigned_identity" {
+  type      = "Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31"
+  name      = module.naming.user_assigned_identity.name_unique
+  parent_id = azapi_resource.resource_group.id
+  location  = azapi_resource.resource_group.location
+
+  body = {}
+
+  response_export_values = ["*"]
 }
 
 
 module "recovery_services_vault" {
   source = "../../"
 
-  location                                       = azurerm_resource_group.this.location
+  location                                       = azapi_resource.resource_group.location
   name                                           = local.vault_name
-  resource_group_name                            = azurerm_resource_group.this.name
+  resource_group_name                            = azapi_resource.resource_group.name
   sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
@@ -130,7 +152,7 @@ module "recovery_services_vault" {
   }
   managed_identities = {
     system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.this_identity.id]
+    user_assigned_resource_ids = [azapi_resource.user_assigned_identity.id]
   }
   public_network_access_enabled = true
   storage_mode_type             = "GeoRedundant"
@@ -281,4 +303,3 @@ module "recovery_services_vault" {
     }
   }
 }
-

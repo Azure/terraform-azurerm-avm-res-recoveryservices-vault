@@ -12,7 +12,7 @@ resource "azapi_resource" "this" {
   location  = var.location
   name      = var.name
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}"
-  type      = "Microsoft.RecoveryServices/vaults@2024-10-01"
+  type      = var.resource_types.recoveryservices_vaults
   body = {
     sku = {
       name = var.sku
@@ -70,79 +70,270 @@ resource "azapi_resource" "this" {
   # Without this flag, importing a vault that Azure has auto-assigned an identity to
   # would produce a PUT body without the identity field, causing a 400
   # ManagedIdentityDetailsNotPresent error from the Recovery Services API.
+  ignore_body_changes    = length(var.ignore_body_changes.recoveryservices_vaults) > 0 ? var.ignore_body_changes.recoveryservices_vaults : null
   ignore_null_property   = true
   read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
   response_export_values = ["*"]
+  retry                  = var.retry
   tags                   = var.tags
   update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
-  lifecycle {}
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
 }
 
-# diagnostics and settings
-resource "azurerm_monitor_diagnostic_setting" "this" {
+# Keep existing state from releases where diagnostic settings were managed by
+# azurerm_monitor_diagnostic_setting.this.
+moved {
+  from = azurerm_monitor_diagnostic_setting.this
+  to   = azapi_resource.diagnostic_settings
+}
+
+# Keep existing state from releases where locks were managed by
+# azurerm_management_lock.this.
+moved {
+  from = azurerm_management_lock.this
+  to   = azapi_resource.lock
+}
+
+# Keep existing state from releases where role assignments were managed by
+# azurerm_role_assignment.this.
+moved {
+  from = azurerm_role_assignment.this
+  to   = azapi_resource.role_assignments
+}
+
+# Keep existing state from releases where the Resource Guard association was
+# managed by azurerm_recovery_services_vault_resource_guard_association.this.
+moved {
+  from = azurerm_recovery_services_vault_resource_guard_association.this
+  to   = azapi_resource.resource_guard_association
+}
+
+data "azapi_resource_list" "role_definitions" {
+  for_each = {
+    for key, assignment in var.role_assignments : key => assignment
+    if !strcontains(lower(assignment.role_definition_id_or_name), lower(local.role_definition_resource_substring))
+  }
+
+  parent_id = azapi_resource.this.id
+  query_parameters = {
+    "$filter" = ["roleName eq '${replace(each.value.role_definition_id_or_name, "'", "''")}'"]
+  }
+  type                   = var.resource_types.authorization_role_definitions
+  response_export_values = ["value"]
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      read = timeouts.value.read
+    }
+  }
+}
+
+resource "azapi_resource" "diagnostic_settings" {
   for_each = var.diagnostic_settings
 
-  name                           = each.value.name != null ? each.value.name : "diag-${var.name}"
-  target_resource_id             = azapi_resource.this.id
-  eventhub_authorization_rule_id = each.value.event_hub_authorization_rule_resource_id
-  eventhub_name                  = each.value.event_hub_name
-  log_analytics_destination_type = each.value.log_analytics_destination_type
-  log_analytics_workspace_id     = each.value.workspace_resource_id
-  partner_solution_id            = each.value.marketplace_partner_resource_id
-  storage_account_id             = each.value.storage_account_resource_id
-
-  dynamic "enabled_log" {
-    for_each = each.value.log_categories
-
-    content {
-      category = enabled_log.value
+  name      = each.value.name != null ? each.value.name : "diag-${var.name}"
+  parent_id = azapi_resource.this.id
+  type      = var.resource_types.insights_diagnostic_settings
+  body = {
+    properties = {
+      eventHubAuthorizationRuleId = each.value.event_hub_authorization_rule_resource_id
+      eventHubName                = each.value.event_hub_name
+      logAnalyticsDestinationType = each.value.log_analytics_destination_type
+      marketplacePartnerId        = each.value.marketplace_partner_resource_id
+      storageAccountId            = each.value.storage_account_resource_id
+      workspaceId                 = each.value.workspace_resource_id
+      logs = concat(
+        [for category in each.value.log_categories : {
+          category = category
+          enabled  = true
+        }],
+        [for category_group in each.value.log_groups : {
+          categoryGroup = category_group
+          enabled       = true
+        }],
+      )
+      metrics = [
+        for category in each.value.metric_categories : {
+          category = category
+          enabled  = true
+        }
+      ]
     }
   }
-  dynamic "enabled_log" {
-    for_each = each.value.log_groups
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes    = length(var.ignore_body_changes.insights_diagnostic_settings) > 0 ? var.ignore_body_changes.insights_diagnostic_settings : null
+  ignore_null_property   = true
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = []
+  retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
-      category_group = enabled_log.value
-    }
-  }
-
-  dynamic "metric" {
-    for_each = each.value.metric_categories
-
-    content {
-      category = metric.value
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
     }
   }
 }
 
-# apply lock to created resource when enabled
-resource "azurerm_management_lock" "this" {
+# Apply a lock to the vault when enabled.
+resource "azapi_resource" "lock" {
   count = var.lock != null ? 1 : 0
 
-  lock_level = var.lock.kind
-  name       = coalesce(var.lock.name, "lock-${var.name}")
-  scope      = azapi_resource.this.id
+  name      = coalesce(var.lock.name, "lock-${var.name}")
+  parent_id = azapi_resource.this.id
+  type      = var.resource_types.authorization_locks
+  body = {
+    properties = {
+      level = var.lock.kind
+    }
+  }
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = ["properties.level"]
+  retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
 }
 
-# set rbac when defined
-resource "azurerm_role_assignment" "this" {
+# Set RBAC assignments when defined.
+resource "azapi_resource" "role_assignments" {
   for_each = var.role_assignments
 
-  principal_id                           = each.value.principal_id
-  scope                                  = azapi_resource.this.id
-  condition                              = each.value.condition
-  condition_version                      = each.value.condition_version
-  delegated_managed_identity_resource_id = each.value.delegated_managed_identity_resource_id
-  role_definition_id                     = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : null
-  role_definition_name                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? null : each.value.role_definition_id_or_name
-  skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
+  name      = uuidv5("6ba7b810-9dad-11d1-80b4-00c04fd430c8", "${azapi_resource.this.id}|${each.value.role_definition_id_or_name}|${each.value.principal_id}")
+  parent_id = azapi_resource.this.id
+  type      = var.resource_types.authorization_role_assignments
+  body = {
+    properties = {
+      condition                          = each.value.condition
+      conditionVersion                   = each.value.condition != null ? coalesce(each.value.condition_version, "2.0") : each.value.condition_version
+      delegatedManagedIdentityResourceId = each.value.delegated_managed_identity_resource_id
+      description                        = each.value.description
+      principalId                        = each.value.principal_id
+      principalType                      = each.value.principal_type != null ? each.value.principal_type : each.value.skip_service_principal_aad_check ? "ServicePrincipal" : null
+      roleDefinitionId                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : one(data.azapi_resource_list.role_definitions[each.key].output.value).id
+    }
+  }
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes    = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
+  ignore_null_property   = true
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = ["properties"]
+  retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
+
+  lifecycle {
+    # Preserve the provider-generated UUID from the AzureRM state during migration.
+    ignore_changes = [name]
+  }
 }
 
-# associate resource guard when specified
-resource "azurerm_recovery_services_vault_resource_guard_association" "this" {
-  count = var.resource_guard_id != null ? 1 : 0
+# Associate a Resource Guard when explicitly enabled.
+resource "azapi_resource" "resource_guard_association" {
+  count = var.resource_guard_association_enabled ? 1 : 0
 
-  resource_guard_id = var.resource_guard_id
-  vault_id          = azapi_resource.this.id
+  name      = "VaultProxy"
+  parent_id = azapi_resource.this.id
+  type      = var.resource_types.recoveryservices_vaults_backup_resource_guard_proxies
+  body = {
+    properties = {
+      resourceGuardResourceId = var.resource_guard_id
+    }
+  }
+  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes    = length(var.ignore_body_changes.recoveryservices_vaults_backup_resource_guard_proxies) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_resource_guard_proxies : null
+  ignore_null_property   = true
+  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  replace_triggers_refs  = []
+  response_export_values = ["properties.resourceGuardResourceId"]
+  retry                  = var.retry
+  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
+}
+
+# Resource Guard protects the proxy from a normal DELETE. Unlock it before the
+# association resource is deleted, mirroring the AzureRM provider behavior.
+resource "azapi_resource_action" "resource_guard_association_unlock_delete" {
+  for_each = { for index, association in azapi_resource.resource_guard_association : index => association }
+
+  action      = "unlockDelete"
+  method      = "POST"
+  resource_id = each.value.id
+  type        = var.resource_types.recoveryservices_vaults_backup_resource_guard_proxies
+  body = {
+    resourceGuardOperationRequests = [
+      "${var.resource_guard_id}/deleteResourceGuardProxyRequests/default",
+    ]
+  }
+  response_export_values = []
+  retry                  = var.retry
+  when                   = "destroy"
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
 }

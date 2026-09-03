@@ -36,9 +36,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
-
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7, < 5.1.1)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
@@ -48,18 +46,21 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource.diagnostic_settings](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.private_endpoint_managed_dns_zone_groups](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.private_endpoint_unmanaged_dns_zone_groups](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.resource_guard_association](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
-- [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
-- [azurerm_private_endpoint.this_managed_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
-- [azurerm_private_endpoint.this_unmanaged_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
-- [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
-- [azurerm_recovery_services_vault_resource_guard_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/recovery_services_vault_resource_guard_association) (resource)
-- [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
+- [azapi_resource_action.private_dns_zone_group](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
+- [azapi_resource_action.private_dns_zone_group_delete](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
+- [azapi_resource_action.resource_guard_association_unlock_delete](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [azapi_client_config.current](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
+- [azapi_resource_list.role_definitions](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource_list) (data source)
 - [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
@@ -175,6 +176,59 @@ map(object({
     source_vm_id          = string
     vm_backup_policy_name = string
     sleep_timer           = optional(string, "60s")
+  }))
+```
+
+Default: `null`
+
+### <a name="input_backup_protected_workload"></a> [backup\_protected\_workload](#input\_backup\_protected\_workload)
+
+Description: A map of virtual machine hosted workloads (SQL Server databases) to protect with the Recovery Services Vault. The virtual machine is registered as a `VMAppContainer`, workload discovery is triggered, and each selected database is protected with the supplied workload backup policy. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+
+- `source_vm_id` - (Required) The resource ID of the virtual machine hosting the workload.
+- `workload_backup_policy_name` - (Required) The name of the workload backup policy in this vault to associate with the protected databases.
+- `workload_type` - (Optional) The workload type to protect. Only `SQLDataBase` is currently supported.
+- `inquiry_enabled` - (Optional) Whether to trigger a workload discovery (inquiry) on the registered container. Defaults to `true`.
+- `sleep_timer` - (Optional) Duration to sleep after registration/discovery, to allow for Azure propagation. Defaults to `"60s"`.
+- `protected_databases` - (Required) A map of databases to protect. The map key is used as the Terraform address of the protected item so that it stays deterministic when databases are added or removed.
+  - `server_name` - (Required) The name of the SQL instance hosting the database, as discovered by Azure Backup (for example `MSSQLSERVER`).
+  - `database_name` - (Required) The name of the database to protect.
+  - `protected_item_name` - (Optional) Overrides the generated protected item name (`<workload_type>;<server_name>;<database_name>`).
+  - `workload_backup_policy_id` - (Optional) Overrides the resource ID of the workload backup policy for this database, allowing policies from another vault or an externally managed policy to be used.
+
+> **Note:** The `AzureBackupWindowsWorkload` virtual machine extension and the SQL Server permissions required by Azure Backup must be configured on the virtual machine before the databases can be protected. Destroying a protected item stops protection and deletes its backup data, subject to the vault soft delete configuration.
+
+Example Inputs:
+```terraform
+backup_protected_workload = {
+  sqlvm1 = {
+    source_vm_id                = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-example/providers/Microsoft.Compute/virtualMachines/vm-sql-example"
+    workload_backup_policy_name = "pol-rsv-workload-vault-001"
+    protected_databases = {
+      master = {
+        server_name   = "MSSQLSERVER"
+        database_name = "master"
+      }
+    }
+  }
+}
+```
+
+Type:
+
+```hcl
+map(object({
+    source_vm_id                = string
+    workload_backup_policy_name = string
+    workload_type               = optional(string, "SQLDataBase")
+    inquiry_enabled             = optional(bool, true)
+    sleep_timer                 = optional(string, "60s")
+    protected_databases = map(object({
+      server_name               = string
+      database_name             = string
+      protected_item_name       = optional(string)
+      workload_backup_policy_id = optional(string)
+    }))
   }))
 ```
 
@@ -402,6 +456,47 @@ map(object({
 
 Default: `null`
 
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative paths ignored for each AzAPI resource owned by the module and the converted protection submodules. Paths use dot notation.  
+Changes take effect only after apply. Ignored configuration is not sent to Azure until the path is removed.
+
+- `recoveryservices_vaults` - Paths ignored on the Recovery Services vault.
+- `insights_diagnostic_settings` - Paths ignored on diagnostic settings.
+- `authorization_locks` - Paths ignored on locks.
+- `authorization_role_assignments` - Paths ignored on role assignments.
+- `recoveryservices_vaults_backup_resource_guard_proxies` - Paths ignored on Resource Guard proxy associations.
+- `network_private_endpoints` - Paths ignored on private endpoints.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Paths passed to the protected VM and protected file share submodules.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protection_containers` - Paths ignored on storage-account registration.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Paths ignored on protected VM and file share resources.
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Paths passed to the Site Recovery replicated VM submodule.
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Reserved for Site Recovery replicated item operations pending AzAPI action/update support for `ignore_body_changes`.
+
+Type:
+
+```hcl
+object({
+    authorization_locks                                   = optional(list(string), [])
+    authorization_role_assignments                        = optional(list(string), [])
+    insights_diagnostic_settings                          = optional(list(string), [])
+    network_private_endpoints                             = optional(list(string), [])
+    recoveryservices_vaults                               = optional(list(string), [])
+    recoveryservices_vaults_backup_resource_guard_proxies = optional(list(string), [])
+
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(object({
+      recoveryservices_vaults_backup_fabrics_protection_containers                 = optional(list(string), [])
+      recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(list(string), [])
+    }), {})
+
+    recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(object({
+      recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(list(string), [])
+    }), {})
+  })
+```
+
+Default: `{}`
+
 ### <a name="input_immutability"></a> [immutability](#input\_immutability)
 
 Description: (optional) Specify Immutability Setting of vault. Locked, Unlocked (default), Disabled
@@ -523,6 +618,14 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_resource_guard_association_enabled"></a> [resource\_guard\_association\_enabled](#input\_resource\_guard\_association\_enabled)
+
+Description: Whether to create a Resource Guard association. Set this to true whenever resource\_guard\_id is supplied, including when the ID is computed from a resource in the same configuration.
+
+Type: `bool`
+
+Default: `false`
+
 ### <a name="input_resource_guard_id"></a> [resource\_guard\_id](#input\_resource\_guard\_id)
 
 Description: (Optional) The ID of the Azure Data Protection resource guard to associate with this Recovery Services Vault.
@@ -541,6 +644,70 @@ Each item should be a fully qualified operation request resource ID under a Micr
 Type: `list(string)`
 
 Default: `[]`
+
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: AzAPI resource types and API versions used by the module and the converted protection submodules.
+
+- `recoveryservices_vaults` - Resource type and API version for the Recovery Services vault.
+- `insights_diagnostic_settings` - Resource type and API version for diagnostic settings.
+- `authorization_locks` - Resource type and API version for locks.
+- `authorization_role_assignments` - Resource type and API version for role assignments.
+- `authorization_role_definitions` - Resource type and API version for role definition lookups.
+- `recoveryservices_vaults_backup_resource_guard_proxies` - Resource type and API version for Resource Guard proxy associations.
+- `network_private_endpoints` - Resource type and API version for private endpoints.
+- `network_private_endpoints_private_dns_zone_groups` - Resource type and API version for private DNS zone groups.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Resource-type overrides passed to the protected VM and protected file share submodules.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_protected_items` - Resource-type override used to find an existing protected file share.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protectable_items` - Resource-type override used to discover file shares.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protection_containers` - Resource-type override for storage-account registration and inquiry.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Resource-type override for protected VM and file share resources.
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Resource-type overrides passed to the Site Recovery replicated VM submodule.
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Resource-type override for Site Recovery replicated item operations.
+
+Type:
+
+```hcl
+object({
+    authorization_locks                                   = optional(string, "Microsoft.Authorization/locks@2020-05-01")
+    authorization_role_assignments                        = optional(string, "Microsoft.Authorization/roleAssignments@2022-04-01")
+    authorization_role_definitions                        = optional(string, "Microsoft.Authorization/roleDefinitions@2022-05-01-preview")
+    insights_diagnostic_settings                          = optional(string, "Microsoft.Insights/diagnosticSettings@2021-05-01-preview")
+    network_private_endpoints                             = optional(string, "Microsoft.Network/privateEndpoints@2024-05-01")
+    network_private_endpoints_private_dns_zone_groups     = optional(string, "Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-05-01")
+    recoveryservices_vaults                               = optional(string, "Microsoft.RecoveryServices/vaults@2024-10-01")
+    recoveryservices_vaults_backup_resource_guard_proxies = optional(string, "Microsoft.RecoveryServices/vaults/backupResourceGuardProxies@2023-02-01")
+
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(object({
+      recoveryservices_vaults_backup_protected_items                               = optional(string)
+      recoveryservices_vaults_backup_fabrics_protectable_items                     = optional(string)
+      recoveryservices_vaults_backup_fabrics_protection_containers                 = optional(string)
+      recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(string)
+    }), {})
+
+    recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(object({
+      recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(string)
+    }), {})
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration applied to the Recovery Services vault and cascaded to the converted protection submodules.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+```
+
+Default: `null`
 
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
@@ -582,12 +749,13 @@ Description: A map of replicated virtual machines to register with the Recovery 
 - `recovery_replication_policy_id` - (Required) The ID of the replication policy to use.
 - `target_resource_id` - (Required) The resource ID where the VM should be recovered (target VM resource ID).
 - `target_recovery_fabric_id` - (Optional) The ID of the recovery fabric for the target region.
-- `target_protection_container_id` - (Optional) The ID of the protection container in the target fabric.
+- `target_protection_container_id` - (Required) The ID of the protection container in the target fabric.
 - `managed_disk` - (Optional) A map of managed disks to replicate.
 - `unmanaged_disk` - (Optional) A map of unmanaged disks to replicate.
 - `target_network_id` - (Optional) The ID of the target virtual network.
 - `target_subnet_name` - (Optional) The name of the target subnet.
 - `target_static_ip` - (Optional) The static IP to assign to the target VM.
+- `target_virtual_machine_size` - (Optional) The size of the target virtual machine.
 - `test_network_id` - (Optional) The ID of the test network.
 - `test_subnet_name` - (Optional) The name of the test subnet.
 - `recovery_resource_group_id` - (Optional) The ID of the recovery resource group.
@@ -622,7 +790,7 @@ map(object({
     target_resource_id               = string
     target_resource_group_id         = optional(string, null)
     target_recovery_fabric_id        = optional(string, null)
-    target_protection_container_id   = optional(string, null)
+    target_protection_container_id   = string
     managed_disk = optional(map(object({
       disk_id                       = string
       staging_storage_account_id    = string
@@ -641,6 +809,7 @@ map(object({
     target_static_ip                       = optional(string, null)
     test_network_id                        = optional(string, null)
     test_subnet_name                       = optional(string, null)
+    target_virtual_machine_size            = optional(string, null)
     recovery_resource_group_id             = optional(string, null)
     recovery_storage_account_id            = optional(string, null)
     recovery_target_disk_encryption_set_id = optional(string, null)
@@ -650,7 +819,7 @@ map(object({
       delete = optional(string, "60m")
       read   = optional(string, "5m")
       update = optional(string, "60m")
-    }), {})
+    }), null)
   }))
 ```
 
@@ -679,6 +848,23 @@ Description: The map of tags to be applied to the resource
 Type: `map(string)`
 
 Default: `null`
+
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: Per-operation timeouts applied to the Recovery Services vault and cascaded to the converted protection submodules.
+
+Type:
+
+```hcl
+object({
+    create = optional(string, "60m")
+    read   = optional(string, "5m")
+    update = optional(string, "60m")
+    delete = optional(string, "60m")
+  })
+```
+
+Default: `{}`
 
 ### <a name="input_vm_backup_policy"></a> [vm\_backup\_policy](#input\_vm\_backup\_policy)
 
@@ -949,9 +1135,13 @@ The following outputs are exported:
 
 Description: Resource ID of the workload backup policy
 
+### <a name="output_backup_protected_workload"></a> [backup\_protected\_workload](#output\_backup\_protected\_workload)
+
+Description: The workload (SQL Server on Azure VM) protection containers and protected items
+
 ### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
 
-Description:   A map of private endpoints. The map key is the supplied input to var.private\_endpoints. The map value is the entire azurerm\_private\_endpoint resource."
+Description:   A map of private endpoints. The map key is the supplied input to var.private\_endpoints. The map value is the entire azapi\_resource private endpoint resource.
 
 ### <a name="output_recovery_services_vault_file_share_policy"></a> [recovery\_services\_vault\_file\_share\_policy](#output\_recovery\_services\_vault\_file\_share\_policy)
 
@@ -994,6 +1184,12 @@ Version:
 ### <a name="module_backup_protected_vm"></a> [backup\_protected\_vm](#module\_backup\_protected\_vm)
 
 Source: ./modules/backup_protected_vm
+
+Version:
+
+### <a name="module_backup_protected_workload"></a> [backup\_protected\_workload](#module\_backup\_protected\_workload)
+
+Source: ./modules/backup_protected_workload
 
 Version:
 
