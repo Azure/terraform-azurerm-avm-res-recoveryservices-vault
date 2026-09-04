@@ -5,4 +5,5 @@ provider "azurerm" {
     }
   }
 }
+
 provider "azapi" {}

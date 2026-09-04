@@ -4,7 +4,6 @@ module "this" {
 
   location                 = azurerm_resource_group.primary.location
   name                     = module.naming.storage_account.name_unique
-  resource_group_name      = azurerm_resource_group.primary.name
   account_kind             = "StorageV2"
   account_replication_type = "ZRS"
   account_tier             = "Standard"
@@ -34,4 +33,5 @@ module "this" {
     owner = "John Doe"
     dept  = "IT"
   }
+  resource_group_name = azurerm_resource_group.primary.name
 }

@@ -1,17 +1,17 @@
-
-
 # This ensures we have unique CAF compliant names for our resources.
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
   max = length(local.test_regions) - 1
   min = 0
 }
+
 # This allow use to randomize the name of resources
 resource "random_string" "this" {
   length  = 6
   special = false
   upper   = false
 }
+
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
@@ -44,6 +44,7 @@ locals {
   endpoints           = toset(["AzureBackup", "AzureSiteRecovery", ])
   endpoints_dns_zones = toset(["AzureBackup", "AzureSiteRecovery", "blob", "queue"])
 }
+
 module "recovery_services_vault" {
   source = "../../"
 
@@ -104,10 +105,10 @@ resource "azurerm_virtual_network" "vnet" {
 }
 
 resource "azurerm_subnet" "private" {
-  address_prefixes     = ["192.168.0.0/24"]
   name                 = module.naming.subnet.name_unique
   resource_group_name  = azurerm_resource_group.this.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["192.168.0.0/24"]
 }
 
 resource "azurerm_network_security_group" "nsg" {
