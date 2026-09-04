@@ -385,13 +385,19 @@ resource "azapi_resource" "site_recovery_fabric_primary" {
   response_export_values = ["*"]
 }
 
+resource "time_sleep" "wait_for_site_recovery_fabric" {
+  create_duration = "2m"
+
+  depends_on = [azapi_resource.site_recovery_fabric_primary]
+}
+
 data "azapi_resource_list" "site_recovery_fabrics" {
   parent_id = module.recovery_services_vault_primary.resource_id
   type      = "Microsoft.RecoveryServices/vaults/replicationFabrics@2024-10-01"
 
   response_export_values = ["value"]
 
-  depends_on = [azapi_resource.site_recovery_fabric_primary]
+  depends_on = [time_sleep.wait_for_site_recovery_fabric]
 }
 
 locals {
