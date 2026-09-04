@@ -1,17 +1,17 @@
-
-
 # This ensures we have unique CAF compliant names for our resources.
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
   max = length(local.test_regions) - 1
   min = 0
 }
+
 # This allows us to randomize the name of resources
 resource "random_string" "this" {
   length  = 6
   special = false
   upper   = false
 }
+
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
@@ -27,10 +27,12 @@ resource "azurerm_resource_group" "primary" {
   location = "westus3"
   name     = "${module.naming.resource_group.name_unique}-wus3"
 }
+
 resource "azurerm_resource_group" "secondary" {
   location = "Central US"
   name     = "${module.naming.resource_group.name_unique}-cus"
 }
+
 locals {
   test_regions = ["eastus", "eastus2", "westus2"]
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
@@ -47,12 +49,12 @@ module "azure_region" {
 
   azure_region = "westus3"
 }
+
 resource "azurerm_user_assigned_identity" "this_identity" {
   location            = azurerm_resource_group.this.location
   name                = module.naming.user_assigned_identity.name_unique
   resource_group_name = azurerm_resource_group.this.name
 }
-
 
 module "recovery_services_vault" {
   source = "../../"
@@ -281,4 +283,3 @@ module "recovery_services_vault" {
     }
   }
 }
-

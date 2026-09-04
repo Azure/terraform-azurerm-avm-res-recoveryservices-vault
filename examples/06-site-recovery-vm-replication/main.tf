@@ -25,8 +25,8 @@ resource "random_string" "storage_suffix" {
 
 resource "random_password" "vm_admin" {
   length           = 20
-  special          = true
   override_special = "!@#$%&*()-_=+[]{}<>:?"
+  special          = true
 }
 
 locals {
@@ -48,31 +48,31 @@ locals {
 }
 
 resource "azurerm_virtual_network" "source" {
-  address_space       = ["10.10.0.0/16"]
   location            = azurerm_resource_group.this.location
   name                = "vnet-source-${random_integer.region_seed.result}"
   resource_group_name = azurerm_resource_group.this.name
+  address_space       = ["10.10.0.0/16"]
 }
 
 resource "azurerm_virtual_network" "target" {
-  address_space       = ["10.20.0.0/16"]
   location            = azurerm_resource_group.target.location
   name                = "vnet-target-${random_integer.region_seed.result}"
   resource_group_name = azurerm_resource_group.target.name
+  address_space       = ["10.20.0.0/16"]
 }
 
 resource "azurerm_subnet" "source" {
-  address_prefixes     = ["10.10.1.0/24"]
   name                 = "snet-source"
   resource_group_name  = azurerm_resource_group.this.name
   virtual_network_name = azurerm_virtual_network.source.name
+  address_prefixes     = ["10.10.1.0/24"]
 }
 
 resource "azurerm_subnet" "target" {
-  address_prefixes     = ["10.20.1.0/24"]
   name                 = "snet-target"
   resource_group_name  = azurerm_resource_group.target.name
   virtual_network_name = azurerm_virtual_network.target.name
+  address_prefixes     = ["10.20.1.0/24"]
 }
 
 resource "azurerm_network_interface" "source" {
@@ -92,14 +92,14 @@ resource "azurerm_network_interface" "source" {
 resource "azurerm_windows_virtual_machine" "source" {
   for_each = local.source_vms
 
-  admin_password        = random_password.vm_admin.result
-  admin_username        = "azureadmin"
   location              = azurerm_resource_group.this.location
   name                  = "vm-source-${each.key}-${random_integer.region_seed.result}"
-  computer_name         = substr(replace("src-${each.key}-${random_integer.region_seed.result}", "-", ""), 0, 15)
   network_interface_ids = [azurerm_network_interface.source[each.key].id]
   resource_group_name   = azurerm_resource_group.this.name
   size                  = var.source_vm_size
+  admin_password        = random_password.vm_admin.result
+  admin_username        = "azureadmin"
+  computer_name         = substr(replace("src-${each.key}-${random_integer.region_seed.result}", "-", ""), 0, 15)
 
   os_disk {
     caching              = "ReadWrite"
@@ -122,11 +122,11 @@ resource "azurerm_managed_disk" "source_data" {
   for_each = local.source_vm_data_disks
 
   create_option        = "Empty"
-  disk_size_gb         = each.value.size_gb
   location             = azurerm_resource_group.this.location
   name                 = "disk-source-${each.value.vm_key}-${each.value.disk_key}-${random_integer.region_seed.result}"
   resource_group_name  = azurerm_resource_group.this.name
   storage_account_type = "Premium_LRS"
+  disk_size_gb         = each.value.size_gb
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "source_data" {
@@ -146,32 +146,32 @@ data "azurerm_managed_disk" "source_os" {
 }
 
 resource "azurerm_storage_account" "staging" {
-  account_kind                    = "StorageV2"
   account_replication_type        = "GRS"
   account_tier                    = "Standard"
-  allow_nested_items_to_be_public = false
-  public_network_access_enabled   = true
-  shared_access_key_enabled       = false
   location                        = azurerm_resource_group.this.location
   name                            = "stasr${random_integer.region_seed.result}${random_string.storage_suffix.result}"
   resource_group_name             = azurerm_resource_group.this.name
+  account_kind                    = "StorageV2"
+  allow_nested_items_to_be_public = false
+  public_network_access_enabled   = true
+  shared_access_key_enabled       = false
 }
 
 # Recovery Services Vault with Site Recovery VM replication enabled
 module "recovery_services_vault_primary" {
   source = "../../"
 
-  location            = azurerm_resource_group.target.location
-  name                = local.primary_vault_name
-  resource_group_name = azurerm_resource_group.target.name
-  sku                 = "RS0"
-  managed_identities = {
-    system_assigned = true
-  }
+  location                                       = azurerm_resource_group.target.location
+  name                                           = local.primary_vault_name
+  resource_group_name                            = azurerm_resource_group.target.name
+  sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
+  managed_identities = {
+    system_assigned = true
+  }
 
   depends_on = [azurerm_resource_group.target]
 }
@@ -193,20 +193,20 @@ module "recovery_services_vault_secondary" {
 
 resource "azurerm_role_assignment" "asr_vault_msi_storage_account_contributor" {
   principal_id         = module.recovery_services_vault_primary.resource.output.identity.principalId
-  role_definition_name = "Storage Account Contributor"
   scope                = azurerm_storage_account.staging.id
+  role_definition_name = "Storage Account Contributor"
 }
 
 resource "azurerm_role_assignment" "asr_vault_msi_blob_data_contributor" {
   principal_id         = module.recovery_services_vault_primary.resource.output.identity.principalId
-  role_definition_name = "Storage Blob Data Contributor"
   scope                = azurerm_storage_account.staging.id
+  role_definition_name = "Storage Blob Data Contributor"
 }
 
 resource "azurerm_role_assignment" "asr_vault_msi_queue_data_contributor" {
   principal_id         = module.recovery_services_vault_primary.resource.output.identity.principalId
-  role_definition_name = "Storage Queue Data Contributor"
   scope                = azurerm_storage_account.staging.id
+  role_definition_name = "Storage Queue Data Contributor"
 }
 
 resource "azurerm_site_recovery_fabric" "primary" {
@@ -272,9 +272,8 @@ resource "azurerm_site_recovery_network_mapping" "primary_to_secondary" {
 }
 
 module "site_recovery_replicated_vm" {
+  source   = "../../modules/site_recovery_replicated_vm"
   for_each = local.source_vms
-
-  source = "../../modules/site_recovery_replicated_vm"
 
   site_recovery_replicated_vm = {
     managed_disk = {

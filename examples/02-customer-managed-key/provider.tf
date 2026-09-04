@@ -1,4 +1,3 @@
-
 provider "azurerm" {
   features {
     resource_group {
@@ -7,4 +6,5 @@ provider "azurerm" {
   }
 
 }
+
 provider "azapi" {}

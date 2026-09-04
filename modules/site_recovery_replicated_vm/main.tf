@@ -1,18 +1,14 @@
 resource "azurerm_site_recovery_replicated_vm" "this" {
   name                                      = basename(var.site_recovery_replicated_vm.source_vm_id)
-  resource_group_name                       = var.site_recovery_replicated_vm.vault_resource_group_name
+  recovery_replication_policy_id            = var.site_recovery_replicated_vm.recovery_replication_policy_id
   recovery_vault_name                       = var.site_recovery_replicated_vm.recovery_vault_name
-  source_vm_id                              = var.site_recovery_replicated_vm.source_vm_id
+  resource_group_name                       = var.site_recovery_replicated_vm.vault_resource_group_name
   source_recovery_fabric_name               = var.site_recovery_replicated_vm.source_recovery_fabric_name
   source_recovery_protection_container_name = var.site_recovery_replicated_vm.source_protection_container_name
-  recovery_replication_policy_id            = var.site_recovery_replicated_vm.recovery_replication_policy_id
-  target_resource_group_id                  = coalesce(var.site_recovery_replicated_vm.target_resource_group_id, var.site_recovery_replicated_vm.recovery_resource_group_id)
+  source_vm_id                              = var.site_recovery_replicated_vm.source_vm_id
   target_recovery_fabric_id                 = var.site_recovery_replicated_vm.target_recovery_fabric_id
   target_recovery_protection_container_id   = var.site_recovery_replicated_vm.target_protection_container_id
-  target_virtual_machine_size               = var.site_recovery_replicated_vm.target_virtual_machine_size
-  target_network_id                         = var.site_recovery_replicated_vm.target_network_id
-  test_network_id                           = var.site_recovery_replicated_vm.test_network_id
-  multi_vm_group_name                       = var.site_recovery_replicated_vm.multi_vm_group_name
+  target_resource_group_id                  = coalesce(var.site_recovery_replicated_vm.target_resource_group_id, var.site_recovery_replicated_vm.recovery_resource_group_id)
 
   dynamic "managed_disk" {
     for_each = var.site_recovery_replicated_vm.managed_disk != null ? var.site_recovery_replicated_vm.managed_disk : {}
@@ -26,6 +22,10 @@ resource "azurerm_site_recovery_replicated_vm" "this" {
       target_disk_encryption_set_id = managed_disk.value.target_disk_encryption_set_id != null ? managed_disk.value.target_disk_encryption_set_id : var.site_recovery_replicated_vm.recovery_target_disk_encryption_set_id
     }
   }
+  multi_vm_group_name         = var.site_recovery_replicated_vm.multi_vm_group_name
+  target_network_id           = var.site_recovery_replicated_vm.target_network_id
+  target_virtual_machine_size = var.site_recovery_replicated_vm.target_virtual_machine_size
+  test_network_id             = var.site_recovery_replicated_vm.test_network_id
 
   dynamic "unmanaged_disk" {
     for_each = var.site_recovery_replicated_vm.unmanaged_disk != null ? var.site_recovery_replicated_vm.unmanaged_disk : {}

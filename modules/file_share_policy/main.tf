@@ -117,7 +117,6 @@ locals {
   )
 }
 
-
 data "azapi_client_config" "current" {}
 
 resource "azapi_resource" "this" {

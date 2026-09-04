@@ -1,4 +1,3 @@
-
 resource "azurerm_backup_container_storage_account" "this" {
   count = var.backup_protected_file_share.disable_registration == true ? 0 : 1
 
@@ -22,6 +21,7 @@ resource "time_sleep" "wait_pre" {
 
   depends_on = [azurerm_backup_container_storage_account.this]
 }
+
 resource "azurerm_backup_protected_file_share" "this" {
   backup_policy_id          = data.azurerm_backup_policy_file_share.this.id
   recovery_vault_name       = var.backup_protected_file_share.vault_name

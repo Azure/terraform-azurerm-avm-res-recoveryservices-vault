@@ -16,20 +16,22 @@ This example creates protected backup items in the vault for both an Azure file 
 The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the [repository](https://aka.ms/avm/telemetry). There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft’s privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
 
 ```hcl
-
 data "azurerm_subscription" "this" {}
+
 # This ensures we have unique CAF compliant names for our resources.
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
   max = length(local.test_regions) - 1
   min = 0
 }
+
 # This allows us to randomize the name of resources
 resource "random_string" "this" {
   length  = 6
   special = false
   upper   = false
 }
+
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
@@ -40,30 +42,37 @@ resource "azurerm_resource_group" "this" {
   location = "westus3"              #local.test_regions[random_integer.region_index.result]
   name     = "rg-westus3-vault-005" #module.naming.resource_group.name_unique
 }
+
 resource "azurerm_resource_group" "primary_wus1" {
   location = "westus"
   name     = "rg-vm-westus-primary-005"
 }
+
 resource "azurerm_resource_group" "primary_wus2" {
   location = "westus2"
   name     = "rg-vm-westus2-primary-005"
 }
+
 resource "azurerm_resource_group" "primary_wus3" {
   location = "westus3"
   name     = "rg-vm-westus3-primary-005"
 }
+
 resource "azurerm_resource_group" "secondary_eus" {
   location = "eastus"
   name     = "rg-vm-secondary_eus-005"
 }
+
 resource "azurerm_resource_group" "secondary_eus2" {
   location = "eastus2"
   name     = "rg-vm-secondary_eus2-005"
 }
+
 resource "azurerm_resource_group" "secondary_cus" {
   location = "centralus"
   name     = "rg-vm-secondary_cus-005"
 }
+
 # output "network" {
 #   value = "${data.azurerm_subscription.This.id}/resourceGroups/${azurerm_resource_group.primary_wus1.name}/providers/Microsoft.Network/virtualNetworks/vnet-westus"
 # }
@@ -83,6 +92,7 @@ module "azure_region" {
 
   azure_region = "westus3"
 }
+
 # must be located in the same region as the VM to be backed up
 resource "azurerm_storage_account" "primary_wus1" {
   account_replication_type = "GRS"
@@ -99,6 +109,7 @@ resource "azurerm_storage_account" "primary_wus2" {
   name                     = "srv${azurerm_resource_group.primary_wus2.location}555"
   resource_group_name      = azurerm_resource_group.primary_wus2.name
 }
+
 resource "azurerm_storage_account" "primary_wus3" {
   account_replication_type = "ZRS"
   account_tier             = "Standard"
@@ -106,6 +117,7 @@ resource "azurerm_storage_account" "primary_wus3" {
   name                     = "srv${azurerm_resource_group.primary_wus3.location}555"
   resource_group_name      = azurerm_resource_group.primary_wus3.name
 }
+
 resource "azurerm_storage_account" "sa" {
   account_replication_type = "GRS"
   account_tier             = "Standard"
@@ -119,6 +131,7 @@ resource "azurerm_storage_share" "this" {
   quota              = 50
   storage_account_id = azurerm_storage_account.sa.id
 }
+
 resource "azurerm_user_assigned_identity" "this" {
   location            = azurerm_resource_group.this.location
   name                = "uami-${azurerm_resource_group.this.location}-005"

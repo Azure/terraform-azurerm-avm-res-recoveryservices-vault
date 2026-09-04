@@ -1,6 +1,7 @@
 resource "time_sleep" "wait_pre" {
   create_duration = var.backup_protected_vm.sleep_timer
 }
+
 resource "azurerm_backup_protected_vm" "this" {
   recovery_vault_name = var.backup_protected_vm.vault_name
   resource_group_name = var.backup_protected_vm.vault_resource_group_name
