@@ -676,7 +676,7 @@ A map of VM backup policies to create on the Recovery Services Vault. The map ke
 
 - `name` - (Required) The name of the VM backup policy.
 - `timezone` - (Required) Specifies the timezone. [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-supported-by-azure/).
-- `snapshot_consistency_type` - (Optional) Specifies the snapshot consistency behavior. Possible values are `Default` and `OnlyCrashConsistent`. When omitted, Azure uses its default behavior.
+- `snapshot_consistency_type` - (Optional) Specifies the snapshot consistency behavior for `V2` policies. The only supported value is `OnlyCrashConsistent`. When omitted, Azure uses its default application/file system-consistent behavior.
 - `policy_type` - (Required) The type of the backup policy. Possible values are `V1` and `V2`. `V2` policies extend support for Enhanced policies with hourly frequency.
 - `frequency` - (Required) Sets the backup frequency. Possible values are `Hourly`, `Daily`, and `Weekly`.
 - `instant_restore_retention_days` - (Optional) Specifies the number of days to keep the instant restore point. Possible values are between 1 and 5 for `V1` policies, or 1 and 30 for `V2` policies.
@@ -746,9 +746,9 @@ vm_backup_policy = {
   validation {
     condition = var.vm_backup_policy == null || alltrue([
       for policy in values(var.vm_backup_policy) :
-      policy.snapshot_consistency_type == null || contains(["Default", "OnlyCrashConsistent"], policy.snapshot_consistency_type)
+      policy.snapshot_consistency_type == null || (policy.snapshot_consistency_type == "OnlyCrashConsistent" && policy.policy_type == "V2")
     ])
-    error_message = "`snapshot_consistency_type` must be either `Default` or `OnlyCrashConsistent`."
+    error_message = "`snapshot_consistency_type` can only be set to `OnlyCrashConsistent` when `policy_type` is `V2`. Omit it to use Azure's default consistency behavior."
   }
 }
 

@@ -38,7 +38,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7, < 5.1.1)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.31.0, < 5.1.1)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
@@ -685,7 +685,7 @@ Description: A map of VM backup policies to create on the Recovery Services Vaul
 
 - `name` - (Required) The name of the VM backup policy.
 - `timezone` - (Required) Specifies the timezone. [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-supported-by-azure/).
-- `snapshot_consistency_type` - (Optional) Specifies the snapshot consistency behavior. Possible values are `Default` and `OnlyCrashConsistent`. When omitted, Azure uses its default behavior.
+- `snapshot_consistency_type` - (Optional) Specifies the snapshot consistency behavior for `V2` policies. The only supported value is `OnlyCrashConsistent`. When omitted, Azure uses its default application/file system-consistent behavior.
 - `policy_type` - (Required) The type of the backup policy. Possible values are `V1` and `V2`. `V2` policies extend support for Enhanced policies with hourly frequency.
 - `frequency` - (Required) Sets the backup frequency. Possible values are `Hourly`, `Daily`, and `Weekly`.
 - `instant_restore_retention_days` - (Optional) Specifies the number of days to keep the instant restore point. Possible values are between 1 and 5 for `V1` policies, or 1 and 30 for `V2` policies.

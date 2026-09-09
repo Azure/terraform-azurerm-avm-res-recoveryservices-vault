@@ -711,7 +711,7 @@ run "vm_policy_sets_snapshot_consistency_type" {
   }
 }
 
-run "vm_policy_rejects_invalid_snapshot_consistency_type" {
+run "vm_policy_rejects_default_snapshot_consistency_type" {
   command = plan
 
   variables {
@@ -719,8 +719,30 @@ run "vm_policy_rejects_invalid_snapshot_consistency_type" {
       invalid = {
         name                      = "pol-rsv-vm-invalid"
         timezone                  = "UTC"
-        snapshot_consistency_type = "ApplicationConsistent"
+        snapshot_consistency_type = "Default"
         policy_type               = "V2"
+        frequency                 = "Daily"
+        backup = {
+          time = "22:00"
+        }
+        retention_daily = 7
+      }
+    }
+  }
+
+  expect_failures = [var.vm_backup_policy]
+}
+
+run "vm_policy_rejects_crash_consistency_for_v1" {
+  command = plan
+
+  variables {
+    vm_backup_policy = {
+      invalid = {
+        name                      = "pol-rsv-vm-invalid-v1"
+        timezone                  = "UTC"
+        snapshot_consistency_type = "OnlyCrashConsistent"
+        policy_type               = "V1"
         frequency                 = "Daily"
         backup = {
           time = "22:00"

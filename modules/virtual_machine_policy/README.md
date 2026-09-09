@@ -53,7 +53,7 @@ The following input variables are optional (have default values):
 
 Description:     A map objects for backup and retation options.
 
-    - `snapshot_consistency_type` - (Optional) Specifies the snapshot consistency behavior. Possible values are `Default` and `OnlyCrashConsistent`. When omitted, Azure uses its default behavior.
+    - `snapshot_consistency_type` - (Optional) Specifies the snapshot consistency behavior for `V2` policies. The only supported value is `OnlyCrashConsistent`. When omitted, Azure uses its default application/file system-consistent behavior.
 
     - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
     - `role_assignments` - (Optional) A map of role assignments to create on the
