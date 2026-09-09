@@ -161,6 +161,14 @@ object({
 
 Default: `null`
 
+### <a name="input_tags"></a> [tags](#input\_tags)
+
+Description: Tags applied to the backup policy resource.
+
+Type: `map(string)`
+
+Default: `null`
+
 ## Outputs
 
 The following outputs are exported:

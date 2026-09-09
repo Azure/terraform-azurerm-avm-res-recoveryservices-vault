@@ -4,5 +4,6 @@ module "recovery_services_vault_vm_policy" {
 
   recovery_vault_name = azapi_resource.this.name
   resource_group_name = var.resource_group_name
+  tags                = var.tags
   vm_backup_policy    = each.value
 }
