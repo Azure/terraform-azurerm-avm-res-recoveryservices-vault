@@ -163,6 +163,7 @@ module "recovery_services_vault" {
     pol-rsv-vm-vault-001 = {
       name                           = "pol-rsv-vm-vault-001"
       timezone                       = "Pacific Standard Time"
+      snapshot_consistency_type      = "OnlyCrashConsistent"
       instant_restore_retention_days = 5
       policy_type                    = "V2"
       frequency                      = "Weekly" # (Required) Sets the backup frequency. Possible values are Hourly, Daily and Weekly

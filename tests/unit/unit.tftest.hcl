@@ -670,3 +670,65 @@ run "file_share_hourly_policy_parses_without_error" {
     error_message = "hourlySchedule.scheduleWindowDuration should match the configured window_duration."
   }
 }
+
+run "vm_policy_sets_snapshot_consistency_type" {
+  command = apply
+
+  variables {
+    vm_backup_policy = {
+      crash_consistent = {
+        name                      = "pol-rsv-vm-crash-consistent"
+        timezone                  = "UTC"
+        snapshot_consistency_type = "OnlyCrashConsistent"
+        policy_type               = "V2"
+        frequency                 = "Daily"
+        backup = {
+          time = "22:00"
+        }
+        retention_daily = 7
+      }
+      default = {
+        name        = "pol-rsv-vm-default"
+        timezone    = "UTC"
+        policy_type = "V2"
+        frequency   = "Daily"
+        backup = {
+          time = "22:00"
+        }
+        retention_daily = 7
+      }
+    }
+  }
+
+  assert {
+    condition     = module.recovery_services_vault_vm_policy["crash_consistent"].resource.body.properties.snapshotConsistencyType == "OnlyCrashConsistent"
+    error_message = "VM backup policies should pass snapshot_consistency_type to Azure as snapshotConsistencyType."
+  }
+
+  assert {
+    condition     = !contains(keys(module.recovery_services_vault_vm_policy["default"].resource.body.properties), "snapshotConsistencyType")
+    error_message = "VM backup policies should omit snapshotConsistencyType when snapshot_consistency_type is not configured."
+  }
+}
+
+run "vm_policy_rejects_invalid_snapshot_consistency_type" {
+  command = plan
+
+  variables {
+    vm_backup_policy = {
+      invalid = {
+        name                      = "pol-rsv-vm-invalid"
+        timezone                  = "UTC"
+        snapshot_consistency_type = "ApplicationConsistent"
+        policy_type               = "V2"
+        frequency                 = "Daily"
+        backup = {
+          time = "22:00"
+        }
+        retention_daily = 7
+      }
+    }
+  }
+
+  expect_failures = [var.vm_backup_policy]
+}

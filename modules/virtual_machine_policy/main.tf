@@ -100,6 +100,9 @@ locals {
 
   properties = merge(
     local.base_properties,
+    var.vm_backup_policy.snapshot_consistency_type != null ? {
+      snapshotConsistencyType = var.vm_backup_policy.snapshot_consistency_type
+    } : {},
     length(var.vm_backup_policy.instant_restore_resource_group) > 0 ? {
       instantRPDetails = {
         azureBackupRGNamePrefix = values(var.vm_backup_policy.instant_restore_resource_group)[0].prefix
