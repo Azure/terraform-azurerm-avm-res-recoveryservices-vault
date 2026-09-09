@@ -125,5 +125,4 @@ resource "azapi_resource" "this" {
     "api-version" = ["2024-10-01"]
   }
   response_export_values = ["*"]
-  tags                   = var.tags
 }

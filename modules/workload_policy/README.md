@@ -49,14 +49,6 @@ Type: `string`
 
 The following input variables are optional (have default values):
 
-### <a name="input_tags"></a> [tags](#input\_tags)
-
-Description: Tags applied to the backup policy resource.
-
-Type: `map(string)`
-
-Default: `null`
-
 ### <a name="input_workload_backup_policy"></a> [workload\_backup\_policy](#input\_workload\_backup\_policy)
 
 Description: (Required)

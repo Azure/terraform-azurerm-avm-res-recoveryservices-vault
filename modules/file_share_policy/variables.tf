@@ -136,9 +136,3 @@ variable "file_share_backup_policy" {
     error_message = "snapshot_retention_in_days must be less than retention_daily count when backup_tier is 'vault-standard'."
   }
 }
-
-variable "tags" {
-  type        = map(string)
-  default     = null
-  description = "Tags applied to the backup policy resource."
-}

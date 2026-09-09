@@ -138,5 +138,4 @@ resource "azapi_resource" "this" {
   # For workload policies, only export the resource ID to avoid API read errors
   # The Azure API may not support reading full response for all workload types
   response_export_values = ["id", "name", "type", "properties"]
-  tags                   = var.tags
 }

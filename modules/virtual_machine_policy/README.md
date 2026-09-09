@@ -49,14 +49,6 @@ Type: `string`
 
 The following input variables are optional (have default values):
 
-### <a name="input_tags"></a> [tags](#input\_tags)
-
-Description: Tags applied to the backup policy resource.
-
-Type: `map(string)`
-
-Default: `null`
-
 ### <a name="input_vm_backup_policy"></a> [vm\_backup\_policy](#input\_vm\_backup\_policy)
 
 Description:     A map objects for backup and retation options.
