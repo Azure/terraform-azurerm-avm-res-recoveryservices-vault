@@ -33,5 +33,5 @@ module "this" {
     owner = "John Doe"
     dept  = "IT"
   }
-  resource_group_name = azurerm_resource_group.primary.name
+  parent_id = azurerm_resource_group.primary.id
 }
