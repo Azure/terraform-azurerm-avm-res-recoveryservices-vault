@@ -35,6 +35,8 @@ locals {
 
 # Register the virtual machine hosting the workload as a `VMAppContainer` with the vault.
 # https://learn.microsoft.com/en-us/rest/api/backup/protection-containers/register
+# Azure does not persist tags on backup protection containers, so setting them causes perpetual drift.
+# tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "container" {
   name      = local.container_name
   parent_id = "${var.backup_protected_workload.vault_id}/backupFabrics/Azure"
@@ -91,6 +93,8 @@ resource "time_sleep" "wait_pre" {
 
 # Protect each selected database.
 # https://learn.microsoft.com/en-us/rest/api/backup/protected-items/create-or-update
+# Azure does not persist tags on backup protected items, so setting them causes perpetual drift.
+# tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "protected_item" {
   for_each = local.protected_items
 
