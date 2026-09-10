@@ -63,7 +63,7 @@ variable "backup_protected_file_share" {
   }))
   default     = null
   description = <<DESCRIPTION
-A map of protected file shares to register with the Recovery Services Vault for backup. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+A map of protected file shares to register with the Recovery Services Vault for backup. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `source_storage_account_id` - (Required) The resource ID of the storage account containing the file share to protect.
 - `backup_file_share_policy_name` - (Required) The name of the file share backup policy to associate with this protected item.
@@ -94,7 +94,7 @@ variable "backup_protected_vm" {
   }))
   default     = null
   description = <<DESCRIPTION
-A map of protected virtual machines to register with the Recovery Services Vault for backup. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+A map of protected virtual machines to register with the Recovery Services Vault for backup. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `source_vm_id` - (Required) The resource ID of the virtual machine to protect.
 - `vm_backup_policy_name` - (Required) The name of the VM backup policy to associate with this protected item.
@@ -135,7 +135,7 @@ variable "backup_protected_workload" {
   }))
   default     = null
   description = <<DESCRIPTION
-A map of virtual machine hosted workloads (SQL Server databases) to protect with the Recovery Services Vault. The virtual machine is registered as a `VMAppContainer`, workload discovery is triggered, and each selected database is protected with the supplied workload backup policy. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+A map of virtual machine hosted workloads (SQL Server databases) to protect with the Recovery Services Vault. The virtual machine is registered as a `VMAppContainer`, workload discovery is triggered, and each selected database is protected with the supplied workload backup policy. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `source_vm_id` - (Required) The resource ID of the virtual machine hosting the workload.
 - `workload_backup_policy_name` - (Required) The name of the workload backup policy in this vault to associate with the protected databases.
@@ -261,7 +261,7 @@ variable "diagnostic_settings" {
   }))
   default     = {}
   description = <<DESCRIPTION
-A map of diagnostic settings to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+A map of diagnostic settings to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
 - `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
@@ -359,7 +359,7 @@ variable "file_share_backup_policy" {
   }))
   default     = null
   description = <<DESCRIPTION
-A map of file share backup policies to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+A map of file share backup policies to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `name` - (Required) The name of the file share backup policy.
 - `timezone` - (Required) Specifies the timezone. [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-supported-by-azure/).
@@ -514,7 +514,7 @@ variable "private_endpoints" {
   }))
   default     = {}
   description = <<DESCRIPTION
-A map of private endpoints to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+A map of private endpoints to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
 - `role_assignments` - (Optional) A map of role assignments to create on the private endpoint.
@@ -577,7 +577,7 @@ variable "role_assignments" {
   }))
   default     = {}
   description = <<DESCRIPTION
-A map of role assignments to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+A map of role assignments to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
 - `principal_id` - The ID of the principal to assign the role to.
@@ -632,7 +632,7 @@ variable "site_recovery_replicated_vm" {
   }))
   default     = null
   description = <<DESCRIPTION
-A map of replicated virtual machines to register with the Recovery Services Vault for site recovery. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+A map of replicated virtual machines to register with the Recovery Services Vault for site recovery. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `source_vm_id` - (Required) The resource ID of the virtual machine to replicate.
 - `source_recovery_fabric_name` - (Required) The name of the recovery fabric containing the source VM.
@@ -754,7 +754,7 @@ variable "vm_backup_policy" {
   }))
   default     = null
   description = <<DESCRIPTION
-A map of VM backup policies to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+A map of VM backup policies to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `name` - (Required) The name of the VM backup policy.
 - `timezone` - (Required) Specifies the timezone. [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-supported-by-azure/).
@@ -879,7 +879,7 @@ variable "workload_backup_policy" {
   }))
   default     = null
   description = <<DESCRIPTION
-A map of workload backup policies to create on the Recovery Services Vault for SQL or SAP HANA workloads. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+A map of workload backup policies to create on the Recovery Services Vault for SQL or SAP HANA workloads. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `name` - (Required) The name of the workload backup policy.
 - `workload_type` - (Required) The workload type for the backup policy. Possible values are `SQLDataBase` and `SAPHanaDatabase`.
