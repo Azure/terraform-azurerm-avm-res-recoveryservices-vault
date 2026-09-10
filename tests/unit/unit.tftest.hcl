@@ -926,3 +926,63 @@ run "workload_source_vm_id_must_be_a_virtual_machine" {
 
   expect_failures = [var.backup_protected_workload]
 }
+
+# ---------------------------------------------------------------------------
+# run: workload_type_must_be_supported
+#
+# Only SQL databases are supported today, so any other workload type must be
+# rejected at plan time rather than producing an unusable protected item body.
+# ---------------------------------------------------------------------------
+run "workload_type_must_be_supported" {
+  command = plan
+
+  variables {
+    backup_protected_workload = {
+      sqlvm1 = {
+        source_vm_id                = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-sql/providers/Microsoft.Compute/virtualMachines/vm-sql-001"
+        workload_backup_policy_name = "pol-rsv-workload-vault-001"
+        workload_type               = "SAPHanaDatabase"
+        protected_databases = {
+          master = {
+            server_name   = "MSSQLSERVER"
+            database_name = "master"
+          }
+        }
+      }
+    }
+  }
+
+  expect_failures = [var.backup_protected_workload]
+}
+
+# ---------------------------------------------------------------------------
+# run: workload_inquiry_can_be_disabled
+#
+# Callers that discover workloads out of band can skip the inquiry action while
+# still registering the container and protecting the selected databases.
+# ---------------------------------------------------------------------------
+run "workload_inquiry_can_be_disabled" {
+  command = apply
+
+  variables {
+    backup_protected_workload = {
+      sqlvm1 = {
+        source_vm_id                = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-sql/providers/Microsoft.Compute/virtualMachines/vm-sql-001"
+        workload_backup_policy_name = "pol-rsv-workload-vault-001"
+        inquiry_enabled             = false
+        sleep_timer                 = "0s"
+        protected_databases = {
+          master = {
+            server_name   = "MSSQLSERVER"
+            database_name = "master"
+          }
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = length(module.backup_protected_workload["sqlvm1"].protected_items) == 1
+    error_message = "The selected database should still be protected when the inquiry is disabled."
+  }
+}

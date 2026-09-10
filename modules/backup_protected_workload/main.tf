@@ -84,6 +84,9 @@ resource "azapi_resource_action" "inquire" {
 # available to the protected item API.
 resource "time_sleep" "wait_pre" {
   create_duration = var.backup_protected_workload.sleep_timer
+  triggers = {
+    container_id = azapi_resource.container.id
+  }
 
   depends_on = [
     azapi_resource.container,
