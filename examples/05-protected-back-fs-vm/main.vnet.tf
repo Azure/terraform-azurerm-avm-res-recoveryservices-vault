@@ -84,30 +84,3 @@ resource "azurerm_subnet" "centralus" {
   virtual_network_name = azurerm_virtual_network.centralus.name
   address_prefixes     = ["192.168.22.0/24"]
 }
-
-/*
-resource "azurerm_virtual_network" "westus3" {
-  name                = "network3"
-  resource_group_name = azurerm_resource_group.primary_wus3.name
-  address_space       = ["192.168.3.0/24"]
-  location            = "westus3"
-}
-resource "azurerm_subnet" "westus3" {
-  name                 = "network3-subnet"
-  resource_group_name  = azurerm_resource_group.primary_wus3.name
-  virtual_network_name = azurerm_virtual_network.westus3.name
-  address_prefixes     = ["192.168.3.0/24"]
-}
-resource "azurerm_virtual_network" "eastus2" {
-  name                = "network4"
-  resource_group_name = azurerm_resource_group.secondary.name
-  address_space       = ["192.168.4.0/24"]
-  location            = "eastus2"
-}
-resource "azurerm_subnet" "eastus2" {
-  name                 = "network4-subnet"
-  resource_group_name  = azurerm_resource_group.secondary.name
-  virtual_network_name = azurerm_virtual_network.eastus2.name
-  address_prefixes     = ["192.168.4.0/24"]
-}
-*/

@@ -53,6 +53,8 @@ The following input variables are optional (have default values):
 
 Description:     A map objects for backup and retation options.
 
+    - `snapshot_consistency_type` - (Optional) Specifies the snapshot consistency behavior for `V2` policies. The only supported value is `OnlyCrashConsistent`. When omitted, Azure uses its default application/file system-consistent behavior.
+
     - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
     - `role_assignments` - (Optional) A map of role assignments to create on the
 
@@ -120,6 +122,7 @@ Type:
 object({
     name                           = string
     timezone                       = string
+    snapshot_consistency_type      = optional(string)
     instant_restore_retention_days = optional(number, null)
     instant_restore_resource_group = optional(map(object({
       prefix = optional(string, null)

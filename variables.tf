@@ -399,6 +399,7 @@ variable "private_endpoints" {
   type = map(object({
     name = optional(string, null)
     role_assignments = optional(map(object({
+      name                                   = optional(string, null)
       role_definition_id_or_name             = string
       principal_id                           = string
       description                            = optional(string, null)
@@ -407,17 +408,15 @@ variable "private_endpoints" {
       condition_version                      = optional(string, null)
       delegated_managed_identity_resource_id = optional(string, null)
       principal_type                         = optional(string, null)
-    })), {}) # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#role-assignments
+    })), {})
     lock = optional(object({
-      kind = string
-      name = optional(string, null)
-    }), null)                                        # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#resource-locks
-    tags               = optional(map(string), null) # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#tags
-    subnet_resource_id = string
-    ## You only need to expose the subresource_name if there are multiple underlying services, e.g. storage.
-    ## Which has blob, file, etc.
-    ## If there is only one then leave this out and hardcode the value in the module.
-    subresource_name                        = string
+      kind  = string
+      name  = optional(string, null)
+      notes = optional(string, null)
+    }), null)
+    tags                                    = optional(map(string), null)
+    subnet_resource_id                      = string
+    subresource_name                        = optional(string, null)
     private_dns_zone_group_name             = optional(string, "default")
     private_dns_zone_resource_ids           = optional(set(string), [])
     application_security_group_associations = optional(map(string), {})
@@ -428,27 +427,27 @@ variable "private_endpoints" {
     ip_configurations = optional(map(object({
       name               = string
       private_ip_address = string
+      member_name        = optional(string)
     })), {})
   }))
   default     = {}
   description = <<DESCRIPTION
-A map of private endpoints to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+A map of private endpoints to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
-- `role_assignments` - (Optional) A map of role assignments to create on the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time. See `var.role_assignments` for more information.
-- `lock` - (Optional) The lock level to apply to the private endpoint. Default is `None`. Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+- `role_assignments` - (Optional) A map of role assignments to create on the private endpoint.
+- `lock` - (Optional) The resource lock applied to the private endpoint.
 - `tags` - (Optional) A mapping of tags to assign to the private endpoint.
 - `subnet_resource_id` - The resource ID of the subnet to deploy the private endpoint in.
-- `private_dns_zone_group_name` - (Optional) The name of the private DNS zone group. One will be generated if not set.
-- `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint. If not set, no zone groups will be created and the private endpoint will not be associated with any private DNS zones. DNS records must be managed external to this module.
-- `application_security_group_resource_ids` - (Optional) A map of resource IDs of application security groups to associate with the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-- `private_service_connection_name` - (Optional) The name of the private service connection. One will be generated if not set.
-- `network_interface_name` - (Optional) The name of the network interface. One will be generated if not set.
-- `location` - (Optional) The Azure location where the resources will be deployed. Defaults to the location of the resource group.
-- `resource_group_name` - (Optional) The resource group where the resources will be deployed. Defaults to the resource group of the Key Vault.
-- `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-  - `name` - The name of the IP configuration.
-  - `private_ip_address` - The private IP address of the IP configuration.
+- `subresource_name` - (Optional) The subresource name associated with the private endpoint.
+- `private_dns_zone_group_name` - (Optional) The name of the private DNS zone group.
+- `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint.
+- `application_security_group_associations` - (Optional) A map of application security group resource IDs to associate with the private endpoint.
+- `private_service_connection_name` - (Optional) The name of the private service connection.
+- `network_interface_name` - (Optional) The name of the network interface.
+- `location` - (Optional) The Azure location where the resources will be deployed.
+- `resource_group_name` - (Optional) The resource group where the resources will be deployed.
+- `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint.
 DESCRIPTION
   nullable    = false
 }
@@ -631,6 +630,7 @@ variable "vm_backup_policy" {
   type = map(object({
     name                           = string
     timezone                       = string
+    snapshot_consistency_type      = optional(string)
     instant_restore_retention_days = optional(number, null)
     instant_restore_resource_group = optional(map(object({
       prefix = optional(string, null)
@@ -676,6 +676,7 @@ A map of VM backup policies to create on the Recovery Services Vault. The map ke
 
 - `name` - (Required) The name of the VM backup policy.
 - `timezone` - (Required) Specifies the timezone. [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-supported-by-azure/).
+- `snapshot_consistency_type` - (Optional) Specifies the snapshot consistency behavior for `V2` policies. The only supported value is `OnlyCrashConsistent`. When omitted, Azure uses its default application/file system-consistent behavior.
 - `policy_type` - (Required) The type of the backup policy. Possible values are `V1` and `V2`. `V2` policies extend support for Enhanced policies with hourly frequency.
 - `frequency` - (Required) Sets the backup frequency. Possible values are `Hourly`, `Daily`, and `Weekly`.
 - `instant_restore_retention_days` - (Optional) Specifies the number of days to keep the instant restore point. Possible values are between 1 and 5 for `V1` policies, or 1 and 30 for `V2` policies.
@@ -709,6 +710,7 @@ vm_backup_policy = {
   pol-rsv-vm-vault-001 = {
     name                           = "pol-rsv-vm-vault-001"
     timezone                       = "Pacific Standard Time"
+    snapshot_consistency_type      = "OnlyCrashConsistent"
     policy_type                    = "V2"
     frequency                      = "Weekly"
     instant_restore_retention_days = 5
@@ -740,6 +742,14 @@ vm_backup_policy = {
 }
 ```
     DESCRIPTION
+
+  validation {
+    condition = var.vm_backup_policy == null || alltrue([
+      for policy in values(var.vm_backup_policy) :
+      policy.snapshot_consistency_type == null || (policy.snapshot_consistency_type == "OnlyCrashConsistent" && policy.policy_type == "V2")
+    ])
+    error_message = "`snapshot_consistency_type` can only be set to `OnlyCrashConsistent` when `policy_type` is `V2`. Omit it to use Azure's default consistency behavior."
+  }
 }
 
 variable "workload_backup_policy" {

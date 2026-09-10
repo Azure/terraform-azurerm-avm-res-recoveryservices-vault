@@ -1,0 +1,2 @@
+This example is excluded from routine e2e discovery because Azure Site Recovery replication takes about 50 minutes.
+It remains available for targeted validation and passed end-to-end in workflow run 34379278694.
