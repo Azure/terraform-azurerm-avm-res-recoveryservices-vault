@@ -95,6 +95,14 @@ Type: `string`
 
 The following input variables are optional (have default values):
 
+### <a name="input_alerts_for_all_failover_issues_enabled"></a> [alerts\_for\_all\_failover\_issues\_enabled](#input\_alerts\_for\_all\_failover\_issues\_enabled)
+
+Description: (optional) Specify Setting for Monitoring 'Alerts for All Failover Issues'. true, false (default)
+
+Type: `bool`
+
+Default: `false`
+
 ### <a name="input_alerts_for_all_job_failures_enabled"></a> [alerts\_for\_all\_job\_failures\_enabled](#input\_alerts\_for\_all\_job\_failures\_enabled)
 
 Description: (optional) Specify Setting for Monitoring 'Alerts for All Job Failures'. true (default), false
@@ -102,6 +110,14 @@ Description: (optional) Specify Setting for Monitoring 'Alerts for All Job Failu
 Type: `bool`
 
 Default: `true`
+
+### <a name="input_alerts_for_all_replication_issues_enabled"></a> [alerts\_for\_all\_replication\_issues\_enabled](#input\_alerts\_for\_all\_replication\_issues\_enabled)
+
+Description: (optional) Specify Setting for Monitoring 'Alerts for All Replication Issues'. true, false (default)
+
+Type: `bool`
+
+Default: `false`
 
 ### <a name="input_alerts_for_critical_operation_failures_enabled"></a> [alerts\_for\_critical\_operation\_failures\_enabled](#input\_alerts\_for\_critical\_operation\_failures\_enabled)
 
@@ -113,7 +129,7 @@ Default: `true`
 
 ### <a name="input_backup_protected_file_share"></a> [backup\_protected\_file\_share](#input\_backup\_protected\_file\_share)
 
-Description: A map of protected file shares to register with the Recovery Services Vault for backup. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description: A map of protected file shares to register with the Recovery Services Vault for backup. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `source_storage_account_id` - (Required) The resource ID of the storage account containing the file share to protect.
 - `backup_file_share_policy_name` - (Required) The name of the file share backup policy to associate with this protected item.
@@ -151,7 +167,7 @@ Default: `null`
 
 ### <a name="input_backup_protected_vm"></a> [backup\_protected\_vm](#input\_backup\_protected\_vm)
 
-Description: A map of protected virtual machines to register with the Recovery Services Vault for backup. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description: A map of protected virtual machines to register with the Recovery Services Vault for backup. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `source_vm_id` - (Required) The resource ID of the virtual machine to protect.
 - `vm_backup_policy_name` - (Required) The name of the VM backup policy to associate with this protected item.
@@ -175,6 +191,66 @@ map(object({
     source_vm_id          = string
     vm_backup_policy_name = string
     sleep_timer           = optional(string, "60s")
+  }))
+```
+
+Default: `null`
+
+### <a name="input_backup_protected_workload"></a> [backup\_protected\_workload](#input\_backup\_protected\_workload)
+
+Description: A map of virtual machine hosted workloads (SQL Server databases) to protect with the Recovery Services Vault. The virtual machine is registered as a `VMAppContainer`, workload discovery is triggered, and each selected database is protected with the supplied workload backup policy. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
+
+- `source_vm_id` - (Required) The resource ID of the virtual machine hosting the workload.
+- `workload_backup_policy_name` - (Required) The name of the workload backup policy in this vault to associate with the protected databases.
+- `workload_type` - (Optional) The workload type to protect. Only `SQLDataBase` is currently supported.
+- `inquiry_enabled` - (Optional) Whether to trigger a workload discovery (inquiry) on the registered container. Defaults to `true`.
+- `sleep_timer` - (Optional) Duration to sleep after registration/discovery, to allow for Azure propagation. Defaults to `"60s"`.
+- `protected_databases` - (Required) A map of databases to protect. The map key is used as the Terraform address of the protected item so that it stays deterministic when databases are added or removed.
+  - `server_name` - (Required) The name of the SQL instance hosting the database, as discovered by Azure Backup (for example `MSSQLSERVER`).
+  - `database_name` - (Required) The name of the database to protect.
+  - `protected_item_name` - (Optional) Overrides the generated protected item name (`<workload_type>;<server_name>;<database_name>`).
+  - `workload_backup_policy_id` - (Optional) Overrides the resource ID of the workload backup policy for this database, allowing policies from another vault or an externally managed policy to be used.
+- `timeouts` - (Optional) The timeouts for the create, delete, read and update operations.
+
+> **Note:** The `AzureBackupWindowsWorkload` virtual machine extension and the SQL Server permissions required by Azure Backup must be configured on the virtual machine before the databases can be protected. Destroying a protected item stops protection and deletes its backup data, subject to the vault soft delete configuration.
+
+Example Inputs:
+```terraform
+backup_protected_workload = {
+  sqlvm1 = {
+    source_vm_id                = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-example/providers/Microsoft.Compute/virtualMachines/vm-sql-example"
+    workload_backup_policy_name = "pol-rsv-workload-vault-001"
+    protected_databases = {
+      master = {
+        server_name   = "MSSQLSERVER"
+        database_name = "master"
+      }
+    }
+  }
+}
+```
+
+Type:
+
+```hcl
+map(object({
+    source_vm_id                = string
+    workload_backup_policy_name = string
+    workload_type               = optional(string, "SQLDataBase")
+    inquiry_enabled             = optional(bool, true)
+    sleep_timer                 = optional(string, "60s")
+    protected_databases = map(object({
+      server_name               = string
+      database_name             = string
+      protected_item_name       = optional(string)
+      workload_backup_policy_id = optional(string)
+    }))
+    timeouts = optional(object({
+      create = optional(string, "60m")
+      delete = optional(string, "60m")
+      read   = optional(string, "60m")
+      update = optional(string, "60m")
+    }))
   }))
 ```
 
@@ -236,7 +312,7 @@ Default: `null`
 
 ### <a name="input_diagnostic_settings"></a> [diagnostic\_settings](#input\_diagnostic\_settings)
 
-Description: A map of diagnostic settings to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description: A map of diagnostic settings to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
 - `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
@@ -292,7 +368,7 @@ Default: `true`
 
 ### <a name="input_file_share_backup_policy"></a> [file\_share\_backup\_policy](#input\_file\_share\_backup\_policy)
 
-Description: A map of file share backup policies to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description: A map of file share backup policies to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `name` - (Required) The name of the file share backup policy.
 - `timezone` - (Required) Specifies the timezone. [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-supported-by-azure/).
@@ -448,7 +524,7 @@ Default: `{}`
 
 ### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
 
-Description: A map of private endpoints to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description: A map of private endpoints to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
 - `role_assignments` - (Optional) A map of role assignments to create on the private endpoint.
@@ -543,7 +619,7 @@ Default: `[]`
 
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
-Description: A map of role assignments to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description: A map of role assignments to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
 - `principal_id` - The ID of the principal to assign the role to.
@@ -573,7 +649,7 @@ Default: `{}`
 
 ### <a name="input_site_recovery_replicated_vm"></a> [site\_recovery\_replicated\_vm](#input\_site\_recovery\_replicated\_vm)
 
-Description: A map of replicated virtual machines to register with the Recovery Services Vault for site recovery. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description: A map of replicated virtual machines to register with the Recovery Services Vault for site recovery. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `source_vm_id` - (Required) The resource ID of the virtual machine to replicate.
 - `source_recovery_fabric_name` - (Required) The name of the recovery fabric containing the source VM.
@@ -681,7 +757,7 @@ Default: `null`
 
 ### <a name="input_vm_backup_policy"></a> [vm\_backup\_policy](#input\_vm\_backup\_policy)
 
-Description: A map of VM backup policies to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description: A map of VM backup policies to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `name` - (Required) The name of the VM backup policy.
 - `timezone` - (Required) Specifies the timezone. [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-supported-by-azure/).
@@ -803,7 +879,7 @@ Default: `null`
 
 ### <a name="input_workload_backup_policy"></a> [workload\_backup\_policy](#input\_workload\_backup\_policy)
 
-Description: A map of workload backup policies to create on the Recovery Services Vault for SQL or SAP HANA workloads. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description: A map of workload backup policies to create on the Recovery Services Vault for SQL or SAP HANA workloads. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
 
 - `name` - (Required) The name of the workload backup policy.
 - `workload_type` - (Required) The workload type for the backup policy. Possible values are `SQLDataBase` and `SAPHanaDatabase`.
@@ -951,6 +1027,10 @@ The following outputs are exported:
 
 Description: Resource ID of the workload backup policy
 
+### <a name="output_backup_protected_workload"></a> [backup\_protected\_workload](#output\_backup\_protected\_workload)
+
+Description: The workload (SQL Server on Azure VM) protection containers and protected items
+
 ### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
 
 Description:   A map of private endpoints. The map key is the supplied input to var.private\_endpoints. The map value is the entire azurerm\_private\_endpoint resource."
@@ -996,6 +1076,12 @@ Version:
 ### <a name="module_backup_protected_vm"></a> [backup\_protected\_vm](#module\_backup\_protected\_vm)
 
 Source: ./modules/backup_protected_vm
+
+Version:
+
+### <a name="module_backup_protected_workload"></a> [backup\_protected\_workload](#module\_backup\_protected\_workload)
+
+Source: ./modules/backup_protected_workload
 
 Version:
 
