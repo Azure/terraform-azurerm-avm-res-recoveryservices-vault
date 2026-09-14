@@ -47,3 +47,11 @@ locals {
     if !var.private_endpoints_manage_dns_zone_group
   }
 }
+
+# The Azure API enum value is "AlwaysON" (see SoftDeleteState in the RecoveryServices
+# spec). "AlwaysOn" is accepted for backwards compatibility and normalised here: because
+# the API models softDeleteState as an extensible enum, an unrecognised value is accepted
+# without error and silently leaves the vault's soft delete state unchanged.
+locals {
+  soft_delete_state = var.soft_delete_enabled == "AlwaysOn" ? "AlwaysON" : var.soft_delete_enabled
+}

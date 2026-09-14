@@ -682,12 +682,12 @@ DESCRIPTION
 variable "soft_delete_enabled" {
   type        = string
   default     = "Enabled"
-  description = "(optional) Specify the soft delete state for the Recovery Services Vault. Possible values are `Enabled` (default), `Disabled`, and `AlwaysOn`. `AlwaysOn` enables always-on soft delete and cannot be reverted to `Enabled` or `Disabled`."
+  description = "(optional) Specify the soft delete state for the Recovery Services Vault. Possible values are `Enabled` (default), `Disabled`, and `AlwaysON`. `AlwaysON` enables always-on soft delete and cannot be reverted to `Enabled` or `Disabled`. `AlwaysOn` is accepted as a deprecated alias for `AlwaysON`."
   nullable    = false
 
   validation {
-    condition     = contains(["Disabled", "Enabled", "AlwaysOn"], var.soft_delete_enabled)
-    error_message = "soft_delete_enabled must be one of: Disabled, Enabled, AlwaysOn."
+    condition     = contains(["Disabled", "Enabled", "AlwaysON", "AlwaysOn"], var.soft_delete_enabled)
+    error_message = "soft_delete_enabled must be one of: Disabled, Enabled, AlwaysON."
   }
 }
 

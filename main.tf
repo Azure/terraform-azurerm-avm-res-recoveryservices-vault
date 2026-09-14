@@ -36,7 +36,7 @@ resource "azapi_resource" "this" {
           state = var.immutability
         } : null
         softDeleteSettings = {
-          softDeleteState = var.soft_delete_enabled
+          softDeleteState = local.soft_delete_state
         }
       }
       monitoringSettings = {
