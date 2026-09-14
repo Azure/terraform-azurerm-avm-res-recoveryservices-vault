@@ -23,12 +23,10 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azapi_resource.protection_container](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
-- [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
-- [azapi_resource_action.inquire](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
+- [azurerm_backup_container_storage_account.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_container_storage_account) (resource)
+- [azurerm_backup_protected_file_share.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/backup_protected_file_share) (resource)
 - [time_sleep.wait_pre](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) (resource)
-- [azapi_resource_list.protectable_items](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource_list) (data source)
-- [azapi_resource_list.protected_items](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource_list) (data source)
+- [azurerm_backup_policy_file_share.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/backup_policy_file_share) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs

@@ -6,17 +6,27 @@ variable "backup_protected_file_share" {
     source_file_share_name    = string
     source_storage_account_id = string
   })
-  nullable    = false
   description = "Configuration for protecting one Azure file share with Azure Backup."
+  nullable    = false
 
   validation {
     condition     = can(provider::azapi::parse_resource_id("Microsoft.RecoveryServices/vaults/backupPolicies", var.backup_protected_file_share.backup_policy_id))
     error_message = "`backup_policy_id` must be a valid Recovery Services vault backup policy resource ID."
   }
-
   validation {
     condition     = can(provider::azapi::parse_resource_id("Microsoft.Storage/storageAccounts", var.backup_protected_file_share.source_storage_account_id))
     error_message = "`source_storage_account_id` must be a valid Azure storage account resource ID."
+  }
+}
+
+variable "parent_id" {
+  type        = string
+  description = "The fully-qualified ARM resource ID of the Azure Backup storage protection container that will contain the protected file share."
+  nullable    = false
+
+  validation {
+    condition     = can(provider::azapi::parse_resource_id("Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers", var.parent_id))
+    error_message = "`parent_id` must be a valid Azure Backup protection container resource ID."
   }
 }
 
@@ -26,7 +36,6 @@ variable "ignore_body_changes" {
     recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(list(string), [])
   })
   default     = {}
-  nullable    = false
   description = <<DESCRIPTION
 Body-relative paths ignored on each AzAPI resource. Paths use dot notation.
 Changes take effect only after apply. Ignored configuration is not sent to Azure until the path is removed.
@@ -34,17 +43,7 @@ Changes take effect only after apply. Ignored configuration is not sent to Azure
 - `recoveryservices_vaults_backup_fabrics_protection_containers` - Paths ignored on storage-account registration. The AzAPI action resource used for inquiry does not expose `ignore_body_changes`.
 - `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Paths ignored on the protected file share.
 DESCRIPTION
-}
-
-variable "parent_id" {
-  type        = string
   nullable    = false
-  description = "The fully-qualified ARM resource ID of the Azure Backup storage protection container that will contain the protected file share."
-
-  validation {
-    condition     = can(provider::azapi::parse_resource_id("Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers", var.parent_id))
-    error_message = "`parent_id` must be a valid Azure Backup protection container resource ID."
-  }
 }
 
 variable "resource_types" {
@@ -55,7 +54,6 @@ variable "resource_types" {
     recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(string, "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01")
   })
   default     = {}
-  nullable    = false
   description = <<DESCRIPTION
 AzAPI resource types and API versions used by the protected file share submodule.
 
@@ -64,6 +62,7 @@ AzAPI resource types and API versions used by the protected file share submodule
 - `recoveryservices_vaults_backup_fabrics_protection_containers` - Resource type and API version for storage-account registration and inquiry.
 - `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Resource type and API version for the protected file share.
 DESCRIPTION
+  nullable    = false
 }
 
 variable "retry" {

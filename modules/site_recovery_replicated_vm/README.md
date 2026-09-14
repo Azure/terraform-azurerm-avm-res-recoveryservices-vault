@@ -13,17 +13,15 @@ The software may collect information about you and your use of the software and 
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.0)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.50, < 5.2)
 
 ## Resources
 
 The following resources are used by this module:
 
-- [azapi_resource_action.remove](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
-- [azapi_resource_action.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
-- [azapi_update_resource.configuration](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
+- [azurerm_site_recovery_replicated_vm.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/site_recovery_replicated_vm) (resource)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
