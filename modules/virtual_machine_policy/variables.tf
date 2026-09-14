@@ -20,6 +20,7 @@ variable "vm_backup_policy" {
   type = object({
     name                           = string
     timezone                       = string
+    snapshot_consistency_type      = optional(string)
     instant_restore_retention_days = optional(number, null)
     instant_restore_resource_group = optional(map(object({
       prefix = optional(string, null)
@@ -62,6 +63,8 @@ variable "vm_backup_policy" {
   default     = null
   description = <<DESCRIPTION
     A map objects for backup and retation options.
+
+    - `snapshot_consistency_type` - (Optional) Specifies the snapshot consistency behavior for `V2` policies. The only supported value is `OnlyCrashConsistent`. When omitted, Azure uses its default application/file system-consistent behavior.
 
     - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
     - `role_assignments` - (Optional) A map of role assignments to create on the 
@@ -124,4 +127,9 @@ variable "vm_backup_policy" {
         }
       }
     DESCRIPTION
+
+  validation {
+    condition     = var.vm_backup_policy == null || var.vm_backup_policy.snapshot_consistency_type == null || (var.vm_backup_policy.snapshot_consistency_type == "OnlyCrashConsistent" && var.vm_backup_policy.policy_type == "V2")
+    error_message = "`snapshot_consistency_type` can only be set to `OnlyCrashConsistent` when `policy_type` is `V2`. Omit it to use Azure's default consistency behavior."
+  }
 }
