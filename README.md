@@ -458,7 +458,7 @@ Default: `null`
 
 ### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
 
-Description: Body-relative paths ignored for each AzAPI resource owned by the module and the converted protection submodules. Paths use dot notation.  
+Description: Body-relative paths ignored for each AzAPI resource owned by the module and the converted protection submodules. Paths use dot notation.
 Changes take effect only after apply. Ignored configuration is not sent to Azure until the path is removed.
 
 - `recoveryservices_vaults` - Paths ignored on the Recovery Services vault.
