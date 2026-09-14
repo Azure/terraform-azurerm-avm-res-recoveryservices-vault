@@ -38,8 +38,6 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.31.0, < 5.1.1)
-
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
@@ -48,19 +46,21 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource.diagnostic_settings](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.private_endpoint_managed_dns_zone_groups](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.private_endpoint_unmanaged_dns_zone_groups](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.resource_guard_association](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource_action.private_dns_zone_group](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
 - [azapi_resource_action.private_dns_zone_group_delete](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
-- [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
-- [azurerm_recovery_services_vault_resource_guard_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/recovery_services_vault_resource_guard_association) (resource)
-- [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
+- [azapi_resource_action.resource_guard_association_unlock_delete](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [azapi_client_config.current](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
+- [azapi_resource_list.role_definitions](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource_list) (data source)
 - [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
@@ -96,14 +96,6 @@ Type: `string`
 
 The following input variables are optional (have default values):
 
-### <a name="input_alerts_for_all_failover_issues_enabled"></a> [alerts\_for\_all\_failover\_issues\_enabled](#input\_alerts\_for\_all\_failover\_issues\_enabled)
-
-Description: (optional) Specify Setting for Monitoring 'Alerts for All Failover Issues'. true, false (default)
-
-Type: `bool`
-
-Default: `false`
-
 ### <a name="input_alerts_for_all_job_failures_enabled"></a> [alerts\_for\_all\_job\_failures\_enabled](#input\_alerts\_for\_all\_job\_failures\_enabled)
 
 Description: (optional) Specify Setting for Monitoring 'Alerts for All Job Failures'. true (default), false
@@ -111,14 +103,6 @@ Description: (optional) Specify Setting for Monitoring 'Alerts for All Job Failu
 Type: `bool`
 
 Default: `true`
-
-### <a name="input_alerts_for_all_replication_issues_enabled"></a> [alerts\_for\_all\_replication\_issues\_enabled](#input\_alerts\_for\_all\_replication\_issues\_enabled)
-
-Description: (optional) Specify Setting for Monitoring 'Alerts for All Replication Issues'. true, false (default)
-
-Type: `bool`
-
-Default: `false`
 
 ### <a name="input_alerts_for_critical_operation_failures_enabled"></a> [alerts\_for\_critical\_operation\_failures\_enabled](#input\_alerts\_for\_critical\_operation\_failures\_enabled)
 
@@ -130,7 +114,7 @@ Default: `true`
 
 ### <a name="input_backup_protected_file_share"></a> [backup\_protected\_file\_share](#input\_backup\_protected\_file\_share)
 
-Description: A map of protected file shares to register with the Recovery Services Vault for backup. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
+Description: A map of protected file shares to register with the Recovery Services Vault for backup. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `source_storage_account_id` - (Required) The resource ID of the storage account containing the file share to protect.
 - `backup_file_share_policy_name` - (Required) The name of the file share backup policy to associate with this protected item.
@@ -168,7 +152,7 @@ Default: `null`
 
 ### <a name="input_backup_protected_vm"></a> [backup\_protected\_vm](#input\_backup\_protected\_vm)
 
-Description: A map of protected virtual machines to register with the Recovery Services Vault for backup. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
+Description: A map of protected virtual machines to register with the Recovery Services Vault for backup. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `source_vm_id` - (Required) The resource ID of the virtual machine to protect.
 - `vm_backup_policy_name` - (Required) The name of the VM backup policy to associate with this protected item.
@@ -199,7 +183,7 @@ Default: `null`
 
 ### <a name="input_backup_protected_workload"></a> [backup\_protected\_workload](#input\_backup\_protected\_workload)
 
-Description: A map of virtual machine hosted workloads (SQL Server databases) to protect with the Recovery Services Vault. The virtual machine is registered as a `VMAppContainer`, workload discovery is triggered, and each selected database is protected with the supplied workload backup policy. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
+Description: A map of virtual machine hosted workloads (SQL Server databases) to protect with the Recovery Services Vault. The virtual machine is registered as a `VMAppContainer`, workload discovery is triggered, and each selected database is protected with the supplied workload backup policy. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `source_vm_id` - (Required) The resource ID of the virtual machine hosting the workload.
 - `workload_backup_policy_name` - (Required) The name of the workload backup policy in this vault to associate with the protected databases.
@@ -211,7 +195,6 @@ Description: A map of virtual machine hosted workloads (SQL Server databases) to
   - `database_name` - (Required) The name of the database to protect.
   - `protected_item_name` - (Optional) Overrides the generated protected item name (`<workload_type>;<server_name>;<database_name>`).
   - `workload_backup_policy_id` - (Optional) Overrides the resource ID of the workload backup policy for this database, allowing policies from another vault or an externally managed policy to be used.
-- `timeouts` - (Optional) The timeouts for the create, delete, read and update operations.
 
 > **Note:** The `AzureBackupWindowsWorkload` virtual machine extension and the SQL Server permissions required by Azure Backup must be configured on the virtual machine before the databases can be protected. Destroying a protected item stops protection and deletes its backup data, subject to the vault soft delete configuration.
 
@@ -245,12 +228,6 @@ map(object({
       database_name             = string
       protected_item_name       = optional(string)
       workload_backup_policy_id = optional(string)
-    }))
-    timeouts = optional(object({
-      create = optional(string, "60m")
-      delete = optional(string, "60m")
-      read   = optional(string, "60m")
-      update = optional(string, "60m")
     }))
   }))
 ```
@@ -313,7 +290,7 @@ Default: `null`
 
 ### <a name="input_diagnostic_settings"></a> [diagnostic\_settings](#input\_diagnostic\_settings)
 
-Description: A map of diagnostic settings to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
+Description: A map of diagnostic settings to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
 - `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
@@ -369,7 +346,7 @@ Default: `true`
 
 ### <a name="input_file_share_backup_policy"></a> [file\_share\_backup\_policy](#input\_file\_share\_backup\_policy)
 
-Description: A map of file share backup policies to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
+Description: A map of file share backup policies to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `name` - (Required) The name of the file share backup policy.
 - `timezone` - (Required) Specifies the timezone. [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-supported-by-azure/).
@@ -479,6 +456,47 @@ map(object({
 
 Default: `null`
 
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative paths ignored for each AzAPI resource owned by the module and the converted protection submodules. Paths use dot notation.
+Changes take effect only after apply. Ignored configuration is not sent to Azure until the path is removed.
+
+- `recoveryservices_vaults` - Paths ignored on the Recovery Services vault.
+- `insights_diagnostic_settings` - Paths ignored on diagnostic settings.
+- `authorization_locks` - Paths ignored on locks.
+- `authorization_role_assignments` - Paths ignored on role assignments.
+- `recoveryservices_vaults_backup_resource_guard_proxies` - Paths ignored on Resource Guard proxy associations.
+- `network_private_endpoints` - Paths ignored on private endpoints.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Paths passed to the protected VM and protected file share submodules.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protection_containers` - Paths ignored on storage-account registration.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Paths ignored on protected VM and file share resources.
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Paths passed to the Site Recovery replicated VM submodule.
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Reserved for Site Recovery replicated item operations pending AzAPI action/update support for `ignore_body_changes`.
+
+Type:
+
+```hcl
+object({
+    authorization_locks                                   = optional(list(string), [])
+    authorization_role_assignments                        = optional(list(string), [])
+    insights_diagnostic_settings                          = optional(list(string), [])
+    network_private_endpoints                             = optional(list(string), [])
+    recoveryservices_vaults                               = optional(list(string), [])
+    recoveryservices_vaults_backup_resource_guard_proxies = optional(list(string), [])
+
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(object({
+      recoveryservices_vaults_backup_fabrics_protection_containers                 = optional(list(string), [])
+      recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(list(string), [])
+    }), {})
+
+    recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(object({
+      recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(list(string), [])
+    }), {})
+  })
+```
+
+Default: `{}`
+
 ### <a name="input_immutability"></a> [immutability](#input\_immutability)
 
 Description: (optional) Specify Immutability Setting of vault. Locked, Unlocked (default), Disabled
@@ -525,22 +543,23 @@ Default: `{}`
 
 ### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
 
-Description: A map of private endpoints to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
+Description: A map of private endpoints to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
-- `role_assignments` - (Optional) A map of role assignments to create on the private endpoint.
-- `lock` - (Optional) The resource lock applied to the private endpoint.
+- `role_assignments` - (Optional) A map of role assignments to create on the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time. See `var.role_assignments` for more information.
+- `lock` - (Optional) The lock level to apply to the private endpoint. Default is `None`. Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
 - `tags` - (Optional) A mapping of tags to assign to the private endpoint.
 - `subnet_resource_id` - The resource ID of the subnet to deploy the private endpoint in.
-- `subresource_name` - (Optional) The subresource name associated with the private endpoint.
-- `private_dns_zone_group_name` - (Optional) The name of the private DNS zone group.
-- `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint.
-- `application_security_group_associations` - (Optional) A map of application security group resource IDs to associate with the private endpoint.
-- `private_service_connection_name` - (Optional) The name of the private service connection.
-- `network_interface_name` - (Optional) The name of the network interface.
-- `location` - (Optional) The Azure location where the resources will be deployed.
-- `resource_group_name` - (Optional) The resource group where the resources will be deployed.
-- `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint.
+- `private_dns_zone_group_name` - (Optional) The name of the private DNS zone group. One will be generated if not set.
+- `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint. If not set, no zone groups will be created and the private endpoint will not be associated with any private DNS zones. DNS records must be managed external to this module.
+- `application_security_group_resource_ids` - (Optional) A map of resource IDs of application security groups to associate with the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+- `private_service_connection_name` - (Optional) The name of the private service connection. One will be generated if not set.
+- `network_interface_name` - (Optional) The name of the network interface. One will be generated if not set.
+- `location` - (Optional) The Azure location where the resources will be deployed. Defaults to the location of the resource group.
+- `resource_group_name` - (Optional) The resource group where the resources will be deployed. Defaults to the resource group of the Key Vault.
+- `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+  - `name` - The name of the IP configuration.
+  - `private_ip_address` - The private IP address of the IP configuration.
 
 Type:
 
@@ -548,7 +567,6 @@ Type:
 map(object({
     name = optional(string, null)
     role_assignments = optional(map(object({
-      name                                   = optional(string, null)
       role_definition_id_or_name             = string
       principal_id                           = string
       description                            = optional(string, null)
@@ -557,15 +575,17 @@ map(object({
       condition_version                      = optional(string, null)
       delegated_managed_identity_resource_id = optional(string, null)
       principal_type                         = optional(string, null)
-    })), {})
+    })), {}) # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#role-assignments
     lock = optional(object({
-      kind  = string
-      name  = optional(string, null)
-      notes = optional(string, null)
-    }), null)
-    tags                                    = optional(map(string), null)
-    subnet_resource_id                      = string
-    subresource_name                        = optional(string, null)
+      kind = string
+      name = optional(string, null)
+    }), null)                                        # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#resource-locks
+    tags               = optional(map(string), null) # see https://azure.github.io/Azure-Verified-Modules/Azure-Verified-Modules/specs/shared/interfaces/#tags
+    subnet_resource_id = string
+    ## You only need to expose the subresource_name if there are multiple underlying services, e.g. storage.
+    ## Which has blob, file, etc.
+    ## If there is only one then leave this out and hardcode the value in the module.
+    subresource_name                        = string
     private_dns_zone_group_name             = optional(string, "default")
     private_dns_zone_resource_ids           = optional(set(string), [])
     application_security_group_associations = optional(map(string), {})
@@ -576,7 +596,6 @@ map(object({
     ip_configurations = optional(map(object({
       name               = string
       private_ip_address = string
-      member_name        = optional(string)
     })), {})
   }))
 ```
@@ -599,6 +618,14 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_resource_guard_association_enabled"></a> [resource\_guard\_association\_enabled](#input\_resource\_guard\_association\_enabled)
+
+Description: Whether to create a Resource Guard association. Set this to true whenever resource\_guard\_id is supplied, including when the ID is computed from a resource in the same configuration.
+
+Type: `bool`
+
+Default: `false`
+
 ### <a name="input_resource_guard_id"></a> [resource\_guard\_id](#input\_resource\_guard\_id)
 
 Description: (Optional) The ID of the Azure Data Protection resource guard to associate with this Recovery Services Vault.
@@ -618,9 +645,73 @@ Type: `list(string)`
 
 Default: `[]`
 
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: AzAPI resource types and API versions used by the module and the converted protection submodules.
+
+- `recoveryservices_vaults` - Resource type and API version for the Recovery Services vault.
+- `insights_diagnostic_settings` - Resource type and API version for diagnostic settings.
+- `authorization_locks` - Resource type and API version for locks.
+- `authorization_role_assignments` - Resource type and API version for role assignments.
+- `authorization_role_definitions` - Resource type and API version for role definition lookups.
+- `recoveryservices_vaults_backup_resource_guard_proxies` - Resource type and API version for Resource Guard proxy associations.
+- `network_private_endpoints` - Resource type and API version for private endpoints.
+- `network_private_endpoints_private_dns_zone_groups` - Resource type and API version for private DNS zone groups.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Resource-type overrides passed to the protected VM and protected file share submodules.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_protected_items` - Resource-type override used to find an existing protected file share.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protectable_items` - Resource-type override used to discover file shares.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protection_containers` - Resource-type override for storage-account registration and inquiry.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Resource-type override for protected VM and file share resources.
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Resource-type overrides passed to the Site Recovery replicated VM submodule.
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Resource-type override for Site Recovery replicated item operations.
+
+Type:
+
+```hcl
+object({
+    authorization_locks                                   = optional(string, "Microsoft.Authorization/locks@2020-05-01")
+    authorization_role_assignments                        = optional(string, "Microsoft.Authorization/roleAssignments@2022-04-01")
+    authorization_role_definitions                        = optional(string, "Microsoft.Authorization/roleDefinitions@2022-05-01-preview")
+    insights_diagnostic_settings                          = optional(string, "Microsoft.Insights/diagnosticSettings@2021-05-01-preview")
+    network_private_endpoints                             = optional(string, "Microsoft.Network/privateEndpoints@2024-05-01")
+    network_private_endpoints_private_dns_zone_groups     = optional(string, "Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-05-01")
+    recoveryservices_vaults                               = optional(string, "Microsoft.RecoveryServices/vaults@2024-10-01")
+    recoveryservices_vaults_backup_resource_guard_proxies = optional(string, "Microsoft.RecoveryServices/vaults/backupResourceGuardProxies@2023-02-01")
+
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(object({
+      recoveryservices_vaults_backup_protected_items                               = optional(string)
+      recoveryservices_vaults_backup_fabrics_protectable_items                     = optional(string)
+      recoveryservices_vaults_backup_fabrics_protection_containers                 = optional(string)
+      recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(string)
+    }), {})
+
+    recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(object({
+      recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(string)
+    }), {})
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration applied to the Recovery Services vault and cascaded to the converted protection submodules.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+```
+
+Default: `null`
+
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
-Description: A map of role assignments to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
+Description: A map of role assignments to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
 - `principal_id` - The ID of the principal to assign the role to.
@@ -650,7 +741,7 @@ Default: `{}`
 
 ### <a name="input_site_recovery_replicated_vm"></a> [site\_recovery\_replicated\_vm](#input\_site\_recovery\_replicated\_vm)
 
-Description: A map of replicated virtual machines to register with the Recovery Services Vault for site recovery. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
+Description: A map of replicated virtual machines to register with the Recovery Services Vault for site recovery. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `source_vm_id` - (Required) The resource ID of the virtual machine to replicate.
 - `source_recovery_fabric_name` - (Required) The name of the recovery fabric containing the source VM.
@@ -658,12 +749,13 @@ Description: A map of replicated virtual machines to register with the Recovery 
 - `recovery_replication_policy_id` - (Required) The ID of the replication policy to use.
 - `target_resource_id` - (Required) The resource ID where the VM should be recovered (target VM resource ID).
 - `target_recovery_fabric_id` - (Optional) The ID of the recovery fabric for the target region.
-- `target_protection_container_id` - (Optional) The ID of the protection container in the target fabric.
+- `target_protection_container_id` - (Required) The ID of the protection container in the target fabric.
 - `managed_disk` - (Optional) A map of managed disks to replicate.
 - `unmanaged_disk` - (Optional) A map of unmanaged disks to replicate.
 - `target_network_id` - (Optional) The ID of the target virtual network.
 - `target_subnet_name` - (Optional) The name of the target subnet.
 - `target_static_ip` - (Optional) The static IP to assign to the target VM.
+- `target_virtual_machine_size` - (Optional) The size of the target virtual machine.
 - `test_network_id` - (Optional) The ID of the test network.
 - `test_subnet_name` - (Optional) The name of the test subnet.
 - `recovery_resource_group_id` - (Optional) The ID of the recovery resource group.
@@ -698,7 +790,7 @@ map(object({
     target_resource_id               = string
     target_resource_group_id         = optional(string, null)
     target_recovery_fabric_id        = optional(string, null)
-    target_protection_container_id   = optional(string, null)
+    target_protection_container_id   = string
     managed_disk = optional(map(object({
       disk_id                       = string
       staging_storage_account_id    = string
@@ -717,6 +809,7 @@ map(object({
     target_static_ip                       = optional(string, null)
     test_network_id                        = optional(string, null)
     test_subnet_name                       = optional(string, null)
+    target_virtual_machine_size            = optional(string, null)
     recovery_resource_group_id             = optional(string, null)
     recovery_storage_account_id            = optional(string, null)
     recovery_target_disk_encryption_set_id = optional(string, null)
@@ -726,7 +819,7 @@ map(object({
       delete = optional(string, "60m")
       read   = optional(string, "5m")
       update = optional(string, "60m")
-    }), {})
+    }), null)
   }))
 ```
 
@@ -734,7 +827,7 @@ Default: `null`
 
 ### <a name="input_soft_delete_enabled"></a> [soft\_delete\_enabled](#input\_soft\_delete\_enabled)
 
-Description: (optional) Specify the soft delete state for the Recovery Services Vault. Possible values are `Enabled` (default), `Disabled`, and `AlwaysON`. `AlwaysON` enables always-on soft delete and cannot be reverted to `Enabled` or `Disabled`. `AlwaysOn` is accepted as a deprecated alias for `AlwaysON`.
+Description: (optional) Specify the soft delete state for the Recovery Services Vault. Possible values are `Enabled` (default), `Disabled`, and `AlwaysOn`. `AlwaysOn` enables always-on soft delete and cannot be reverted to `Enabled` or `Disabled`.
 
 Type: `string`
 
@@ -756,13 +849,29 @@ Type: `map(string)`
 
 Default: `null`
 
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: Per-operation timeouts applied to the Recovery Services vault and cascaded to the converted protection submodules.
+
+Type:
+
+```hcl
+object({
+    create = optional(string, "60m")
+    read   = optional(string, "5m")
+    update = optional(string, "60m")
+    delete = optional(string, "60m")
+  })
+```
+
+Default: `{}`
+
 ### <a name="input_vm_backup_policy"></a> [vm\_backup\_policy](#input\_vm\_backup\_policy)
 
-Description: A map of VM backup policies to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
+Description: A map of VM backup policies to create on the Recovery Services Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `name` - (Required) The name of the VM backup policy.
 - `timezone` - (Required) Specifies the timezone. [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-supported-by-azure/).
-- `snapshot_consistency_type` - (Optional) Specifies the snapshot consistency behavior for `V2` policies. The only supported value is `OnlyCrashConsistent`. When omitted, Azure uses its default application/file system-consistent behavior.
 - `policy_type` - (Required) The type of the backup policy. Possible values are `V1` and `V2`. `V2` policies extend support for Enhanced policies with hourly frequency.
 - `frequency` - (Required) Sets the backup frequency. Possible values are `Hourly`, `Daily`, and `Weekly`.
 - `instant_restore_retention_days` - (Optional) Specifies the number of days to keep the instant restore point. Possible values are between 1 and 5 for `V1` policies, or 1 and 30 for `V2` policies.
@@ -796,7 +905,6 @@ vm_backup_policy = {
   pol-rsv-vm-vault-001 = {
     name                           = "pol-rsv-vm-vault-001"
     timezone                       = "Pacific Standard Time"
-    snapshot_consistency_type      = "OnlyCrashConsistent"
     policy_type                    = "V2"
     frequency                      = "Weekly"
     instant_restore_retention_days = 5
@@ -834,7 +942,6 @@ Type:
 map(object({
     name                           = string
     timezone                       = string
-    snapshot_consistency_type      = optional(string)
     instant_restore_retention_days = optional(number, null)
     instant_restore_resource_group = optional(map(object({
       prefix = optional(string, null)
@@ -880,7 +987,7 @@ Default: `null`
 
 ### <a name="input_workload_backup_policy"></a> [workload\_backup\_policy](#input\_workload\_backup\_policy)
 
-Description: A map of workload backup policies to create on the Recovery Services Vault for SQL or SAP HANA workloads. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
+Description: A map of workload backup policies to create on the Recovery Services Vault for SQL or SAP HANA workloads. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
 - `name` - (Required) The name of the workload backup policy.
 - `workload_type` - (Required) The workload type for the backup policy. Possible values are `SQLDataBase` and `SAPHanaDatabase`.

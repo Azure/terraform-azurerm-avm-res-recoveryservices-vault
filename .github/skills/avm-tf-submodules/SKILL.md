@@ -39,6 +39,7 @@ resource "azapi_resource" "this" {
   }
 
   ignore_body_changes    = length(var.ignore_body_changes.example_widgets_parts) > 0 ? var.ignore_body_changes.example_widgets_parts : null
+  replace_triggers_refs  = []
   response_export_values = []
   retry                  = var.retry
 

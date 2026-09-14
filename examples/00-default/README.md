@@ -17,37 +17,40 @@ This example deploys a Recovery Services Vault with a minimal, production-shaped
 The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the [repository](https://aka.ms/avm/telemetry). There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft’s privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
 
 ```hcl
+
+
 # This ensures we have unique CAF compliant names for our resources.
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
   max = length(local.test_regions) - 1
   min = 0
 }
-
 # This allows us to randomize the name of resources
 resource "random_string" "this" {
   length  = 6
   special = false
   upper   = false
 }
-
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = "0.4.3"
 }
 
-resource "azurerm_resource_group" "this" {
-  location = local.test_regions[random_integer.region_index.result]
-  name     = module.naming.resource_group.name_unique
+data "azapi_client_config" "current" {}
+
+resource "azapi_resource" "resource_group" {
+  location  = local.test_regions[random_integer.region_index.result]
+  name      = module.naming.resource_group.name_unique
+  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type      = "Microsoft.Resources/resourceGroups@2024-03-01"
+  body      = {}
 }
 
-data "azurerm_client_config" "current" {}
-
 resource "azapi_resource" "resource_guard" {
-  location  = azurerm_resource_group.this.location
+  location  = azapi_resource.resource_group.location
   name      = "rg-${random_string.this.result}"
-  parent_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${azurerm_resource_group.this.name}"
+  parent_id = azapi_resource.resource_group.id
   type      = "Microsoft.DataProtection/resourceGuards@2024-04-01"
   body = {
     properties = {}
@@ -57,11 +60,6 @@ resource "azapi_resource" "resource_guard" {
 locals {
   test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-app1-001"
-}
-
-module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = "0.8.2" # change this to your desired version, https://www.terraform.io/language/expressions/version-constraints
 }
 
 module "azure_region" {
@@ -74,14 +72,24 @@ module "azure_region" {
 module "recovery_services_vault" {
   source = "../../"
 
-  location                                       = azurerm_resource_group.this.location
+  location                                       = azapi_resource.resource_group.location
   name                                           = local.vault_name #"rsv-test-vault-001"
-  resource_group_name                            = azurerm_resource_group.this.name
+  resource_group_name                            = azapi_resource.resource_group.name
   sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
+  public_network_access_enabled                  = true
+  storage_mode_type                              = "GeoRedundant"
+  resource_guard_id                              = azapi_resource.resource_guard.id
+  resource_guard_association_enabled             = true
+  tags = {
+    env   = "Prod"
+    owner = "ABREG0"
+    dept  = "IT"
+  }
+
   file_share_backup_policy = {
     pol-rsv-fileshare-vault-001 = {
       name     = "pol-rsv-fileshare-vault-001"
@@ -145,14 +153,7 @@ module "recovery_services_vault" {
       }
     }
   }
-  public_network_access_enabled = true
-  resource_guard_id             = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${azurerm_resource_group.this.name}/providers/Microsoft.DataProtection/resourceGuards/${azapi_resource.resource_guard.name}"
-  storage_mode_type             = "GeoRedundant"
-  tags = {
-    env   = "Prod"
-    owner = "ABREG0"
-    dept  = "IT"
-  }
+
   vm_backup_policy = {
     pol-rsv-vm-vault-001 = {
       name                           = "pol-rsv-vm-vault-001"
@@ -188,6 +189,7 @@ module "recovery_services_vault" {
       }
     }
   }
+
   workload_backup_policy = {
     "pol-rsv-SAPh-vault-002" = {
       name          = "pol-rsv-SAPh-vault-01"
@@ -389,11 +391,11 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource.resource_group](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.resource_guard](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
-- [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [random_string.this](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) (resource)
-- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
+- [azapi_client_config.current](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -429,12 +431,6 @@ Version: 0.4.3
 Source: ../../
 
 Version:
-
-### <a name="module_regions"></a> [regions](#module\_regions)
-
-Source: Azure/regions/azurerm
-
-Version: 0.8.2
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
