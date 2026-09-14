@@ -42,8 +42,8 @@ resource "azapi_resource" "this" {
       monitoringSettings = {
         azureMonitorAlertSettings = {
           alertsForAllJobFailures       = var.alerts_for_all_job_failures_enabled ? "Enabled" : "Disabled"
-          alertsForAllReplicationIssues = "Disabled"
-          alertsForAllFailoverIssues    = "Disabled"
+          alertsForAllReplicationIssues = var.alerts_for_all_replication_issues_enabled ? "Enabled" : "Disabled"
+          alertsForAllFailoverIssues    = var.alerts_for_all_failover_issues_enabled ? "Enabled" : "Disabled"
         }
         classicAlertSettings = {
           alertsForCriticalOperations       = var.alerts_for_critical_operation_failures_enabled ? "Enabled" : "Disabled"

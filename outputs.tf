@@ -3,6 +3,11 @@ output "backup_protected_vm" {
   value       = module.backup_protected_vm
 }
 
+output "backup_protected_workload" {
+  description = "The workload (SQL Server on Azure VM) protection containers and protected items"
+  value       = module.backup_protected_workload
+}
+
 output "private_endpoints" {
   description = <<DESCRIPTION
   A map of private endpoints. The map key is the supplied input to var.private_endpoints. The map value is the entire azurerm_private_endpoint resource."
