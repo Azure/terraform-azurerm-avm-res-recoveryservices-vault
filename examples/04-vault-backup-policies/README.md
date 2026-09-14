@@ -16,19 +16,20 @@ This example focuses on defining backup policies in the vault for file shares, v
 The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the [repository](https://aka.ms/avm/telemetry). There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft’s privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
 
 ```hcl
-
 # This ensures we have unique CAF compliant names for our resources.
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
   max = length(local.test_regions) - 1
   min = 0
 }
+
 # This allows us to randomize the name of resources
 resource "random_string" "this" {
   length  = 6
   special = false
   upper   = false
 }
+
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
@@ -38,35 +39,29 @@ module "naming" {
 data "azapi_client_config" "current" {}
 
 resource "azapi_resource" "resource_group" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = module.naming.resource_group.name_unique
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = local.test_regions[random_integer.region_index.result]
-
-  body = {}
-
+  location               = local.test_regions[random_integer.region_index.result]
+  name                   = module.naming.resource_group.name_unique
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "resource_group_primary" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = "${module.naming.resource_group.name_unique}-wus3"
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = "westus3"
-
-  body = {}
-
+  location               = "westus3"
+  name                   = "${module.naming.resource_group.name_unique}-wus3"
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "resource_group_secondary" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = "${module.naming.resource_group.name_unique}-cus"
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = "Central US"
-
-  body = {}
-
+  location               = "Central US"
+  name                   = "${module.naming.resource_group.name_unique}-cus"
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
 
@@ -83,16 +78,13 @@ module "azure_region" {
 }
 
 resource "azapi_resource" "user_assigned_identity" {
-  type      = "Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31"
-  name      = module.naming.user_assigned_identity.name_unique
-  parent_id = azapi_resource.resource_group.id
-  location  = azapi_resource.resource_group.location
-
-  body = {}
-
+  location               = azapi_resource.resource_group.location
+  name                   = module.naming.user_assigned_identity.name_unique
+  parent_id              = azapi_resource.resource_group.id
+  type                   = "Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31"
+  body                   = {}
   response_export_values = ["*"]
 }
-
 
 module "recovery_services_vault" {
   source = "../../"

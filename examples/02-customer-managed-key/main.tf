@@ -1,17 +1,17 @@
-
-
 # This ensures we have unique CAF compliant names for our resources.
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
   max = length(local.test_regions) - 1
   min = 0
 }
+
 # This allows us to randomize the name of resources
 resource "random_string" "this" {
   length  = 6
   special = false
   upper   = false
 }
+
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
@@ -84,12 +84,11 @@ module "recovery_services_vault" {
 }
 
 resource "azapi_resource" "this_identity" {
-  location  = azapi_resource.resource_group.location
-  name      = module.naming.user_assigned_identity.name_unique
-  parent_id = azapi_resource.resource_group.id
-  type      = "Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31"
-  body      = {}
-
+  location               = azapi_resource.resource_group.location
+  name                   = module.naming.user_assigned_identity.name_unique
+  parent_id              = azapi_resource.resource_group.id
+  type                   = "Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31"
+  body                   = {}
   response_export_values = ["properties.principalId"]
 }
 
@@ -110,10 +109,9 @@ resource "azapi_data_plane_resource" "key_vault_key" {
     key_size = 2048
     kty      = "RSA"
   }
+  response_export_values = ["key.kid"]
 
   depends_on = [time_sleep.wait_for_kv]
-
-  response_export_values = ["key.kid"]
 }
 
 resource "azapi_resource" "key_vault" {
@@ -135,11 +133,10 @@ resource "azapi_resource" "key_vault" {
       tenantId                  = data.azapi_client_config.current.tenant_id
     }
   }
+  response_export_values = ["properties.vaultUri"]
   tags = {
     Dep = "IT"
   }
-
-  response_export_values = ["properties.vaultUri"]
 }
 
 resource "random_uuid" "key_vault_role_assignment" {

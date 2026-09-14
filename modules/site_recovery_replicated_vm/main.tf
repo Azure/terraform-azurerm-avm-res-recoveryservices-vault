@@ -2,10 +2,10 @@
 # POST /remove. Action resources model those asymmetric operations without
 # issuing an unsupported generic DELETE request.
 resource "azapi_resource_action" "this" {
-  type        = var.resource_types.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items
-  resource_id = local.resource_id
   action      = ""
   method      = "PUT"
+  resource_id = local.resource_id
+  type        = var.resource_types.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items
   body = {
     properties = {
       policyId = var.site_recovery_replicated_vm.recovery_replication_policy_id
@@ -34,10 +34,9 @@ resource "azapi_resource_action" "this" {
       )
     }
   }
-  when = "apply"
-
   response_export_values = ["*"]
   retry                  = var.retry
+  when                   = "apply"
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -56,8 +55,8 @@ resource "azapi_resource_action" "this" {
 resource "azapi_update_resource" "configuration" {
   count = local.update_required ? 1 : 0
 
-  type        = var.resource_types.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items
   resource_id = local.resource_id
+  type        = var.resource_types.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items
   body = {
     properties = merge(
       {
@@ -100,10 +99,10 @@ resource "azapi_update_resource" "configuration" {
 }
 
 resource "azapi_resource_action" "remove" {
-  type        = var.resource_types.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items
-  resource_id = local.resource_id
   action      = "remove"
   method      = "POST"
+  resource_id = local.resource_id
+  type        = var.resource_types.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items
   body = {
     properties = {
       disableProtectionReason = "NotSpecified"
@@ -112,11 +111,10 @@ resource "azapi_resource_action" "remove" {
       }
     }
   }
-  when = "destroy"
-
   ignore_not_found       = true
   response_export_values = []
   retry                  = var.retry
+  when                   = "destroy"
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]

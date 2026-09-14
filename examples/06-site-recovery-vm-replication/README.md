@@ -35,8 +35,8 @@ resource "random_string" "storage_suffix" {
 
 resource "random_password" "vm_admin" {
   length           = 20
-  special          = true
   override_special = "!@#$%&*()-_=+[]{}<>:?"
+  special          = true
 }
 
 resource "random_uuid" "storage_account_contributor_assignment" {}
@@ -64,33 +64,28 @@ locals {
 }
 
 resource "azapi_resource" "resource_group_source" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = "rg-site-recovery-${random_integer.region_seed.result}"
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = "westus2"
-
-  body = {}
-
+  location               = "westus2"
+  name                   = "rg-site-recovery-${random_integer.region_seed.result}"
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "resource_group_target" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = "rg-site-recovery-target-${random_integer.region_seed.result}"
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = "westcentralus"
-
-  body = {}
-
+  location               = "westcentralus"
+  name                   = "rg-site-recovery-target-${random_integer.region_seed.result}"
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "virtual_network_source" {
-  type      = "Microsoft.Network/virtualNetworks@2024-05-01"
+  location  = azapi_resource.resource_group_source.location
   name      = "vnet-source-${random_integer.region_seed.result}"
   parent_id = azapi_resource.resource_group_source.id
-  location  = azapi_resource.resource_group_source.location
-
+  type      = "Microsoft.Network/virtualNetworks@2024-05-01"
   body = {
     properties = {
       addressSpace = {
@@ -98,16 +93,14 @@ resource "azapi_resource" "virtual_network_source" {
       }
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "virtual_network_target" {
-  type      = "Microsoft.Network/virtualNetworks@2024-05-01"
+  location  = azapi_resource.resource_group_target.location
   name      = "vnet-target-${random_integer.region_seed.result}"
   parent_id = azapi_resource.resource_group_target.id
-  location  = azapi_resource.resource_group_target.location
-
+  type      = "Microsoft.Network/virtualNetworks@2024-05-01"
   body = {
     properties = {
       addressSpace = {
@@ -115,46 +108,40 @@ resource "azapi_resource" "virtual_network_target" {
       }
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "subnet_source" {
-  type      = "Microsoft.Network/virtualNetworks/subnets@2024-05-01"
   name      = "snet-source"
   parent_id = azapi_resource.virtual_network_source.id
-
+  type      = "Microsoft.Network/virtualNetworks/subnets@2024-05-01"
   body = {
     properties = {
       addressPrefix = "10.10.1.0/24"
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "subnet_target" {
-  type      = "Microsoft.Network/virtualNetworks/subnets@2024-05-01"
   name      = "snet-target"
   parent_id = azapi_resource.virtual_network_target.id
-
+  type      = "Microsoft.Network/virtualNetworks/subnets@2024-05-01"
   body = {
     properties = {
       addressPrefix = "10.20.1.0/24"
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "network_interface_source" {
   for_each = local.source_vms
 
-  type      = "Microsoft.Network/networkInterfaces@2024-05-01"
+  location  = azapi_resource.resource_group_source.location
   name      = "nic-${each.key}-${random_integer.region_seed.result}"
   parent_id = azapi_resource.resource_group_source.id
-  location  = azapi_resource.resource_group_source.location
-
+  type      = "Microsoft.Network/networkInterfaces@2024-05-01"
   body = {
     properties = {
       ipConfigurations = [
@@ -170,18 +157,16 @@ resource "azapi_resource" "network_interface_source" {
       ]
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "managed_disk_source" {
   for_each = local.source_vm_data_disks
 
-  type      = "Microsoft.Compute/disks@2024-03-02"
+  location  = azapi_resource.resource_group_source.location
   name      = "disk-source-${each.value.vm_key}-${each.value.disk_key}-${random_integer.region_seed.result}"
   parent_id = azapi_resource.resource_group_source.id
-  location  = azapi_resource.resource_group_source.location
-
+  type      = "Microsoft.Compute/disks@2024-03-02"
   body = {
     properties = {
       creationData = {
@@ -193,18 +178,16 @@ resource "azapi_resource" "managed_disk_source" {
       name = "Premium_LRS"
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "virtual_machine_source" {
   for_each = local.source_vms
 
-  type      = "Microsoft.Compute/virtualMachines@2024-07-01"
+  location  = azapi_resource.resource_group_source.location
   name      = "vm-source-${each.key}-${random_integer.region_seed.result}"
   parent_id = azapi_resource.resource_group_source.id
-  location  = azapi_resource.resource_group_source.location
-
+  type      = "Microsoft.Compute/virtualMachines@2024-07-01"
   body = {
     identity = {
       type = "SystemAssigned"
@@ -255,7 +238,9 @@ resource "azapi_resource" "virtual_machine_source" {
       }
     }
   }
-
+  response_export_values = [
+    "properties.storageProfile.osDisk.managedDisk.id",
+  ]
   sensitive_body = {
     properties = {
       osProfile = {
@@ -263,18 +248,13 @@ resource "azapi_resource" "virtual_machine_source" {
       }
     }
   }
-
-  response_export_values = [
-    "properties.storageProfile.osDisk.managedDisk.id",
-  ]
 }
 
 resource "azapi_resource" "storage_account_staging" {
-  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  location  = azapi_resource.resource_group_source.location
   name      = "stasr${random_integer.region_seed.result}${random_string.storage_suffix.result}"
   parent_id = azapi_resource.resource_group_source.id
-  location  = azapi_resource.resource_group_source.location
-
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
   body = {
     kind = "StorageV2"
     properties = {
@@ -286,7 +266,6 @@ resource "azapi_resource" "storage_account_staging" {
       name = "Standard_GRS"
     }
   }
-
   response_export_values = ["*"]
 }
 
@@ -294,17 +273,17 @@ resource "azapi_resource" "storage_account_staging" {
 module "recovery_services_vault_primary" {
   source = "../../"
 
-  location            = azapi_resource.resource_group_target.location
-  name                = local.primary_vault_name
-  resource_group_name = azapi_resource.resource_group_target.name
-  sku                 = "RS0"
-  managed_identities = {
-    system_assigned = true
-  }
+  location                                       = azapi_resource.resource_group_target.location
+  name                                           = local.primary_vault_name
+  resource_group_name                            = azapi_resource.resource_group_target.name
+  sku                                            = "RS0"
   alerts_for_all_job_failures_enabled            = true
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
+  managed_identities = {
+    system_assigned = true
+  }
 }
 
 module "recovery_services_vault_secondary" {
@@ -321,10 +300,9 @@ module "recovery_services_vault_secondary" {
 }
 
 resource "azapi_resource" "storage_account_contributor_assignment" {
-  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   name      = random_uuid.storage_account_contributor_assignment.result
   parent_id = azapi_resource.storage_account_staging.id
-
+  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   body = {
     properties = {
       principalId      = module.recovery_services_vault_primary.resource.output.identity.principalId
@@ -332,15 +310,13 @@ resource "azapi_resource" "storage_account_contributor_assignment" {
       roleDefinitionId = "/subscriptions/${data.azapi_client_config.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/17d1049b-9a84-46fb-8f53-869881c3d3ab"
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "storage_blob_data_contributor_assignment" {
-  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   name      = random_uuid.storage_blob_data_contributor_assignment.result
   parent_id = azapi_resource.storage_account_staging.id
-
+  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   body = {
     properties = {
       principalId      = module.recovery_services_vault_primary.resource.output.identity.principalId
@@ -348,15 +324,13 @@ resource "azapi_resource" "storage_blob_data_contributor_assignment" {
       roleDefinitionId = "/subscriptions/${data.azapi_client_config.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/ba92f5b4-2d11-453d-a403-e96b0029c9fe"
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "storage_queue_data_contributor_assignment" {
-  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   name      = random_uuid.storage_queue_data_contributor_assignment.result
   parent_id = azapi_resource.storage_account_staging.id
-
+  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   body = {
     properties = {
       principalId      = module.recovery_services_vault_primary.resource.output.identity.principalId
@@ -364,15 +338,13 @@ resource "azapi_resource" "storage_queue_data_contributor_assignment" {
       roleDefinitionId = "/subscriptions/${data.azapi_client_config.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/974c5e8b-45b9-4653-ba55-5f855dd0fb88"
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "site_recovery_fabric_primary" {
-  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics@2024-10-01"
   name      = "fabric-primary-${random_integer.region_seed.result}"
   parent_id = module.recovery_services_vault_primary.resource_id
-
+  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics@2024-10-01"
   body = {
     properties = {
       customDetails = {
@@ -381,7 +353,6 @@ resource "azapi_resource" "site_recovery_fabric_primary" {
       }
     }
   }
-
   response_export_values = ["*"]
 }
 
@@ -392,9 +363,8 @@ resource "time_sleep" "wait_for_site_recovery_fabric" {
 }
 
 data "azapi_resource_list" "site_recovery_fabrics" {
-  parent_id = module.recovery_services_vault_primary.resource_id
-  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics@2024-10-01"
-
+  parent_id              = module.recovery_services_vault_primary.resource_id
+  type                   = "Microsoft.RecoveryServices/vaults/replicationFabrics@2024-10-01"
   response_export_values = ["value"]
 
   depends_on = [time_sleep.wait_for_site_recovery_fabric]
@@ -408,34 +378,29 @@ locals {
 }
 
 resource "azapi_resource" "site_recovery_protection_container_primary" {
-  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers@2024-10-01"
   name      = "pc-primary-${random_integer.region_seed.result}"
   parent_id = azapi_resource.site_recovery_fabric_primary.id
-
+  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers@2024-10-01"
   body = {
     properties = {}
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "site_recovery_protection_container_secondary" {
-  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers@2024-10-01"
   name      = "pc-secondary-${random_integer.region_seed.result}"
   parent_id = local.site_recovery_fabric_secondary.id
-
+  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers@2024-10-01"
   body = {
     properties = {}
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "site_recovery_replication_policy" {
-  type      = "Microsoft.RecoveryServices/vaults/replicationPolicies@2024-10-01"
   name      = "replication-policy-${random_integer.region_seed.result}"
   parent_id = module.recovery_services_vault_primary.resource_id
-
+  type      = "Microsoft.RecoveryServices/vaults/replicationPolicies@2024-10-01"
   body = {
     properties = {
       providerSpecificInput = {
@@ -446,15 +411,13 @@ resource "azapi_resource" "site_recovery_replication_policy" {
       }
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "site_recovery_protection_container_mapping" {
-  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectionContainerMappings@2024-10-01"
   name      = "pcm-primary-secondary-${random_integer.region_seed.result}"
   parent_id = azapi_resource.site_recovery_protection_container_primary.id
-
+  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectionContainerMappings@2024-10-01"
   body = {
     properties = {
       policyId                    = azapi_resource.site_recovery_replication_policy.id
@@ -464,15 +427,13 @@ resource "azapi_resource" "site_recovery_protection_container_mapping" {
       }
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "site_recovery_network_mapping" {
-  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationNetworks/replicationNetworkMappings@2024-10-01"
   name      = "nm-primary-secondary-${random_integer.region_seed.result}"
   parent_id = "${azapi_resource.site_recovery_fabric_primary.id}/replicationNetworks/${azapi_resource.virtual_network_source.name}"
-
+  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationNetworks/replicationNetworkMappings@2024-10-01"
   body = {
     properties = {
       fabricSpecificDetails = {
@@ -483,17 +444,15 @@ resource "azapi_resource" "site_recovery_network_mapping" {
       recoveryNetworkId  = azapi_resource.virtual_network_target.id
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "site_recovery_replicated_vm" {
   for_each = local.source_vms
 
-  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectedItems@2024-10-01"
   name      = azapi_resource.virtual_machine_source[each.key].name
   parent_id = azapi_resource.site_recovery_protection_container_primary.id
-
+  type      = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectedItems@2024-10-01"
   body = {
     properties = {
       policyId = azapi_resource.site_recovery_replication_policy.id
@@ -516,7 +475,6 @@ resource "azapi_resource" "site_recovery_replicated_vm" {
       }
     }
   }
-
   response_export_values = ["*"]
 
   timeouts {
@@ -535,9 +493,8 @@ resource "azapi_resource" "site_recovery_replicated_vm" {
 resource "azapi_update_resource" "site_recovery_replicated_vm_configuration" {
   for_each = local.source_vms
 
-  type        = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectedItems@2024-10-01"
   resource_id = azapi_resource.site_recovery_replicated_vm[each.key].id
-
+  type        = "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectedItems@2024-10-01"
   body = {
     properties = {
       providerSpecificDetails = {
@@ -549,7 +506,6 @@ resource "azapi_update_resource" "site_recovery_replicated_vm_configuration" {
       selectedTfoAzureNetworkId      = azapi_resource.virtual_network_target.id
     }
   }
-
   response_export_values = ["*"]
 
   timeouts {
@@ -571,6 +527,8 @@ The following requirements are needed by this module:
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.1)
+
+- <a name="requirement_time"></a> [time](#requirement\_time) (~> 0.13)
 
 ## Resources
 
@@ -603,6 +561,7 @@ The following resources are used by this module:
 - [random_uuid.storage_account_contributor_assignment](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [random_uuid.storage_blob_data_contributor_assignment](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [random_uuid.storage_queue_data_contributor_assignment](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
+- [time_sleep.wait_for_site_recovery_fabric](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) (resource)
 - [azapi_client_config.current](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [azapi_resource_list.site_recovery_fabrics](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource_list) (data source)
 

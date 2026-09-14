@@ -1,9 +1,8 @@
 resource "azapi_resource" "storage_account" {
-  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  location  = azapi_resource.resource_group_primary.location
   name      = module.naming.storage_account.name_unique
   parent_id = azapi_resource.resource_group_primary.id
-  location  = azapi_resource.resource_group_primary.location
-
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
   body = {
     identity = {
       type = "SystemAssigned,UserAssigned"
@@ -32,7 +31,6 @@ resource "azapi_resource" "storage_account" {
       name = "Standard_ZRS"
     }
   }
-
   response_export_values = ["*"]
   tags = {
     env   = "Dev"
@@ -42,15 +40,13 @@ resource "azapi_resource" "storage_account" {
 }
 
 resource "azapi_resource" "storage_account_blob_service" {
-  type      = "Microsoft.Storage/storageAccounts/blobServices@2023-05-01"
   name      = "default"
   parent_id = azapi_resource.storage_account.id
-
+  type      = "Microsoft.Storage/storageAccounts/blobServices@2023-05-01"
   body = {
     properties = {
       isVersioningEnabled = true
     }
   }
-
   response_export_values = ["*"]
 }

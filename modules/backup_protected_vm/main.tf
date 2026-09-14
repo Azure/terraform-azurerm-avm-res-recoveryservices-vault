@@ -3,9 +3,9 @@ resource "time_sleep" "wait_pre" {
 }
 
 resource "azapi_resource" "this" {
-  type      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   name      = "VM;iaasvmcontainerv2;${local.source_vm_resource_group_name};${local.source_vm_name}"
   parent_id = var.parent_id
+  type      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   body = {
     properties = {
       friendlyName      = local.source_vm_name

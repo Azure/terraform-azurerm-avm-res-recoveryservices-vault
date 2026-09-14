@@ -1,17 +1,17 @@
 data "azapi_resource_list" "protectable_items" {
-  type                   = var.resource_types.recoveryservices_vaults_backup_fabrics_protectable_items
-  parent_id              = local.backup_fabric_id
-  response_export_values = ["*"]
+  parent_id = local.backup_fabric_id
   query_parameters = {
     "$filter" = ["backupManagementType eq 'AzureStorage'"]
   }
+  type                   = var.resource_types.recoveryservices_vaults_backup_fabrics_protectable_items
+  response_export_values = ["*"]
 
   depends_on = [time_sleep.wait_pre]
 }
 
 data "azapi_resource_list" "protected_items" {
-  type                   = var.resource_types.recoveryservices_vaults_backup_protected_items
   parent_id              = local.vault_id
+  type                   = var.resource_types.recoveryservices_vaults_backup_protected_items
   response_export_values = ["*"]
 
   depends_on = [time_sleep.wait_pre]
@@ -20,9 +20,9 @@ data "azapi_resource_list" "protected_items" {
 resource "azapi_resource" "protection_container" {
   count = var.backup_protected_file_share.disable_registration == true ? 0 : 1
 
-  type      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers
   name      = local.protection_container_name
   parent_id = local.backup_fabric_id
+  type      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers
   body = {
     properties = {
       backupManagementType = "AzureStorage"
@@ -51,17 +51,16 @@ resource "azapi_resource" "protection_container" {
 }
 
 resource "azapi_resource_action" "inquire" {
-  type        = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers
-  resource_id = var.parent_id
-  action      = "inquire"
-  method      = "POST"
+  action = "inquire"
+  method = "POST"
   query_parameters = {
     "$filter" = ["backupManagementType eq 'AzureStorage'"]
   }
-  when = "apply"
-
+  resource_id            = var.parent_id
+  type                   = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers
   response_export_values = []
   retry                  = var.retry
+  when                   = "apply"
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -87,9 +86,9 @@ resource "time_sleep" "wait_pre" {
 }
 
 resource "azapi_resource" "this" {
-  type      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   name      = try(local.protectable_item.name, var.backup_protected_file_share.source_file_share_name)
   parent_id = var.parent_id
+  type      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   body = {
     properties = {
       friendlyName      = var.backup_protected_file_share.source_file_share_name
@@ -123,6 +122,5 @@ resource "azapi_resource" "this" {
       error_message = "The file share was not returned by Azure Backup discovery after registration and inquiry."
     }
   }
-
   depends_on = [time_sleep.wait_pre]
 }

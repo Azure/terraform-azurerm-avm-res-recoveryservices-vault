@@ -5,8 +5,6 @@ variable "source_vms" {
       size_gb = number
     }))
   }))
-  description = "Map of source VMs and their data disks for Site Recovery replication."
-
   default = {
     vm1 = {
       data_disks = {
@@ -33,17 +31,16 @@ variable "source_vms" {
       }
     }
   }
+  description = "Map of source VMs and their data disks for Site Recovery replication."
 
   validation {
     condition     = length(var.source_vms) > 0
     error_message = "source_vms must include at least one VM."
   }
-
   validation {
     condition     = alltrue([for _, vm in var.source_vms : length(vm.data_disks) > 0])
     error_message = "Each VM in source_vms must define at least one data disk."
   }
-
   validation {
     condition = alltrue([
       for _, vm in var.source_vms :
@@ -55,14 +52,14 @@ variable "source_vms" {
 
 variable "source_vm_size" {
   type        = string
-  description = "VM SKU for source VMs used in the Site Recovery example."
   default     = "Standard_D2as_v5"
+  description = "VM SKU for source VMs used in the Site Recovery example."
 }
 
 variable "target_vm_size" {
   type        = string
-  description = "VM SKU used for failover target replicated VMs. Must be compatible with the source VM's disk controller type (SCSI) and generation; incompatible sizes cause Azure Site Recovery error 1400148. Defaults to the source VM size to guarantee compatibility."
   default     = "Standard_D2as_v5"
+  description = "VM SKU used for failover target replicated VMs. Must be compatible with the source VM's disk controller type (SCSI) and generation; incompatible sizes cause Azure Site Recovery error 1400148. Defaults to the source VM size to guarantee compatibility."
 }
 
 variable "site_recovery_replication_timeouts" {
@@ -72,11 +69,11 @@ variable "site_recovery_replication_timeouts" {
     delete = string
     read   = string
   })
-  description = "Timeouts for replicated VM Site Recovery operations. Increase these when Azure replication operations are slow to report completion."
   default = {
     create = "180m"
     update = "180m"
     delete = "120m"
     read   = "15m"
   }
+  description = "Timeouts for replicated VM Site Recovery operations. Increase these when Azure replication operations are slow to report completion."
 }

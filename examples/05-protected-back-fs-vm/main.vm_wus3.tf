@@ -1,9 +1,8 @@
 resource "azapi_resource" "network_interface_wus3" {
-  type      = "Microsoft.Network/networkInterfaces@2024-05-01"
+  location  = azapi_resource.resource_group_primary_wus3.location
   name      = "vm-${azapi_resource.resource_group_primary_wus3.location}-nic"
   parent_id = azapi_resource.resource_group_primary_wus3.id
-  location  = azapi_resource.resource_group_primary_wus3.location
-
+  type      = "Microsoft.Network/networkInterfaces@2024-05-01"
   body = {
     properties = {
       ipConfigurations = [
@@ -19,16 +18,14 @@ resource "azapi_resource" "network_interface_wus3" {
       ]
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "managed_disk_wus3" {
-  type      = "Microsoft.Compute/disks@2024-03-02"
+  location  = azapi_resource.resource_group_primary_wus3.location
   name      = "data-${azapi_resource.resource_group_primary_wus3.location}-disk"
   parent_id = azapi_resource.resource_group_primary_wus3.id
-  location  = azapi_resource.resource_group_primary_wus3.location
-
+  type      = "Microsoft.Compute/disks@2024-03-02"
   body = {
     properties = {
       creationData = {
@@ -40,16 +37,14 @@ resource "azapi_resource" "managed_disk_wus3" {
       name = "Premium_ZRS"
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "virtual_machine_wus3" {
-  type      = "Microsoft.Compute/virtualMachines@2024-07-01"
+  location  = azapi_resource.resource_group_primary_wus3.location
   name      = "vm-${azapi_resource.resource_group_primary_wus3.location}-005"
   parent_id = azapi_resource.resource_group_primary_wus3.id
-  location  = azapi_resource.resource_group_primary_wus3.location
-
+  type      = "Microsoft.Compute/virtualMachines@2024-07-01"
   body = {
     identity = {
       type = "SystemAssigned,UserAssigned"
@@ -103,7 +98,7 @@ resource "azapi_resource" "virtual_machine_wus3" {
       }
     }
   }
-
+  response_export_values = ["*"]
   sensitive_body = {
     properties = {
       osProfile = {
@@ -111,6 +106,4 @@ resource "azapi_resource" "virtual_machine_wus3" {
       }
     }
   }
-
-  response_export_values = ["*"]
 }

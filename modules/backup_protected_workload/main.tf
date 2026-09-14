@@ -68,17 +68,16 @@ resource "azapi_resource" "container" {
 resource "azapi_resource_action" "inquire" {
   count = var.backup_protected_workload.inquiry_enabled ? 1 : 0
 
-  resource_id = azapi_resource.container.id
-  type        = "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers@2024-10-01"
-  action      = "inquire"
-  method      = "POST"
+  action = "inquire"
+  method = "POST"
   query_parameters = {
     "$filter" = ["workloadType eq '${local.workload_types[var.backup_protected_workload.workload_type]}'"]
   }
-  when = "apply"
-
+  resource_id            = azapi_resource.container.id
+  type                   = "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers@2024-10-01"
   response_export_values = []
   retry                  = var.retry
+  when                   = "apply"
 }
 
 # Registration and discovery are asynchronous, the discovered items are not immediately

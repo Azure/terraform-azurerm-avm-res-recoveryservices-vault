@@ -24,12 +24,14 @@ resource "random_integer" "region_index" {
   max = length(local.test_regions) - 1
   min = 0
 }
+
 # This allows us to randomize the name of resources
 resource "random_string" "this" {
   length  = 6
   special = false
   upper   = false
 }
+
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
@@ -37,81 +39,68 @@ module "naming" {
 }
 
 resource "azapi_resource" "resource_group" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = "rg-westus3-vault-005"
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = "westus3"
-
-  body = {}
-
+  location               = "westus3"
+  name                   = "rg-westus3-vault-005"
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "resource_group_primary_wus1" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = "rg-vm-westus-primary-005"
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = "westus"
-
-  body = {}
-
+  location               = "westus"
+  name                   = "rg-vm-westus-primary-005"
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "resource_group_primary_wus2" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = "rg-vm-westus2-primary-005"
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = "westus2"
-
-  body = {}
-
+  location               = "westus2"
+  name                   = "rg-vm-westus2-primary-005"
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "resource_group_primary_wus3" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = "rg-vm-westus3-primary-005"
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = "westus3"
-
-  body = {}
-
+  location               = "westus3"
+  name                   = "rg-vm-westus3-primary-005"
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "resource_group_secondary_eus" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = "rg-vm-secondary_eus-005"
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = "eastus"
-
-  body = {}
-
+  location               = "eastus"
+  name                   = "rg-vm-secondary_eus-005"
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "resource_group_secondary_eus2" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = "rg-vm-secondary_eus2-005"
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = "eastus2"
-
-  body = {}
-
+  location               = "eastus2"
+  name                   = "rg-vm-secondary_eus2-005"
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "resource_group_secondary_cus" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = "rg-vm-secondary_cus-005"
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = "centralus"
-
-  body = {}
-
+  location               = "centralus"
+  name                   = "rg-vm-secondary_cus-005"
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
+
 locals {
   test_regions = ["eastus", "eastus2", "westus3"] #  "westu2",
   vault_name   = "${module.naming.recovery_services_vault.slug}-${module.azure_region.location_short}-005"
@@ -123,100 +112,89 @@ module "azure_region" {
 
   azure_region = "westus3"
 }
+
 # Must be located in the same region as the VM to be backed up.
 resource "azapi_resource" "storage_account_primary_wus1" {
-  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  location  = azapi_resource.resource_group_primary_wus1.location
   name      = "srv${azapi_resource.resource_group_primary_wus1.location}005"
   parent_id = azapi_resource.resource_group_primary_wus1.id
-  location  = azapi_resource.resource_group_primary_wus1.location
-
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
   body = {
     kind = "StorageV2"
     sku = {
       name = "Standard_GRS"
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "storage_account_primary_wus2" {
-  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  location  = azapi_resource.resource_group_primary_wus2.location
   name      = "srv${azapi_resource.resource_group_primary_wus2.location}555"
   parent_id = azapi_resource.resource_group_primary_wus2.id
-  location  = azapi_resource.resource_group_primary_wus2.location
-
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
   body = {
     kind = "StorageV2"
     sku = {
       name = "Standard_ZRS"
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "storage_account_primary_wus3" {
-  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  location  = azapi_resource.resource_group_primary_wus3.location
   name      = "srv${azapi_resource.resource_group_primary_wus3.location}555"
   parent_id = azapi_resource.resource_group_primary_wus3.id
-  location  = azapi_resource.resource_group_primary_wus3.location
-
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
   body = {
     kind = "StorageV2"
     sku = {
       name = "Standard_ZRS"
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "storage_account_file_share" {
-  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  location  = azapi_resource.resource_group_primary_wus3.location
   name      = "fsbk${azapi_resource.resource_group_primary_wus3.location}555"
   parent_id = azapi_resource.resource_group_primary_wus3.id
-  location  = azapi_resource.resource_group_primary_wus3.location
-
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
   body = {
     kind = "StorageV2"
     sku = {
       name = "Standard_GRS"
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "storage_share" {
-  type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2023-05-01"
   name      = "share1"
   parent_id = "${azapi_resource.storage_account_file_share.id}/fileServices/default"
-
+  type      = "Microsoft.Storage/storageAccounts/fileServices/shares@2023-05-01"
   body = {
     properties = {
       shareQuota = 50
     }
   }
-
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "user_assigned_identity" {
-  type      = "Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31"
-  name      = "uami-${azapi_resource.resource_group.location}-005"
-  parent_id = azapi_resource.resource_group.id
-  location  = azapi_resource.resource_group.location
-
-  body = {}
-
+  location               = azapi_resource.resource_group.location
+  name                   = "uami-${azapi_resource.resource_group.location}-005"
+  parent_id              = azapi_resource.resource_group.id
+  type                   = "Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31"
+  body                   = {}
   response_export_values = ["*"]
 }
 
 resource "random_password" "vm_admin" {
   length           = 20
-  special          = true
   override_special = "!@#$%&*()-_=+[]{}<>:?"
+  special          = true
 }
 
 module "recovery_services_vault" {

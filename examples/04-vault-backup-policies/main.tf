@@ -1,16 +1,17 @@
-
 # This ensures we have unique CAF compliant names for our resources.
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
   max = length(local.test_regions) - 1
   min = 0
 }
+
 # This allows us to randomize the name of resources
 resource "random_string" "this" {
   length  = 6
   special = false
   upper   = false
 }
+
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
@@ -20,35 +21,29 @@ module "naming" {
 data "azapi_client_config" "current" {}
 
 resource "azapi_resource" "resource_group" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = module.naming.resource_group.name_unique
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = local.test_regions[random_integer.region_index.result]
-
-  body = {}
-
+  location               = local.test_regions[random_integer.region_index.result]
+  name                   = module.naming.resource_group.name_unique
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "resource_group_primary" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = "${module.naming.resource_group.name_unique}-wus3"
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = "westus3"
-
-  body = {}
-
+  location               = "westus3"
+  name                   = "${module.naming.resource_group.name_unique}-wus3"
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
 
 resource "azapi_resource" "resource_group_secondary" {
-  type      = "Microsoft.Resources/resourceGroups@2022-09-01"
-  name      = "${module.naming.resource_group.name_unique}-cus"
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location  = "Central US"
-
-  body = {}
-
+  location               = "Central US"
+  name                   = "${module.naming.resource_group.name_unique}-cus"
+  parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
+  type                   = "Microsoft.Resources/resourceGroups@2022-09-01"
+  body                   = {}
   response_export_values = ["*"]
 }
 
@@ -65,16 +60,13 @@ module "azure_region" {
 }
 
 resource "azapi_resource" "user_assigned_identity" {
-  type      = "Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31"
-  name      = module.naming.user_assigned_identity.name_unique
-  parent_id = azapi_resource.resource_group.id
-  location  = azapi_resource.resource_group.location
-
-  body = {}
-
+  location               = azapi_resource.resource_group.location
+  name                   = module.naming.user_assigned_identity.name_unique
+  parent_id              = azapi_resource.resource_group.id
+  type                   = "Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31"
+  body                   = {}
   response_export_values = ["*"]
 }
-
 
 module "recovery_services_vault" {
   source = "../../"
