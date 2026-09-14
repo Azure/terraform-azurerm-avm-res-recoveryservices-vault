@@ -284,9 +284,31 @@ run "soft_delete_disabled" {
 # ---------------------------------------------------------------------------
 # run: soft_delete_always_on
 #
-# Verifies that the "AlwaysOn" always-on soft delete state can be configured.
+# Verifies that the "AlwaysON" always-on soft delete state can be configured.
+# The body must carry the exact API enum value: softDeleteState is an extensible
+# enum, so a mis-cased value is accepted by ARM without error and silently
+# leaves the vault's soft delete state unchanged.
 # ---------------------------------------------------------------------------
 run "soft_delete_always_on" {
+  command = apply
+
+  variables {
+    soft_delete_enabled = "AlwaysON"
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "AlwaysON"
+    error_message = "Soft delete state should be 'AlwaysON' when always-on soft delete is enabled."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: soft_delete_always_on_legacy_casing
+#
+# The deprecated "AlwaysOn" alias must normalise to the API value "AlwaysON"
+# so existing callers keep working.
+# ---------------------------------------------------------------------------
+run "soft_delete_always_on_legacy_casing" {
   command = apply
 
   variables {
@@ -294,8 +316,8 @@ run "soft_delete_always_on" {
   }
 
   assert {
-    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "AlwaysOn"
-    error_message = "Soft delete state should be 'AlwaysON' when always-on soft delete is enabled."
+    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "AlwaysON"
+    error_message = "The 'AlwaysOn' alias should normalise to the API enum value 'AlwaysON'."
   }
 }
 
