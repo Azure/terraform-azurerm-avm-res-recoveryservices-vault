@@ -192,6 +192,7 @@ resource "azapi_resource" "private_dns_zone" {
 resource "azapi_resource" "private_dns_zone_virtual_network_link" {
   for_each = azapi_resource.private_dns_zone
 
+  location  = "global"
   name      = "${each.key}_${azapi_resource.vnet.name}-link"
   parent_id = azapi_resource.private_dns_zone[each.key].id
   type      = "Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01"
