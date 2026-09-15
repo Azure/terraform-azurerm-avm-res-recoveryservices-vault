@@ -35,8 +35,6 @@ locals {
 
 # Register the virtual machine hosting the workload as a `VMAppContainer` with the vault.
 # https://learn.microsoft.com/en-us/rest/api/backup/protection-containers/register
-# Azure does not persist tags on backup protection containers, so setting them causes perpetual drift.
-# tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "container" {
   name      = local.container_name
   parent_id = "${var.backup_protected_workload.vault_id}/backupFabrics/Azure"
@@ -51,6 +49,7 @@ resource "azapi_resource" "container" {
     }
   }
   response_export_values = ["*"]
+  retry                  = var.retry
 
   dynamic "timeouts" {
     for_each = var.backup_protected_workload.timeouts == null ? [] : [var.backup_protected_workload.timeouts]
@@ -77,6 +76,7 @@ resource "azapi_resource_action" "inquire" {
   resource_id            = azapi_resource.container.id
   type                   = "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers@2024-10-01"
   response_export_values = []
+  retry                  = var.retry
   when                   = "apply"
 }
 
@@ -84,9 +84,6 @@ resource "azapi_resource_action" "inquire" {
 # available to the protected item API.
 resource "time_sleep" "wait_pre" {
   create_duration = var.backup_protected_workload.sleep_timer
-  triggers = {
-    container_id = azapi_resource.container.id
-  }
 
   depends_on = [
     azapi_resource.container,
@@ -96,8 +93,6 @@ resource "time_sleep" "wait_pre" {
 
 # Protect each selected database.
 # https://learn.microsoft.com/en-us/rest/api/backup/protected-items/create-or-update
-# Azure does not persist tags on backup protected items, so setting them causes perpetual drift.
-# tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "protected_item" {
   for_each = local.protected_items
 
@@ -112,6 +107,7 @@ resource "azapi_resource" "protected_item" {
     }
   }
   response_export_values = ["*"]
+  retry                  = var.retry
 
   dynamic "timeouts" {
     for_each = var.backup_protected_workload.timeouts == null ? [] : [var.backup_protected_workload.timeouts]
