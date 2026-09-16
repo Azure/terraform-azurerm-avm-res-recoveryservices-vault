@@ -11,6 +11,12 @@ resource "azapi_resource" "this" {
     }
   }
   ignore_body_changes = length(var.ignore_body_changes.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items) > 0 ? var.ignore_body_changes.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items : null
+  # Azure Site Recovery normalizes the casing of ARM ID segments (for example
+  # "subscriptions" vs "Subscriptions") embedded in nested body properties such
+  # as `policyId` and `providerSpecificDetails.fabricObjectId` when it returns
+  # them, which otherwise causes perpetual external-change drift and forces
+  # unwanted replacements on every subsequent plan.
+  ignore_casing = true
   read_query_parameters = {
     "api-version" = [local.api_version]
   }

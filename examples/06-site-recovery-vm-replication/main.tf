@@ -413,6 +413,11 @@ resource "azapi_resource" "container_mapping_primary_to_secondary" {
       }
     }
   }
+  # Azure Site Recovery normalizes the casing of the ARM ID segments it
+  # returns in nested body properties (for example "subscriptions" vs
+  # "Subscriptions" in `policyId`/`targetProtectionContainerId`), which
+  # otherwise causes perpetual external-change drift on every subsequent plan.
+  ignore_casing = true
 }
 
 resource "azapi_resource" "network_mapping_primary_to_secondary" {
@@ -431,6 +436,10 @@ resource "azapi_resource" "network_mapping_primary_to_secondary" {
       }
     }
   }
+  # See the comment on azapi_resource.container_mapping_primary_to_secondary
+  # above: Azure returns `recoveryNetworkId` with different ARM ID segment
+  # casing than submitted, causing perpetual drift without this setting.
+  ignore_casing = true
 }
 
 module "site_recovery_replicated_vm" {
