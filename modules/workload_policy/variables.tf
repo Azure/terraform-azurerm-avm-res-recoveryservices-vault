@@ -62,6 +62,8 @@ See <https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/r
 DESCRIPTION
 }
 
+# Azure does not persist tags on workload backup policies.
+# tflint-ignore: terraform_unused_declarations
 variable "tags" {
   type        = map(string)
   default     = null

@@ -23,7 +23,7 @@ resource "azapi_resource" "this" {
 
   name      = var.workload_backup_policy.name
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.RecoveryServices/vaults/${var.recovery_vault_name}"
-  type      = "Microsoft.RecoveryServices/vaults/backupPolicies@2024-10-01"
+  type      = var.resource_types.recoveryservices_vaults_backup_policies
   body = {
     properties = {
       backupManagementType = "AzureWorkload"
@@ -133,6 +133,7 @@ resource "azapi_resource" "this" {
       )
     }
   }
+  ignore_body_changes = length(var.ignore_body_changes.recoveryservices_vaults_backup_policies) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_policies : null
   # Include api-version in both type and read query parameters to ensure Azure API accepts the read request
   read_query_parameters = {
     "api-version" = ["2024-10-01"]
@@ -140,4 +141,16 @@ resource "azapi_resource" "this" {
   # For workload policies, only export the resource ID to avoid API read errors
   # The Azure API may not support reading full response for all workload types
   response_export_values = ["id", "name", "type", "properties"]
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
 }
