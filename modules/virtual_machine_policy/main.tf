@@ -100,9 +100,6 @@ locals {
 
   properties = merge(
     local.base_properties,
-    var.vm_backup_policy.snapshot_consistency_type != null ? {
-      snapshotConsistencyType = var.vm_backup_policy.snapshot_consistency_type
-    } : {},
     length(var.vm_backup_policy.instant_restore_resource_group) > 0 ? {
       instantRPDetails = {
         azureBackupRGNamePrefix = values(var.vm_backup_policy.instant_restore_resource_group)[0].prefix
@@ -114,7 +111,7 @@ locals {
 
 data "azapi_client_config" "current" {}
 
-# Azure does not persist tags on backup policies, so setting them causes perpetual drift.
+# Azure does not persist tags on backupPolicies, so setting them causes perpetual drift.
 # tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "this" {
   name      = var.vm_backup_policy.name

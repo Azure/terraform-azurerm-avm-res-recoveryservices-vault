@@ -12,13 +12,6 @@ variable "backup_protected_workload" {
       protected_item_name       = optional(string)
       workload_backup_policy_id = optional(string)
     }))
-    timeouts = optional(object({
-      # The timeouts block allows you to specify a duration for the create, delete, read, and update operations.
-      create = optional(string, "60m")
-      delete = optional(string, "60m")
-      read   = optional(string, "60m")
-      update = optional(string, "60m")
-    }))
   })
   description = <<DESCRIPTION
 Values for the backup_protected_workload module. Registers an Azure virtual machine as a workload (`VMAppContainer`) with the Recovery Services Vault and protects the selected SQL databases hosted on it.
@@ -34,7 +27,6 @@ Values for the backup_protected_workload module. Registers an Azure virtual mach
   - `database_name` - (Required) The name of the database to protect.
   - `protected_item_name` - (Optional) Overrides the generated protected item name (`<workload_type>;<server_name>;<database_name>`).
   - `workload_backup_policy_id` - (Optional) Overrides `workload_backup_policy_id` for this database.
-- `timeouts` - (Optional) The timeouts for the create, delete, read and update operations.
 DESCRIPTION
 
   validation {
@@ -45,4 +37,55 @@ DESCRIPTION
     condition     = can(regex("(?i)^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft.Compute/virtualMachines/[^/]+$", var.backup_protected_workload.source_vm_id))
     error_message = "`source_vm_id` must be the resource ID of an Azure virtual machine."
   }
+}
+
+variable "ignore_body_changes" {
+  type = object({
+    recoveryservices_vaults_backup_fabrics_protection_containers                 = optional(list(string), [])
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(list(string), [])
+  })
+  default     = {}
+  description = <<DESCRIPTION
+Body-relative paths ignored on each AzAPI resource. Paths use dot notation. Changes take effect only after apply. Ignored configuration is not sent to Azure until the path is removed.
+
+- `recoveryservices_vaults_backup_fabrics_protection_containers` - Paths ignored on workload container registration.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Paths ignored on protected SQL database resources.
+DESCRIPTION
+  nullable    = false
+}
+
+variable "resource_types" {
+  type = object({
+    recoveryservices_vaults_backup_fabrics_protection_containers                 = optional(string, "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers@2024-10-01")
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(string, "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01")
+  })
+  default     = {}
+  description = <<DESCRIPTION
+AzAPI resource types and API versions used by the protected workload submodule.
+
+- `recoveryservices_vaults_backup_fabrics_protection_containers` - Resource type and API version for workload container registration and inquiry.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Resource type and API version for protected SQL databases.
+DESCRIPTION
+  nullable    = false
+}
+
+variable "retry" {
+  type = object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
+  default     = null
+  description = "Retry configuration applied to every managed AzAPI resource in the submodule."
+}
+
+variable "timeouts" {
+  type = object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+  default     = null
+  description = "Per-operation timeouts applied to every managed AzAPI resource in the submodule."
 }

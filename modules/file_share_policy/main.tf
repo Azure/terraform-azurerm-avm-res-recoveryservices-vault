@@ -119,7 +119,7 @@ locals {
 
 data "azapi_client_config" "current" {}
 
-# Azure does not persist tags on backup policies, so setting them causes perpetual drift.
+# Azure does not persist tags on backupPolicies, so setting them causes perpetual drift.
 # tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "this" {
   name      = var.file_share_backup_policy.name
