@@ -16,12 +16,6 @@ variable "resource_group_name" {
   description = "The resource group where the resources will be deployed."
 }
 
-variable "tags" {
-  type        = map(string)
-  default     = null
-  description = "The map of tags to apply to the virtual machine backup policy."
-}
-
 variable "vm_backup_policy" {
   type = object({
     name                           = string

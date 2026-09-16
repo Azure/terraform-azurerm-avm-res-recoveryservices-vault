@@ -119,6 +119,8 @@ locals {
 
 data "azapi_client_config" "current" {}
 
+# Azure does not persist tags on backupPolicies, so setting them causes perpetual drift.
+# tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "this" {
   name      = var.file_share_backup_policy.name
   parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}/providers/Microsoft.RecoveryServices/vaults/${var.recovery_vault_name}"
@@ -130,5 +132,4 @@ resource "azapi_resource" "this" {
     "api-version" = ["2024-10-01"]
   }
   response_export_values = ["*"]
-  tags                   = var.tags
 }

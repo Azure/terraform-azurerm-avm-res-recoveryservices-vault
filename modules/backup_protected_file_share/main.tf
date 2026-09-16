@@ -17,6 +17,8 @@ data "azapi_resource_list" "protected_items" {
   depends_on = [time_sleep.wait_pre]
 }
 
+# Azure does not persist tags on protectionContainers, so setting them causes perpetual drift.
+# tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "protection_container" {
   count = var.backup_protected_file_share.disable_registration == true ? 0 : 1
 
@@ -37,7 +39,6 @@ resource "azapi_resource" "protection_container" {
     "properties.registrationStatus",
   ]
   retry = var.retry
-  tags  = var.tags
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -86,6 +87,8 @@ resource "time_sleep" "wait_pre" {
   ]
 }
 
+# Azure does not persist tags on protectedItems, so setting them causes perpetual drift.
+# tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "this" {
   name      = try(local.protectable_item.name, var.backup_protected_file_share.source_file_share_name)
   parent_id = var.parent_id
@@ -105,7 +108,6 @@ resource "azapi_resource" "this" {
     "properties.protectionStatus",
   ]
   retry = var.retry
-  tags  = var.tags
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]

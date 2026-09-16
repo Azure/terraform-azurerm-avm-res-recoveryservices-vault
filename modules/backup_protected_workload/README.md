@@ -124,14 +124,6 @@ object({
 
 Default: `null`
 
-### <a name="input_tags"></a> [tags](#input\_tags)
-
-Description: The map of tags to apply to the protected workload resources.
-
-Type: `map(string)`
-
-Default: `null`
-
 ### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
 
 Description: Per-operation timeouts applied to every managed AzAPI resource in the submodule.

@@ -104,14 +104,6 @@ object({
 
 Default: `null`
 
-### <a name="input_tags"></a> [tags](#input\_tags)
-
-Description: The map of tags to apply to the protected virtual machine.
-
-Type: `map(string)`
-
-Default: `null`
-
 ### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
 
 Description: Per-operation timeouts applied to the protected virtual machine AzAPI resource.

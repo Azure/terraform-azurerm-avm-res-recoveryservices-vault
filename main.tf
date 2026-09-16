@@ -255,6 +255,8 @@ resource "azapi_resource" "role_assignments" {
 }
 
 # Associate a Resource Guard when explicitly enabled.
+# Azure does not persist tags on backupResourceGuardProxies, so setting them causes perpetual drift.
+# tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "resource_guard_association" {
   count = var.resource_guard_association_enabled ? 1 : 0
 
@@ -270,7 +272,6 @@ resource "azapi_resource" "resource_guard_association" {
   ignore_null_property   = true
   response_export_values = ["properties.resourceGuardResourceId"]
   retry                  = var.retry
-  tags                   = var.tags
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]

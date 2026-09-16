@@ -31,6 +31,8 @@ locals {
 
 # Register the virtual machine hosting the workload as a `VMAppContainer` with the vault.
 # https://learn.microsoft.com/en-us/rest/api/backup/protection-containers/register
+# Azure does not persist tags on protectionContainers, so setting them causes perpetual drift.
+# tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "container" {
   name      = local.container_name
   parent_id = "${var.backup_protected_workload.vault_id}/backupFabrics/Azure"
@@ -47,7 +49,6 @@ resource "azapi_resource" "container" {
   ignore_body_changes    = length(var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers : null
   response_export_values = ["*"]
   retry                  = var.retry
-  tags                   = var.tags
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
@@ -91,6 +92,8 @@ resource "time_sleep" "wait_pre" {
 
 # Protect each selected database.
 # https://learn.microsoft.com/en-us/rest/api/backup/protected-items/create-or-update
+# Azure does not persist tags on protectedItems, so setting them causes perpetual drift.
+# tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "protected_item" {
   for_each = local.protected_items
 
@@ -107,7 +110,6 @@ resource "azapi_resource" "protected_item" {
   ignore_body_changes    = length(var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items : null
   response_export_values = ["*"]
   retry                  = var.retry
-  tags                   = var.tags
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]

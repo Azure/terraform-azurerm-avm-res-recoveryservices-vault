@@ -2,6 +2,8 @@ resource "time_sleep" "wait_pre" {
   create_duration = var.backup_protected_vm.sleep_timer
 }
 
+# Azure does not persist tags on protectedItems, so setting them causes perpetual drift.
+# tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "this" {
   name      = "VM;iaasvmcontainerv2;${local.source_vm_resource_group_name};${local.source_vm_name}"
   parent_id = var.parent_id
@@ -22,7 +24,6 @@ resource "azapi_resource" "this" {
     "properties.protectionStatus",
   ]
   retry = var.retry
-  tags  = var.tags
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]

@@ -65,12 +65,6 @@ variable "retry" {
   description = "Retry configuration applied to the protected virtual machine AzAPI resource."
 }
 
-variable "tags" {
-  type        = map(string)
-  default     = null
-  description = "The map of tags to apply to the protected virtual machine."
-}
-
 variable "timeouts" {
   type = object({
     create = optional(string)
