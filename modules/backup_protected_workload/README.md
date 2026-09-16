@@ -48,7 +48,6 @@ Description: Values for the backup\_protected\_workload module. Registers an Azu
   - `database_name` - (Required) The name of the database to protect.
   - `protected_item_name` - (Optional) Overrides the generated protected item name (`<workload_type>;<server_name>;<database_name>`).
   - `workload_backup_policy_id` - (Optional) Overrides `workload_backup_policy_id` for this database.
-- `timeouts` - (Optional) The timeouts for the create, delete, read and update operations.
 
 Type:
 
@@ -66,19 +65,48 @@ object({
       protected_item_name       = optional(string)
       workload_backup_policy_id = optional(string)
     }))
-    timeouts = optional(object({
-      # The timeouts block allows you to specify a duration for the create, delete, read, and update operations.
-      create = optional(string, "60m")
-      delete = optional(string, "60m")
-      read   = optional(string, "60m")
-      update = optional(string, "60m")
-    }))
   })
 ```
 
 ## Optional Inputs
 
 The following input variables are optional (have default values):
+
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative paths ignored on each AzAPI resource. Paths use dot notation. Changes take effect only after apply. Ignored configuration is not sent to Azure until the path is removed.
+
+- `recoveryservices_vaults_backup_fabrics_protection_containers` - Paths ignored on workload container registration.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Paths ignored on protected SQL database resources.
+
+Type:
+
+```hcl
+object({
+    recoveryservices_vaults_backup_fabrics_protection_containers                 = optional(list(string), [])
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(list(string), [])
+  })
+```
+
+Default: `{}`
+
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: AzAPI resource types and API versions used by the protected workload submodule.
+
+- `recoveryservices_vaults_backup_fabrics_protection_containers` - Resource type and API version for workload container registration and inquiry.
+- `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Resource type and API version for protected SQL databases.
+
+Type:
+
+```hcl
+object({
+    recoveryservices_vaults_backup_fabrics_protection_containers                 = optional(string, "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers@2024-10-01")
+    recoveryservices_vaults_backup_fabrics_protection_containers_protected_items = optional(string, "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01")
+  })
+```
+
+Default: `{}`
 
 ### <a name="input_retry"></a> [retry](#input\_retry)
 
@@ -91,6 +119,31 @@ object({
     error_message_regex  = optional(list(string))
     interval_seconds     = optional(number)
     max_interval_seconds = optional(number)
+  })
+```
+
+Default: `null`
+
+### <a name="input_tags"></a> [tags](#input\_tags)
+
+Description: The map of tags to apply to the protected workload resources.
+
+Type: `map(string)`
+
+Default: `null`
+
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: Per-operation timeouts applied to every managed AzAPI resource in the submodule.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
   })
 ```
 

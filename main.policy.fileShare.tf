@@ -5,4 +5,5 @@ module "recovery_services_vault_file_share_policy" {
   recovery_vault_name      = azapi_resource.this.name
   resource_group_name      = var.resource_group_name
   file_share_backup_policy = each.value
+  tags                     = var.tags
 }

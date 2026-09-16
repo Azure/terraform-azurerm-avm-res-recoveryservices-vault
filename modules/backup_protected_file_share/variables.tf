@@ -75,6 +75,12 @@ variable "retry" {
   description = "Retry configuration applied to every managed AzAPI resource in the submodule."
 }
 
+variable "tags" {
+  type        = map(string)
+  default     = null
+  description = "The map of tags to apply to the protected file share resources."
+}
+
 variable "timeouts" {
   type = object({
     create = optional(string)

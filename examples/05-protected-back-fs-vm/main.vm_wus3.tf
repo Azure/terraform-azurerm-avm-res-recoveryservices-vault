@@ -47,7 +47,7 @@ resource "azapi_resource" "virtual_machine_wus3" {
   type      = "Microsoft.Compute/virtualMachines@2024-07-01"
   body = {
     identity = {
-      type = "SystemAssigned,UserAssigned"
+      type = "SystemAssigned, UserAssigned"
       userAssignedIdentities = {
         (azapi_resource.user_assigned_identity.id) = {}
       }

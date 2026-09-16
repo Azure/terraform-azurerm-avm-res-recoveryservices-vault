@@ -150,6 +150,7 @@ variable "site_recovery_replicated_vm" {
   }
 }
 
+# tflint-ignore: terraform_unused_declarations
 variable "ignore_body_changes" {
   type = object({
     recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(list(string), [])

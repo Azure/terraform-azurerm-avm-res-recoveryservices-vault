@@ -11,6 +11,7 @@ module "backup_protected_vm" {
   ignore_body_changes = var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   resource_types      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   retry               = var.retry
+  tags                = var.tags
   timeouts            = var.timeouts
 
   depends_on = [module.recovery_services_vault_vm_policy]
@@ -31,6 +32,7 @@ module "backup_protected_file_share" {
   ignore_body_changes = var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   resource_types      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   retry               = var.retry
+  tags                = var.tags
   timeouts            = var.timeouts
 
   depends_on = [module.recovery_services_vault_file_share_policy]
@@ -82,7 +84,11 @@ module "backup_protected_workload" {
     sleep_timer               = each.value.sleep_timer
     protected_databases       = each.value.protected_databases
   }
-  retry = var.retry
+  ignore_body_changes = var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
+  resource_types      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
+  retry               = var.retry
+  tags                = var.tags
+  timeouts            = var.timeouts
 
   depends_on = [module.recovery_workload_policy]
 }

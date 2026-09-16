@@ -16,6 +16,12 @@ variable "resource_group_name" {
   description = "The resource group where the resources will be deployed."
 }
 
+variable "tags" {
+  type        = map(string)
+  default     = null
+  description = "The map of tags to apply to the virtual machine backup policy."
+}
+
 variable "vm_backup_policy" {
   type = object({
     name                           = string
@@ -64,7 +70,7 @@ variable "vm_backup_policy" {
     A map objects for backup and retation options.
 
     - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
-    - `role_assignments` - (Optional) A map of role assignments to create on the 
+    - `role_assignments` - (Optional) A map of role assignments to create on the
 
     - `backup` - (required) backup options.
         - `frequency` - (Required) Sets the backup frequency. Possible values are Hourly, Daily and Weekly.
@@ -73,7 +79,7 @@ variable "vm_backup_policy" {
         - `hour_duration` -  (Optional) Duration of the backup window in hours. Possible values are between 4 and 24 This is used when frequency is Hourly. 12
         - `weekdays` -  (Optional) The days of the week to perform backups on. Must be one of Sunday, Monday, Tuesday, Wednesday, Thursday, Friday or Saturday. This is used when frequency is Weekly. ["Tuesday", "Saturday"]
     - `retention_daily` - (Optional)
-      - `count` - 
+      - `count` -
     - `retantion_weekly` -
       - `count` -
       - `weekdays` -

@@ -64,7 +64,7 @@ variable "file_share_backup_policy" {
     A map objects for backup and retation options.
 
     - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
-    - `role_assignments` - (Optional) A map of role assignments to create on the 
+    - `role_assignments` - (Optional) A map of role assignments to create on the
 
     - `backup` - (required) backup options.
         - `frequency` - (Required) Sets the backup frequency. Possible values are hourly, Daily and Weekly.
@@ -75,7 +75,7 @@ variable "file_share_backup_policy" {
     - `backup_tier` - (Optional) The backup tier. Possible values are `snapshot` and `vault-standard`. Defaults to `snapshot`. When set to `vault-standard`, backups are stored in the Recovery Services vault. When set to `snapshot`, backups are stored as snapshots.
     - `snapshot_retention_in_days` - (Optional) The number of days to retain snapshots when `backup_tier` is `vault-standard`. Must be less than `retention_daily` count. Defaults to `0`.
     - `retention_daily` - (Optional)
-      - `count` - 
+      - `count` -
     - `retantion_weekly` -
       - `count` -
       - `weekdays` -
@@ -135,4 +135,10 @@ variable "file_share_backup_policy" {
     condition     = var.file_share_backup_policy == null || lower(var.file_share_backup_policy.backup_tier) != "vault-standard" || var.file_share_backup_policy.retention_daily == null || var.file_share_backup_policy.snapshot_retention_in_days < var.file_share_backup_policy.retention_daily
     error_message = "snapshot_retention_in_days must be less than retention_daily count when backup_tier is 'vault-standard'."
   }
+}
+
+variable "tags" {
+  type        = map(string)
+  default     = null
+  description = "The map of tags to apply to the file share backup policy."
 }

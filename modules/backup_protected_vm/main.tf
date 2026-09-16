@@ -22,6 +22,7 @@ resource "azapi_resource" "this" {
     "properties.protectionStatus",
   ]
   retry = var.retry
+  tags  = var.tags
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]

@@ -15,10 +15,6 @@ locals {
       )
     }
   }
-  # The protected item type used by the Azure Backup REST API for each supported workload type.
-  protected_item_types = {
-    SQLDataBase = "AzureVmWorkloadSQLDatabase"
-  }
   source_vm = {
     resource_group_name = local.source_vm_id_parts[1]
     name                = local.source_vm_id_parts[2]
@@ -38,7 +34,7 @@ locals {
 resource "azapi_resource" "container" {
   name      = local.container_name
   parent_id = "${var.backup_protected_workload.vault_id}/backupFabrics/Azure"
-  type      = "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers@2024-10-01"
+  type      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers
   body = {
     properties = {
       backupManagementType = "AzureWorkload"
@@ -48,11 +44,13 @@ resource "azapi_resource" "container" {
       workloadType         = local.workload_types[var.backup_protected_workload.workload_type]
     }
   }
+  ignore_body_changes    = length(var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers : null
   response_export_values = ["*"]
   retry                  = var.retry
+  tags                   = var.tags
 
   dynamic "timeouts" {
-    for_each = var.backup_protected_workload.timeouts == null ? [] : [var.backup_protected_workload.timeouts]
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
       create = timeouts.value.create
@@ -74,7 +72,7 @@ resource "azapi_resource_action" "inquire" {
     "$filter" = ["workloadType eq '${local.workload_types[var.backup_protected_workload.workload_type]}'"]
   }
   resource_id            = azapi_resource.container.id
-  type                   = "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers@2024-10-01"
+  type                   = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers
   response_export_values = []
   retry                  = var.retry
   when                   = "apply"
@@ -98,19 +96,21 @@ resource "azapi_resource" "protected_item" {
 
   name      = each.value.name
   parent_id = azapi_resource.container.id
-  type      = "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems@2024-10-01"
+  type      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   body = {
     properties = {
       policyId          = each.value.policy_id
-      protectedItemType = local.protected_item_types[var.backup_protected_workload.workload_type]
+      protectedItemType = "AzureVmWorkloadSQLDatabase"
       sourceResourceId  = var.backup_protected_workload.source_vm_id
     }
   }
+  ignore_body_changes    = length(var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items : null
   response_export_values = ["*"]
   retry                  = var.retry
+  tags                   = var.tags
 
   dynamic "timeouts" {
-    for_each = var.backup_protected_workload.timeouts == null ? [] : [var.backup_protected_workload.timeouts]
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
       create = timeouts.value.create
