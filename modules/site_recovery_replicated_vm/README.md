@@ -4,49 +4,6 @@
 
 This module defines the configuration for Azure Site Recovery replicated virtual machines.
 
-This submodule is implemented entirely with the `Azure/azapi` provider.
-
-## Resources
-
-| Purpose | ARM type | API version |
-| --- | --- | --- |
-| Replication protected item | `Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectedItems` | `2024-10-01` |
-| Post-enablement target settings (PATCH action) | `Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectedItems` | `2024-10-01` |
-
-The A2A (Azure to Azure) provider is used. Input mapping onto `properties.providerSpecificDetails`:
-
-| Module input | A2A body path |
-| --- | --- |
-| `source_vm_id` | `fabricObjectId` |
-| `target_resource_group_id` / `recovery_resource_group_id` | `recoveryResourceGroupId` |
-| `target_protection_container_id` | `recoveryContainerId` |
-| `target_network_id` | `recoveryAzureNetworkId` |
-| `target_subnet_name` | `recoverySubnetName` |
-| `multi_vm_group_name` | `multiVmGroupName` |
-| `managed_disk` | `vmManagedDisks[]` (`diskId`, `primaryStagingAzureStorageAccountId`, `recoveryResourceGroupId`, `recoveryTargetDiskAccountType`, `recoveryReplicaDiskAccountType`, `recoveryDiskEncryptionSetId`) |
-| `unmanaged_disk` | `vmDisks[]` (`diskUri`, `primaryStagingAzureStorageAccountId`, `recoveryAzureStorageAccountId`) |
-| `target_virtual_machine_size` | `recoveryAzureVMSize` (PATCH only) |
-| `test_network_id` | `selectedTfoAzureNetworkId` (PATCH only) |
-
-`recoveryAzureVMSize` and `selectedTfoAzureNetworkId` are read-only on the enable-protection (PUT) contract, so they are applied by `azapi_resource_action.target_settings` with `method = "PATCH"` after replication is enabled. This mirrors the follow-up update call the AzureRM provider made internally. Because the action is not refreshed from Azure, later ASR-side changes to those two values do not create drift, preserving the intent of the former `lifecycle.ignore_changes` entries for `target_virtual_machine_size` and `test_network_id`.
-
-Disk drift is handled with body-relative `lifecycle.ignore_changes` on `body.properties.providerSpecificDetails.vmManagedDisks` and `body.properties.providerSpecificDetails.vmDisks`. The NIC details that the former configuration ignored (`network_interface`) map to `vmNics`, which is response-only under AzAPI and therefore never part of the configured body.
-
-`target_recovery_fabric_id` has no equivalent field in the A2A enable-protection contract (the recovery fabric is implied by `recoveryContainerId`); it is accepted for interface compatibility but not sent to Azure.
-
-## Migrating from the AzureRM implementation
-
-Terraform `moved` blocks cannot move state between two different resource types, so the `azurerm_site_recovery_replicated_vm` -> `azapi_resource` change cannot be expressed as a 1:1 `moved` block. `moved.tf` contains a `removed` block with `destroy = false`, which drops the legacy resource from state without disabling replication.
-
-After upgrading, adopt the existing replication protected item:
-
-```shell
-terraform import 'module.<your_module>.module.site_recovery_replicated_vm["<key>"].azapi_resource.this' \
-  '/subscriptions/<sub>/resourceGroups/<vault rg>/providers/Microsoft.RecoveryServices/vaults/<vault>/replicationFabrics/<source fabric>/replicationProtectionContainers/<source container>/replicationProtectedItems/<vm name>?api-version=2024-10-01'
-```
-
-Do not skip the import: without it Terraform re-issues the enable-protection call for an already replicating VM, which the ASR service rejects.
-
 ## Data Collection
 
 The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the [repository](https://aka.ms/avm/telemetry). There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft's privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
@@ -64,14 +21,60 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
-- [azapi_resource_action.target_settings](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
-- [azapi_client_config.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
+- [azapi_resource_action.remove](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
+- [azapi_resource_action.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
+- [azapi_update_resource.configuration](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
 
-No required inputs.
+The following input variables are required:
+
+### <a name="input_parent_id"></a> [parent\_id](#input\_parent\_id)
+
+Description: The fully-qualified ARM resource ID of the source Site Recovery protection container.
+
+Type: `string`
+
+### <a name="input_site_recovery_replicated_vm"></a> [site\_recovery\_replicated\_vm](#input\_site\_recovery\_replicated\_vm)
+
+Description: Configuration for one Azure-to-Azure Site Recovery replicated virtual machine.
+
+Type:
+
+```hcl
+object({
+    managed_disk = optional(map(object({
+      disk_id                       = string
+      staging_storage_account_id    = string
+      target_disk_encryption_set_id = optional(string)
+      target_disk_type              = optional(string, "Standard_LRS")
+      target_replica_disk_type      = optional(string, "Standard_LRS")
+      target_resource_group_id      = optional(string)
+    })))
+    multi_vm_group_name                    = optional(string)
+    recovery_replication_policy_id         = string
+    recovery_resource_group_id             = optional(string)
+    recovery_storage_account_id            = optional(string)
+    recovery_target_disk_encryption_set_id = optional(string)
+    source_vm_id                           = string
+    target_network_id                      = optional(string)
+    target_protection_container_id         = string
+    target_recovery_fabric_id              = optional(string)
+    target_resource_group_id               = optional(string)
+    target_resource_id                     = optional(string)
+    target_static_ip                       = optional(string)
+    target_subnet_name                     = optional(string)
+    target_virtual_machine_size            = optional(string)
+    test_network_id                        = optional(string)
+    test_subnet_name                       = optional(string)
+    unmanaged_disk = optional(map(object({
+      disk_uri                   = string
+      staging_storage_account_id = optional(string)
+      target_storage_account_id  = optional(string)
+    })))
+  })
+```
 
 ## Optional Inputs
 
@@ -79,10 +82,10 @@ The following input variables are optional (have default values):
 
 ### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
 
-Description: Body-relative paths to ignore for the AzAPI resource owned by this module. Paths use dot notation, e.g. `properties.policyId`.  
+Description: Body-relative paths reserved for the replicated item operations. Paths use dot notation.  
 Changes take effect only after apply. Ignored configuration is not sent to Azure until the path is removed.
 
-- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Paths ignored on the replication protected item resource.
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Reserved for the replicated item. The AzAPI action and update resources currently do not expose `ignore_body_changes`, so non-empty values cannot yet be applied.
 
 Type:
 
@@ -96,15 +99,15 @@ Default: `{}`
 
 ### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
 
-Description: AzAPI resource types and API versions used by this module.
+Description: AzAPI resource types and API versions used by the replicated virtual machine submodule.
 
-- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Resource type and API version for the Azure Site Recovery replication protected item and its post-enablement update action.
+- `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Resource type and API version for the replicated item and its actions.
 
 Type:
 
 ```hcl
 object({
-    recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(string, "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectedItems@2024-10-01")
+    recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items = optional(string, "Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectedItems@2024-04-01")
   })
 ```
 
@@ -112,13 +115,7 @@ Default: `{}`
 
 ### <a name="input_retry"></a> [retry](#input\_retry)
 
-Description: Retry configuration applied to every `azapi` resource created by this module. Defaults to `null` (no custom retry).
-
-- `error_message_regex`  - (Optional) A list of regex patterns matching error messages that trigger a retry.
-- `interval_seconds`     - (Optional) Initial interval between retries in seconds.
-- `max_interval_seconds` - (Optional) Maximum interval between retries in seconds.
-
-See <https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource#retry> for full semantics.
+Description: Retry configuration applied to every managed AzAPI resource in the submodule.
 
 Type:
 
@@ -132,66 +129,9 @@ object({
 
 Default: `null`
 
-### <a name="input_site_recovery_replicated_vm"></a> [site\_recovery\_replicated\_vm](#input\_site\_recovery\_replicated\_vm)
-
-Description: Configuration for site recovery replicated VM. Either target\_resource\_group\_id or recovery\_resource\_group\_id must be set.
-
-Type:
-
-```hcl
-object({
-    source_vm_id                     = string
-    recovery_vault_name              = string
-    vault_resource_group_name        = string
-    source_recovery_fabric_name      = string
-    source_protection_container_name = string
-    recovery_replication_policy_id   = string
-    target_resource_id               = string
-    target_resource_group_id         = optional(string, null)
-    target_recovery_fabric_id        = optional(string, null)
-    target_protection_container_id   = optional(string, null)
-    target_virtual_machine_size      = optional(string, null)
-    managed_disk = optional(map(object({
-      disk_id                       = string
-      staging_storage_account_id    = string
-      target_resource_group_id      = optional(string, null)
-      target_disk_type              = optional(string, "Standard_LRS")
-      target_replica_disk_type      = optional(string, "Standard_LRS")
-      target_disk_encryption_set_id = optional(string, null)
-    })), null)
-    unmanaged_disk = optional(map(object({
-      disk_uri                   = string
-      staging_storage_account_id = optional(string, null)
-      target_storage_account_id  = optional(string, null)
-    })), null)
-    target_network_id                      = optional(string, null)
-    target_subnet_name                     = optional(string, null)
-    target_static_ip                       = optional(string, null)
-    test_network_id                        = optional(string, null)
-    test_subnet_name                       = optional(string, null)
-    recovery_resource_group_id             = optional(string, null)
-    recovery_storage_account_id            = optional(string, null)
-    recovery_target_disk_encryption_set_id = optional(string, null)
-    multi_vm_group_name                    = optional(string, null)
-    timeouts = optional(object({
-      create = optional(string, "60m")
-      delete = optional(string, "60m")
-      read   = optional(string, "5m")
-      update = optional(string, "60m")
-    }), {})
-  })
-```
-
-Default: `null`
-
 ### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
 
-Description: Default per-operation timeouts applied to every `azapi` resource created by this module. Defaults to `null` (provider defaults). Each value is a Go duration string (e.g. `30m`, `1h`).
-
-- `create` - (Optional) Timeout for create operations.
-- `read`   - (Optional) Timeout for read operations.
-- `update` - (Optional) Timeout for update operations.
-- `delete` - (Optional) Timeout for delete operations.
+Description: Per-operation timeouts applied to every managed AzAPI resource in the submodule.
 
 Type:
 
@@ -210,21 +150,17 @@ Default: `null`
 
 The following outputs are exported:
 
-### <a name="output_body"></a> [body](#output\_body)
+### <a name="output_replication_health"></a> [replication\_health](#output\_replication\_health)
 
-Description: The configured AzAPI request body sent to Azure for the Azure Site Recovery replication protected item.
+Description: The replication health returned by Azure Site Recovery.
 
-### <a name="output_name"></a> [name](#output\_name)
+### <a name="output_resource"></a> [resource](#output\_resource)
 
-Description: The name of the Azure Site Recovery replication protected item.
-
-### <a name="output_parent_id"></a> [parent\_id](#output\_parent\_id)
-
-Description: The ARM resource ID of the source replication protection container that contains the replication protected item.
+Description: The site recovery replicated VM resource
 
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
-Description: The ARM resource ID of the Azure Site Recovery replication protected item.
+Description: The resource ID of the site recovery replicated VM
 
 ## Modules
 

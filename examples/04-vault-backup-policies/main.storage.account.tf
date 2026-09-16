@@ -1,37 +1,52 @@
-module "this" {
-  source  = "Azure/avm-res-storage-storageaccount/azurerm"
-  version = "0.8.1"
-
-  location                 = azapi_resource.primary.location
-  name                     = module.naming.storage_account.name_unique
-  parent_id                = azapi_resource.primary.id
-  account_kind             = "StorageV2"
-  account_replication_type = "ZRS"
-  account_tier             = "Standard"
-  azure_files_authentication = {
-    default_share_level_permission = "StorageFileDataSmbShareReader"
-    directory_type                 = "AADKERB"
+resource "azapi_resource" "storage_account" {
+  location  = azapi_resource.resource_group_primary.location
+  name      = module.naming.storage_account.name_unique
+  parent_id = azapi_resource.resource_group_primary.id
+  type      = "Microsoft.Storage/storageAccounts@2023-05-01"
+  body = {
+    identity = {
+      type = "SystemAssigned,UserAssigned"
+      userAssignedIdentities = {
+        (azapi_resource.user_assigned_identity.id) = {}
+      }
+    }
+    kind = "StorageV2"
+    properties = {
+      allowSharedKeyAccess     = true
+      minimumTlsVersion        = "TLS1_2"
+      publicNetworkAccess      = "Disabled"
+      supportsHttpsTrafficOnly = true
+      azureFilesIdentityBasedAuthentication = {
+        defaultSharePermission  = "StorageFileDataSmbShareReader"
+        directoryServiceOptions = "AADKERB"
+      }
+      networkAcls = {
+        bypass              = "AzureServices"
+        defaultAction       = "Deny"
+        ipRules             = []
+        virtualNetworkRules = []
+      }
+    }
+    sku = {
+      name = "Standard_ZRS"
+    }
   }
-  blob_properties = {
-    versioning_enabled = true
-  }
-  https_traffic_only_enabled = true
-  managed_identities = {
-    system_assigned            = true
-    user_assigned_resource_ids = [azapi_resource.this_identity.id]
-  }
-  min_tls_version = "TLS1_2"
-  network_rules = {
-    bypass                     = ["AzureServices"]
-    default_action             = "Deny"
-    ip_rules                   = [] # [try(module.public_ip[0].public_ip, var.bypass_ip_cidr)]
-    virtual_network_subnet_ids = [] # toset([azapi_resource.private.id])
-  }
-  public_network_access_enabled = false
-  shared_access_key_enabled     = true
+  response_export_values = ["*"]
   tags = {
     env   = "Dev"
     owner = "John Doe"
     dept  = "IT"
   }
+}
+
+resource "azapi_resource" "storage_account_blob_service" {
+  name      = "default"
+  parent_id = azapi_resource.storage_account.id
+  type      = "Microsoft.Storage/storageAccounts/blobServices@2023-05-01"
+  body = {
+    properties = {
+      isVersioningEnabled = true
+    }
+  }
+  response_export_values = ["*"]
 }

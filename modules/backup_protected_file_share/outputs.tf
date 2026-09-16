@@ -1,29 +1,19 @@
-output "body" {
-  description = "The configured AzAPI request body sent to Azure for the Azure Files protected item."
-  value       = azapi_resource.this.body
+output "protection_container_id" {
+  description = "The resource ID of the storage protection container."
+  value       = var.parent_id
 }
 
-output "name" {
-  description = "The name of the Azure Files protected item."
-  value       = azapi_resource.this.name
+output "protection_state" {
+  description = "The protection state returned by Azure Backup."
+  value       = try(azapi_resource.this.output.properties.protectionState, null)
 }
 
-output "parent_id" {
-  description = "The ARM resource ID of the protection container that contains the Azure Files protected item."
-  value       = azapi_resource.this.parent_id
-}
-
-output "policy_id" {
-  description = "The ARM resource ID of the backup policy applied to the Azure Files protected item."
-  value       = data.azapi_resource.this.id
-}
-
-output "protection_container_resource_id" {
-  description = "The ARM resource ID of the storage account protection container registered with the vault, or `null` when registration is disabled."
-  value       = try(azapi_resource.storage_container[0].id, null)
+output "resource" {
+  description = "The protected file share resource."
+  value       = azapi_resource.this
 }
 
 output "resource_id" {
-  description = "The ARM resource ID of the Azure Files protected item."
+  description = "The resource ID of the protected file share."
   value       = azapi_resource.this.id
 }

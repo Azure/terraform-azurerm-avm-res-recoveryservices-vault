@@ -2,29 +2,28 @@ resource "time_sleep" "wait_pre" {
   create_duration = var.backup_protected_vm.sleep_timer
 }
 
-# Enables Azure Backup protection for an Azure IaaS VM.
-# Replaces the former `resource "azurerm_backup_protected_vm" "this"`.
+# Azure does not persist tags on protectedItems, so setting them causes perpetual drift.
+# tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "this" {
-  name      = local.protected_item_name
-  parent_id = local.protection_container_id
+  name      = "VM;iaasvmcontainerv2;${local.source_vm_resource_group_name};${local.source_vm_name}"
+  parent_id = var.parent_id
   type      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   body = {
     properties = {
+      friendlyName      = local.source_vm_name
+      policyId          = var.backup_protected_vm.backup_policy_id
       protectedItemType = "Microsoft.Compute/virtualMachines"
-      policyId          = data.azapi_resource.this.id
       sourceResourceId  = var.backup_protected_vm.source_vm_id
+      virtualMachineId  = var.backup_protected_vm.source_vm_id
+      workloadType      = "VM"
     }
   }
   ignore_body_changes = length(var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items : null
-  read_query_parameters = {
-    "api-version" = ["2024-10-01"]
-  }
-  # The protected item name is derived from the source VM, so a different source VM
-  # always means a different protected item; recreate instead of updating in place.
-  replace_triggers_refs  = ["properties.sourceResourceId"]
-  response_export_values = []
-  retry                  = var.retry
-  tags                   = var.tags
+  response_export_values = [
+    "properties.protectionState",
+    "properties.protectionStatus",
+  ]
+  retry = var.retry
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]

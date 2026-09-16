@@ -63,8 +63,6 @@ resource "azapi_resource" "this" {
       } : null
     }
   }
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   # Ignore null body properties (e.g. `identity = null` when no managed identity is
   # configured) so they are not treated as "remove this field" during plan/apply.
   # Without this flag, importing a vault that Azure has auto-assigned an identity to
@@ -72,30 +70,73 @@ resource "azapi_resource" "this" {
   # ManagedIdentityDetailsNotPresent error from the Recovery Services API.
   ignore_body_changes    = length(var.ignore_body_changes.recoveryservices_vaults) > 0 ? var.ignore_body_changes.recoveryservices_vaults : null
   ignore_null_property   = true
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  response_export_values = ["identity.principalId", "properties.provisioningState"]
+  response_export_values = ["*"]
   retry                  = var.retry
   tags                   = var.tags
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
       create = timeouts.value.create
-      delete = timeouts.value.delete
       read   = timeouts.value.read
       update = timeouts.value.update
+      delete = timeouts.value.delete
     }
   }
-
-  lifecycle {}
 }
 
-# diagnostics and settings
-#
-# `Microsoft.Insights/diagnosticSettings` is an extension resource: the parent_id is
-# the resource the diagnostic setting is attached to (the vault).
+# Keep existing state from releases where diagnostic settings were managed by
+# azurerm_monitor_diagnostic_setting.this.
+moved {
+  from = azurerm_monitor_diagnostic_setting.this
+  to   = azapi_resource.diagnostic_settings
+}
+
+# Keep existing state from releases where locks were managed by
+# azurerm_management_lock.this.
+moved {
+  from = azurerm_management_lock.this
+  to   = azapi_resource.lock
+}
+
+# Keep existing state from releases where role assignments were managed by
+# azurerm_role_assignment.this.
+moved {
+  from = azurerm_role_assignment.this
+  to   = azapi_resource.role_assignments
+}
+
+# Keep existing state from releases where the Resource Guard association was
+# managed by azurerm_recovery_services_vault_resource_guard_association.this.
+moved {
+  from = azurerm_recovery_services_vault_resource_guard_association.this
+  to   = azapi_resource.resource_guard_association
+}
+
+data "azapi_resource_list" "role_definitions" {
+  for_each = {
+    for key, assignment in var.role_assignments : key => assignment
+    if !strcontains(lower(assignment.role_definition_id_or_name), lower(local.role_definition_resource_substring))
+  }
+
+  parent_id = azapi_resource.this.id
+  query_parameters = {
+    "$filter" = ["roleName eq '${replace(each.value.role_definition_id_or_name, "'", "''")}'"]
+  }
+  type                   = var.resource_types.authorization_role_definitions
+  response_export_values = ["value"]
+  retry                  = var.retry
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      read = timeouts.value.read
+    }
+  }
+}
+
 resource "azapi_resource" "diagnostic_settings" {
   for_each = var.diagnostic_settings
 
@@ -110,58 +151,42 @@ resource "azapi_resource" "diagnostic_settings" {
       marketplacePartnerId        = each.value.marketplace_partner_resource_id
       storageAccountId            = each.value.storage_account_resource_id
       workspaceId                 = each.value.workspace_resource_id
-      logs = setunion(
-        [
-          for log_group in each.value.log_groups : {
-            category      = null
-            categoryGroup = log_group
-            enabled       = true
-          }
-        ],
-        [
-          for log_category in each.value.log_categories : {
-            category      = log_category
-            categoryGroup = null
-            enabled       = true
-          }
-        ]
+      logs = concat(
+        [for category in each.value.log_categories : {
+          category = category
+          enabled  = true
+        }],
+        [for category_group in each.value.log_groups : {
+          categoryGroup = category_group
+          enabled       = true
+        }],
       )
-      metrics = length(each.value.metric_categories) > 0 ? [
-        for metric_category in each.value.metric_categories : {
-          category = metric_category
+      metrics = [
+        for category in each.value.metric_categories : {
+          category = category
           enabled  = true
         }
-      ] : null
+      ]
     }
   }
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.insights_diagnostic_settings) > 0 ? var.ignore_body_changes.insights_diagnostic_settings : null
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_null_property   = true
   response_export_values = []
   retry                  = var.retry
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
       create = timeouts.value.create
-      delete = timeouts.value.delete
       read   = timeouts.value.read
       update = timeouts.value.update
+      delete = timeouts.value.delete
     }
   }
 }
 
-# Keep existing state from v1.x releases where diagnostic settings were managed as
-# azurerm_monitor_diagnostic_setting.this.
-moved {
-  from = azurerm_monitor_diagnostic_setting.this
-  to   = azapi_resource.diagnostic_settings
-}
-
-# apply lock to created resource when enabled
+# Apply a lock to the vault when enabled.
 resource "azapi_resource" "lock" {
   count = var.lock != null ? 1 : 0
 
@@ -171,110 +196,70 @@ resource "azapi_resource" "lock" {
   body = {
     properties = {
       level = var.lock.kind
-      notes = var.lock.notes
     }
   }
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.authorization_locks) > 0 ? var.ignore_body_changes.authorization_locks : null
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  response_export_values = []
+  response_export_values = ["properties.level"]
   retry                  = var.retry
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
       create = timeouts.value.create
-      delete = timeouts.value.delete
       read   = timeouts.value.read
       update = timeouts.value.update
+      delete = timeouts.value.delete
     }
   }
 }
 
-# Keep existing state from v1.x releases where the lock was managed as
-# azurerm_management_lock.this.
-moved {
-  from = azurerm_management_lock.this
-  to   = azapi_resource.lock
-}
-
-# Look up role definitions by name so that `role_definition_id_or_name` can continue
-# to accept a role name as well as a role definition resource ID. The ARM role
-# assignment API only accepts a role definition resource ID.
-data "azapi_resource_list" "role_definitions" {
-  count = local.role_definition_lookup_enabled ? 1 : 0
-
-  parent_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  type      = "Microsoft.Authorization/roleDefinitions@2022-04-01"
-  response_export_values = {
-    results = "value[].{id: id, role_name: properties.roleName}"
-  }
-}
-
-# set rbac when defined
-#
-# NOTE: ARM has no equivalent of the AzureRM `skip_service_principal_aad_check` flag.
-# Supplying `principalType` is the ARM mechanism that skips the Entra ID principal
-# existence check, so the flag is mapped onto it when no explicit principal type is
-# supplied.
+# Set RBAC assignments when defined.
 resource "azapi_resource" "role_assignments" {
   for_each = var.role_assignments
 
-  # ARM requires the role assignment name to be a GUID unless the consumer supplies one.
-  # A deterministic uuidv5 of the scope, principal and role definition keeps the name
-  # stable across plans (unlike random_uuid, which requires additional state) while
-  # remaining unique per assignment.
-  name      = each.value.name != null ? each.value.name : uuidv5("url", "${azapi_resource.this.id}|${each.value.principal_id}|${local.role_assignment_role_definition_resource_ids[each.key]}")
+  name      = uuidv5("6ba7b810-9dad-11d1-80b4-00c04fd430c8", "${azapi_resource.this.id}|${each.value.role_definition_id_or_name}|${each.value.principal_id}")
   parent_id = azapi_resource.this.id
   type      = var.resource_types.authorization_role_assignments
   body = {
     properties = {
       condition                          = each.value.condition
-      conditionVersion                   = each.value.condition_version
+      conditionVersion                   = each.value.condition != null ? coalesce(each.value.condition_version, "2.0") : each.value.condition_version
       delegatedManagedIdentityResourceId = each.value.delegated_managed_identity_resource_id
       description                        = each.value.description
       principalId                        = each.value.principal_id
-      principalType                      = each.value.principal_type != null ? each.value.principal_type : (each.value.skip_service_principal_aad_check ? "ServicePrincipal" : null)
-      roleDefinitionId                   = local.role_assignment_role_definition_resource_ids[each.key]
+      principalType                      = each.value.principal_type != null ? each.value.principal_type : each.value.skip_service_principal_aad_check ? "ServicePrincipal" : null
+      roleDefinitionId                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : one(data.azapi_resource_list.role_definitions[each.key].output.value).id
     }
   }
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.authorization_role_assignments) > 0 ? var.ignore_body_changes.authorization_role_assignments : null
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  response_export_values = []
+  ignore_null_property   = true
+  response_export_values = ["properties"]
   retry                  = var.retry
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
       create = timeouts.value.create
-      delete = timeouts.value.delete
       read   = timeouts.value.read
       update = timeouts.value.update
+      delete = timeouts.value.delete
     }
+  }
+
+  lifecycle {
+    # Preserve the provider-generated UUID from the AzureRM state during migration.
+    ignore_changes = [name]
   }
 }
 
-# Keep existing state from v1.x releases where role assignments were managed as
-# azurerm_role_assignment.this.
-moved {
-  from = azurerm_role_assignment.this
-  to   = azapi_resource.role_assignments
-}
-
-# associate resource guard when specified
+# Associate a Resource Guard when explicitly enabled.
+# Azure does not persist tags on backupResourceGuardProxies, so setting them causes perpetual drift.
+# tflint-ignore: avm_azapi_resource_tags_required
 resource "azapi_resource" "resource_guard_association" {
-  count = var.resource_guard_id != null ? 1 : 0
+  count = var.resource_guard_association_enabled ? 1 : 0
 
-  # `VaultProxy` is the only name Azure accepts for a backup resource guard proxy, and it is
-  # the fixed name the AzureRM provider used, so the association keeps the same ARM resource
-  # ID after the state move.
   name      = "VaultProxy"
   parent_id = azapi_resource.this.id
   type      = var.resource_types.recoveryservices_vaults_backup_resource_guard_proxies
@@ -283,34 +268,49 @@ resource "azapi_resource" "resource_guard_association" {
       resourceGuardResourceId = var.resource_guard_id
     }
   }
-  create_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_body_changes    = length(var.ignore_body_changes.recoveryservices_vaults_backup_resource_guard_proxies) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_resource_guard_proxies : null
-  read_headers           = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  response_export_values = []
+  ignore_null_property   = true
+  response_export_values = ["properties.resourceGuardResourceId"]
   retry                  = var.retry
-  tags                   = var.tags
-  update_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
       create = timeouts.value.create
-      delete = timeouts.value.delete
       read   = timeouts.value.read
       update = timeouts.value.update
+      delete = timeouts.value.delete
     }
-  }
-
-  lifecycle {
-    ignore_changes = [tags]
   }
 }
 
-# Keep existing state from v1.x releases where the resource guard association was
-# managed as azurerm_recovery_services_vault_resource_guard_association.this.
-moved {
-  from = azurerm_recovery_services_vault_resource_guard_association.this
-  to   = azapi_resource.resource_guard_association
+# Resource Guard protects the proxy from a normal DELETE. Unlock it before the
+# association resource is deleted, mirroring the AzureRM provider behavior.
+resource "azapi_resource_action" "resource_guard_association_unlock_delete" {
+  for_each = { for index, association in azapi_resource.resource_guard_association : index => association }
+
+  action      = "unlockDelete"
+  method      = "POST"
+  resource_id = each.value.id
+  type        = var.resource_types.recoveryservices_vaults_backup_resource_guard_proxies
+  body = {
+    resourceGuardOperationRequests = [
+      "${var.resource_guard_id}/deleteResourceGuardProxyRequests/default",
+    ]
+  }
+  response_export_values = []
+  retry                  = var.retry
+  when                   = "destroy"
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
+  }
 }

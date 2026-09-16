@@ -1,19 +1,14 @@
-output "body" {
-  description = "The configured AzAPI request body sent to Azure for the Azure Site Recovery replication protected item."
-  value       = azapi_resource.this.body
+output "replication_health" {
+  description = "The replication health returned by Azure Site Recovery."
+  value       = try(azapi_resource_action.this.output.properties.replicationHealth, null)
 }
 
-output "name" {
-  description = "The name of the Azure Site Recovery replication protected item."
-  value       = azapi_resource.this.name
-}
-
-output "parent_id" {
-  description = "The ARM resource ID of the source replication protection container that contains the replication protected item."
-  value       = azapi_resource.this.parent_id
+output "resource" {
+  description = "The site recovery replicated VM resource"
+  value       = azapi_resource_action.this
 }
 
 output "resource_id" {
-  description = "The ARM resource ID of the Azure Site Recovery replication protected item."
-  value       = azapi_resource.this.id
+  description = "The resource ID of the site recovery replicated VM"
+  value       = local.resource_id
 }

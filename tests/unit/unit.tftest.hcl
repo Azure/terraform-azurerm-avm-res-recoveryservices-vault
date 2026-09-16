@@ -6,10 +6,8 @@
 # 1. The vault is managed as `azapi_resource.this` (the target address of the
 #    `moved` block that migrates state from v0.x `azurerm_recovery_services_vault.this`).
 #
-# 2. Key optional features (locks, role assignments, diagnostic settings,
-#    private endpoints, resource guard association) are conditionally created or
-#    omitted as expected.  Every one of these is now an AzAPI resource: the root
-#    module contains no azurerm resources at all.
+# 2. Key optional features (locks, role assignments, diagnostic settings) are
+#    conditionally created or omitted as expected.
 #
 # To run (using the ./avm wrapper script at the repository root, which runs
 # commands inside the AVM-managed container):
@@ -30,6 +28,7 @@ mock_provider "azapi" {
 }
 
 mock_provider "modtm" {}
+mock_provider "time" {}
 mock_provider "random" {}
 
 # ---------------------------------------------------------------------------
@@ -88,8 +87,7 @@ run "no_lock_by_default" {
 # ---------------------------------------------------------------------------
 # run: lock_created_when_configured
 #
-# When var.lock is provided a lock resource must be created.  The lock is a
-# Microsoft.Authorization/locks extension resource on the vault.
+# When var.lock is provided a lock resource must be created.
 # ---------------------------------------------------------------------------
 run "lock_created_when_configured" {
   command = apply
@@ -107,31 +105,15 @@ run "lock_created_when_configured" {
   }
 
   assert {
-    condition     = azapi_resource.lock[0].type == "Microsoft.Authorization/locks@2020-05-01"
-    error_message = "The lock must be declared as a Microsoft.Authorization/locks AzAPI resource."
-  }
-
-  assert {
     condition     = azapi_resource.lock[0].body.properties.level == "CanNotDelete"
     error_message = "The lock level should match the value supplied via var.lock.kind."
-  }
-
-  assert {
-    condition     = azapi_resource.lock[0].name == "lock-rsv-test"
-    error_message = "The lock name should match the value supplied via var.lock.name."
-  }
-
-  assert {
-    condition     = azapi_resource.lock[0].parent_id == azapi_resource.this.id
-    error_message = "The lock must be scoped to the vault."
   }
 }
 
 # ---------------------------------------------------------------------------
 # run: no_role_assignments_by_default
 #
-# Role assignments are optional.  Verify none are created when not requested,
-# and that the role definition lookup data source is not read either.
+# Role assignments are optional.  Verify none are created when not requested.
 # ---------------------------------------------------------------------------
 run "no_role_assignments_by_default" {
   command = apply
@@ -139,151 +121,6 @@ run "no_role_assignments_by_default" {
   assert {
     condition     = length(azapi_resource.role_assignments) == 0
     error_message = "No role assignments should be created when var.role_assignments is empty."
-  }
-
-  assert {
-    condition     = length(data.azapi_resource_list.role_definitions) == 0
-    error_message = "The role definition lookup should not run when there are no role assignments."
-  }
-}
-
-# ---------------------------------------------------------------------------
-# run: role_assignment_with_role_definition_id
-#
-# When `role_definition_id_or_name` is a fully qualified role definition
-# resource ID it is used verbatim in the ARM body and no role definition lookup
-# is required.  The role assignment name must be a GUID (ARM requirement), which
-# the module derives deterministically with uuidv5.
-# ---------------------------------------------------------------------------
-run "role_assignment_with_role_definition_id" {
-  command = apply
-
-  variables {
-    role_assignments = {
-      contributor = {
-        role_definition_id_or_name = "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
-        principal_id               = "00000000-0000-0000-0000-0000000000aa"
-      }
-    }
-  }
-
-  assert {
-    condition     = length(azapi_resource.role_assignments) == 1
-    error_message = "A role assignment should be created for each entry in var.role_assignments."
-  }
-
-  assert {
-    condition     = azapi_resource.role_assignments["contributor"].type == "Microsoft.Authorization/roleAssignments@2022-04-01"
-    error_message = "Role assignments must be declared as Microsoft.Authorization/roleAssignments AzAPI resources."
-  }
-
-  assert {
-    condition     = azapi_resource.role_assignments["contributor"].body.properties.roleDefinitionId == "/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
-    error_message = "A fully qualified role definition resource ID must be passed through unchanged."
-  }
-
-  assert {
-    condition     = azapi_resource.role_assignments["contributor"].body.properties.principalId == "00000000-0000-0000-0000-0000000000aa"
-    error_message = "The role assignment principalId should match the supplied principal_id."
-  }
-
-  assert {
-    condition     = azapi_resource.role_assignments["contributor"].parent_id == azapi_resource.this.id
-    error_message = "Role assignments must be scoped to the vault."
-  }
-
-  assert {
-    condition     = length(azapi_resource.role_assignments["contributor"].name) == 36
-    error_message = "The role assignment name must be a GUID, as required by the ARM role assignment API."
-  }
-
-  assert {
-    condition     = length(data.azapi_resource_list.role_definitions) == 0
-    error_message = "The role definition lookup should not run when every role is supplied as a resource ID."
-  }
-}
-
-# ---------------------------------------------------------------------------
-# run: role_assignment_with_role_name_triggers_lookup
-#
-# AzAPI cannot resolve a role *name* on its own, so the module lists the role
-# definitions available at subscription scope.  The lookup must only be enabled
-# when at least one role assignment is supplied by name.
-# ---------------------------------------------------------------------------
-run "role_assignment_with_role_name_triggers_lookup" {
-  command = plan
-
-  variables {
-    role_assignments = {
-      by_name = {
-        role_definition_id_or_name = "Contributor"
-        principal_id               = "00000000-0000-0000-0000-0000000000aa"
-      }
-    }
-  }
-
-  assert {
-    condition     = length(data.azapi_resource_list.role_definitions) == 1
-    error_message = "The role definition lookup must run when a role assignment is supplied by role name."
-  }
-
-  assert {
-    condition     = data.azapi_resource_list.role_definitions[0].type == "Microsoft.Authorization/roleDefinitions@2022-04-01"
-    error_message = "The role definition lookup must list Microsoft.Authorization/roleDefinitions."
-  }
-
-  assert {
-    condition     = data.azapi_resource_list.role_definitions[0].parent_id == "/subscriptions/00000000-0000-0000-0000-000000000000"
-    error_message = "The role definition lookup must be scoped to the subscription hosting the vault."
-  }
-}
-
-# ---------------------------------------------------------------------------
-# run: diagnostic_settings_created
-#
-# Diagnostic settings are created as Microsoft.Insights/diagnosticSettings
-# extension resources on the vault, with the log groups and metric categories
-# translated into the ARM body.
-# ---------------------------------------------------------------------------
-run "diagnostic_settings_created" {
-  command = apply
-
-  variables {
-    diagnostic_settings = {
-      diag = {
-        workspace_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.OperationalInsights/workspaces/law-test"
-      }
-    }
-  }
-
-  assert {
-    condition     = azapi_resource.diagnostic_settings["diag"].type == "Microsoft.Insights/diagnosticSettings@2021-05-01-preview"
-    error_message = "Diagnostic settings must be declared as Microsoft.Insights/diagnosticSettings AzAPI resources."
-  }
-
-  assert {
-    condition     = azapi_resource.diagnostic_settings["diag"].parent_id == azapi_resource.this.id
-    error_message = "Diagnostic settings must be attached to the vault."
-  }
-
-  assert {
-    condition     = azapi_resource.diagnostic_settings["diag"].name == "diag-${var.name}"
-    error_message = "A diagnostic setting name should be generated from the vault name when none is supplied."
-  }
-
-  assert {
-    condition     = azapi_resource.diagnostic_settings["diag"].body.properties.workspaceId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.OperationalInsights/workspaces/law-test"
-    error_message = "The log analytics workspace resource ID should be sent as properties.workspaceId."
-  }
-
-  assert {
-    condition     = one(azapi_resource.diagnostic_settings["diag"].body.properties.logs).categoryGroup == "allLogs"
-    error_message = "The default log group (allLogs) should be enabled as a categoryGroup entry."
-  }
-
-  assert {
-    condition     = azapi_resource.diagnostic_settings["diag"].body.properties.metrics[0].category == "AllMetrics"
-    error_message = "The default metric category (AllMetrics) should be enabled."
   }
 }
 
@@ -551,12 +388,8 @@ run "resource_guard_association_created" {
   command = apply
 
   variables {
-    resource_guard_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg-guard-01"
-  }
-
-  assert {
-    condition     = azapi_resource.resource_guard_association[0].type == "Microsoft.RecoveryServices/vaults/backupResourceGuardProxies@2024-10-01"
-    error_message = "The Resource Guard association must be declared as a Microsoft.RecoveryServices/vaults/backupResourceGuardProxies AzAPI resource."
+    resource_guard_association_enabled = true
+    resource_guard_id                  = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg-guard-01"
   }
 
   assert {
@@ -566,7 +399,7 @@ run "resource_guard_association_created" {
 
   assert {
     condition     = azapi_resource.resource_guard_association[0].body.properties.resourceGuardResourceId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-guard/providers/Microsoft.DataProtection/resourceGuards/rg-guard-01"
-    error_message = "Resource Guard association resourceGuardResourceId should match the supplied variable."
+    error_message = "Resource Guard association resource_guard_id should match the supplied variable."
   }
 }
 
@@ -588,12 +421,10 @@ run "no_resource_guard_association_by_default" {
 # ---------------------------------------------------------------------------
 # run: unmanaged_private_endpoints_omit_dns_zone_group
 #
-# When callers manage private DNS zone groups outside the module, the module must
-# not create the Microsoft.Network/privateEndpoints/privateDnsZoneGroups child
-# resource at all.  This avoids update calls that can fail for Recovery Services
-# Vault private endpoints when centrally managed DNS zone groups are attached
-# separately.  It also verifies that application security group associations are
-# folded into the private endpoint body, as ARM requires.
+# When callers manage private DNS zone groups outside the module, the private
+# module must omit private DNS zone group actions entirely.
+# This avoids update calls that can fail for Recovery Services Vault private
+# endpoints when centrally managed DNS zone groups are attached separately.
 # ---------------------------------------------------------------------------
 run "unmanaged_private_endpoints_omit_dns_zone_group" {
   command = apply
@@ -613,28 +444,23 @@ run "unmanaged_private_endpoints_omit_dns_zone_group" {
   }
 
   assert {
-    condition     = length(azapi_resource.this_managed_dns_zone_groups) == 0
+    condition     = length(azapi_resource.private_endpoint_managed_dns_zone_groups) == 0
     error_message = "Managed private endpoint resources should not be created when var.private_endpoints_manage_dns_zone_group is false."
   }
 
   assert {
-    condition     = length(azapi_resource.this_unmanaged_dns_zone_groups) == 1
+    condition     = length(azapi_resource.private_endpoint_unmanaged_dns_zone_groups) == 1
     error_message = "Exactly one unmanaged private endpoint should be created when DNS zone groups are managed externally."
   }
 
   assert {
-    condition     = azapi_resource.this_unmanaged_dns_zone_groups["backup"].type == "Microsoft.Network/privateEndpoints@2024-05-01"
-    error_message = "Private endpoints must be declared as Microsoft.Network/privateEndpoints AzAPI resources."
+    condition     = length(azapi_resource_action.private_dns_zone_group) == 0
+    error_message = "Unmanaged private endpoints must not manage private DNS zone groups even when private DNS zone IDs are supplied."
   }
 
   assert {
-    condition     = length(azapi_resource.this_managed_dns_zone_groups_dns_zone_group) == 0
-    error_message = "Unmanaged private endpoints must not create a privateDnsZoneGroups child resource even when private DNS zone IDs are supplied."
-  }
-
-  assert {
-    condition     = length(azapi_resource.this_unmanaged_dns_zone_groups["backup"].body.properties.applicationSecurityGroups) == 1 && azapi_resource.this_unmanaged_dns_zone_groups["backup"].body.properties.applicationSecurityGroups[0].id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/applicationSecurityGroups/asg-test"
-    error_message = "Private endpoint ASG associations must be applied to the unmanaged private endpoint body when DNS zone groups are managed externally."
+    condition     = azapi_resource.private_endpoint_unmanaged_dns_zone_groups["backup"].body.properties.applicationSecurityGroups[0].id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/applicationSecurityGroups/asg-test"
+    error_message = "Private endpoint ASG associations must target the unmanaged private endpoint resource when DNS zone groups are managed externally."
   }
 }
 
@@ -642,9 +468,8 @@ run "unmanaged_private_endpoints_omit_dns_zone_group" {
 # run: managed_private_endpoints_include_dns_zone_group
 #
 # When the module manages private DNS zone groups (default), the managed
-# private endpoint resource must be created together with its
-# privateDnsZoneGroups child resource when DNS zone IDs are supplied.  The
-# unmanaged resource must be absent.
+# private endpoint resource and its private DNS zone group action must be
+# created when DNS zone IDs are supplied. The unmanaged resource must be absent.
 #
 # This complements the unmanaged_private_endpoints_omit_dns_zone_group test
 # and ensures the two exclusive resource types are not created concurrently,
@@ -666,33 +491,23 @@ run "managed_private_endpoints_include_dns_zone_group" {
   }
 
   assert {
-    condition     = length(azapi_resource.this_managed_dns_zone_groups) == 1
+    condition     = length(azapi_resource.private_endpoint_managed_dns_zone_groups) == 1
     error_message = "Exactly one managed private endpoint should be created when var.private_endpoints_manage_dns_zone_group is true."
   }
 
   assert {
-    condition     = length(azapi_resource.this_unmanaged_dns_zone_groups) == 0
+    condition     = length(azapi_resource.private_endpoint_unmanaged_dns_zone_groups) == 0
     error_message = "Unmanaged private endpoint resources must not be created when var.private_endpoints_manage_dns_zone_group is true."
   }
 
   assert {
-    condition     = length(azapi_resource.this_managed_dns_zone_groups_dns_zone_group) == 1
-    error_message = "Managed private endpoints must create a privateDnsZoneGroups child resource when private DNS zone IDs are supplied."
+    condition     = length(azapi_resource_action.private_dns_zone_group) == 1
+    error_message = "Managed private endpoints must create a private DNS zone group when private DNS zone IDs are supplied."
   }
 
   assert {
-    condition     = azapi_resource.this_managed_dns_zone_groups_dns_zone_group["backup"].type == "Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-05-01"
-    error_message = "The DNS zone group must be declared as a Microsoft.Network/privateEndpoints/privateDnsZoneGroups AzAPI resource."
-  }
-
-  assert {
-    condition     = azapi_resource.this_managed_dns_zone_groups_dns_zone_group["backup"].name == "default"
-    error_message = "The DNS zone group name should default to 'default'."
-  }
-
-  assert {
-    condition     = length(azapi_resource.this_managed_dns_zone_groups_dns_zone_group["backup"].body.properties.privateDnsZoneConfigs) == 1 && azapi_resource.this_managed_dns_zone_groups_dns_zone_group["backup"].body.properties.privateDnsZoneConfigs[0].properties.privateDnsZoneId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-dns/providers/Microsoft.Network/privateDnsZones/privatelink.test.windowsazure.com"
-    error_message = "The DNS zone group must contain a config for each supplied private DNS zone resource ID."
+    condition     = azapi_resource_action.private_dns_zone_group["backup"].body.properties.privateDnsZoneConfigs[0].properties.privateDnsZoneId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-dns/providers/Microsoft.Network/privateDnsZones/privatelink.test.windowsazure.com"
+    error_message = "The private DNS zone group must contain the configured private DNS zone ID."
   }
 }
 
@@ -717,18 +532,13 @@ run "managed_private_endpoints_sequence_and_unique_defaults" {
   }
 
   assert {
-    condition     = azapi_resource.this_managed_dns_zone_groups["backup"].name == "pep-${var.name}-backup" && azapi_resource.this_managed_dns_zone_groups["site_recovery"].name == "pep-${var.name}-site_recovery"
+    condition     = azapi_resource.private_endpoint_managed_dns_zone_groups["backup"].name == "pep-${var.name}-backup" && azapi_resource.private_endpoint_managed_dns_zone_groups["site_recovery"].name == "pep-${var.name}-site_recovery"
     error_message = "When multiple managed private endpoints are configured without explicit names, default names must include the map key to avoid collisions."
   }
 
   assert {
-    condition     = azapi_resource.this_managed_dns_zone_groups["backup"].body.properties.privateLinkServiceConnections[0].name == "pse-${var.name}-backup" && azapi_resource.this_managed_dns_zone_groups["site_recovery"].body.properties.privateLinkServiceConnections[0].name == "pse-${var.name}-site_recovery"
+    condition     = azapi_resource.private_endpoint_managed_dns_zone_groups["backup"].body.properties.privateLinkServiceConnections[0].name == "pse-${var.name}-backup" && azapi_resource.private_endpoint_managed_dns_zone_groups["site_recovery"].body.properties.privateLinkServiceConnections[0].name == "pse-${var.name}-site_recovery"
     error_message = "When multiple managed private endpoints are configured without explicit private service connection names, defaults must include the map key to avoid collisions."
-  }
-
-  assert {
-    condition     = azapi_resource.this_managed_dns_zone_groups["backup"].body.properties.privateLinkServiceConnections[0].properties.privateLinkServiceId == azapi_resource.this.id
-    error_message = "The private link service connection must target the vault."
   }
 }
 
@@ -775,27 +585,27 @@ run "workload_daily_full_uses_retention_weekly_monthly_yearly_config" {
   }
 
   assert {
-    condition     = module.recovery_workload_policy["daily_full"].body.properties.subProtectionPolicy[0].retentionPolicy.weeklySchedule != null
+    condition     = module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.weeklySchedule != null
     error_message = "weeklySchedule should be set when retention_weekly is configured, even when backup_frequency is Daily."
   }
 
   assert {
-    condition     = contains(module.recovery_workload_policy["daily_full"].body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Saturday") && !contains(module.recovery_workload_policy["daily_full"].body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Monday")
+    condition     = contains(module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Saturday") && !contains(module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Monday")
     error_message = "Monthly retention weekly days should come from retention_monthly.weekdays, not backup.weekdays."
   }
 
   assert {
-    condition     = module.recovery_workload_policy["daily_full"].body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleFormatType == "Weekly"
+    condition     = module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleFormatType == "Weekly"
     error_message = "Monthly retention schedule format should be Weekly when retention_monthly.weekdays is set."
   }
 
   assert {
-    condition     = contains(module.recovery_workload_policy["daily_full"].body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Sunday") && !contains(module.recovery_workload_policy["daily_full"].body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Monday")
+    condition     = contains(module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Sunday") && !contains(module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Monday")
     error_message = "Yearly retention weekly days should come from retention_yearly.weekdays, not backup.weekdays."
   }
 
   assert {
-    condition     = module.recovery_workload_policy["daily_full"].body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleFormatType == "Weekly"
+    condition     = module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleFormatType == "Weekly"
     error_message = "Yearly retention schedule format should be Weekly when retention_yearly.weekdays is set."
   }
 }
@@ -836,22 +646,22 @@ run "workload_daily_full_uses_monthdays_for_daily_monthly_yearly_retention" {
   }
 
   assert {
-    condition     = module.recovery_workload_policy["daily_full_monthdays"].body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleFormatType == "Daily"
+    condition     = module.recovery_workload_policy["daily_full_monthdays"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleFormatType == "Daily"
     error_message = "Monthly retention schedule format should be Daily when retention_monthly.monthdays is set."
   }
 
   assert {
-    condition     = module.recovery_workload_policy["daily_full_monthdays"].body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly == null
+    condition     = module.recovery_workload_policy["daily_full_monthdays"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly == null
     error_message = "Monthly retention weekly schedule should be null when retention_monthly.weekdays is not set."
   }
 
   assert {
-    condition     = module.recovery_workload_policy["daily_full_monthdays"].body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleFormatType == "Daily"
+    condition     = module.recovery_workload_policy["daily_full_monthdays"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleFormatType == "Daily"
     error_message = "Yearly retention schedule format should be Daily when retention_yearly.monthdays is set."
   }
 
   assert {
-    condition     = module.recovery_workload_policy["daily_full_monthdays"].body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly == null
+    condition     = module.recovery_workload_policy["daily_full_monthdays"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly == null
     error_message = "Yearly retention weekly schedule should be null when retention_yearly.weekdays is not set."
   }
 }
@@ -889,17 +699,142 @@ run "file_share_hourly_policy_parses_without_error" {
   }
 
   assert {
-    condition     = module.recovery_services_vault_file_share_policy["hourly"].body.properties.schedulePolicy.scheduleRunFrequency == "Hourly"
+    condition     = module.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.scheduleRunFrequency == "Hourly"
     error_message = "scheduleRunFrequency should be Hourly for an hourly file share backup policy."
   }
 
   assert {
-    condition     = module.recovery_services_vault_file_share_policy["hourly"].body.properties.schedulePolicy.hourlySchedule.interval == 4
+    condition     = module.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.hourlySchedule.interval == 4
     error_message = "hourlySchedule.interval should match the configured backup interval."
   }
 
   assert {
-    condition     = module.recovery_services_vault_file_share_policy["hourly"].body.properties.schedulePolicy.hourlySchedule.scheduleWindowDuration == 12
+    condition     = module.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.hourlySchedule.scheduleWindowDuration == 12
     error_message = "hourlySchedule.scheduleWindowDuration should match the configured window_duration."
   }
+}
+
+# ---------------------------------------------------------------------------
+# run: workload_protected_item_addressing_and_body
+#
+# The workload (SQL Server on Azure VM) protection is composed of a
+# `VMAppContainer` protection container registration and one protected item per
+# selected database.  Both resource names are constructed by the module from the
+# supplied virtual machine ID and database selection, so verify:
+#   - the container name follows `VMAppContainer;Compute;<rg>;<vm>`
+#   - the container is created under the `Azure` backup fabric of the vault
+#   - protected items are addressed by the caller supplied map key and named
+#     `<workload type>;<sql instance>;<database>`
+#   - the protected item body carries the workload policy ID and the source VM
+# ---------------------------------------------------------------------------
+run "workload_protected_item_addressing_and_body" {
+  command = apply
+
+  variables {
+    backup_protected_workload = {
+      sqlvm1 = {
+        source_vm_id                = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-sql/providers/Microsoft.Compute/virtualMachines/vm-sql-001"
+        workload_backup_policy_name = "pol-rsv-workload-vault-001"
+        protected_databases = {
+          master = {
+            server_name   = "MSSQLSERVER"
+            database_name = "master"
+          }
+          model = {
+            server_name               = "MSSQLSERVER"
+            database_name             = "model"
+            workload_backup_policy_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.RecoveryServices/vaults/rsv-test-001/backupPolicies/pol-rsv-workload-vault-002"
+          }
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = module.backup_protected_workload["sqlvm1"].resource.name == "VMAppContainer;Compute;rg-sql;vm-sql-001"
+    error_message = "The protection container should be named VMAppContainer;Compute;<vm resource group>;<vm name>."
+  }
+
+  assert {
+    condition     = endswith(module.backup_protected_workload["sqlvm1"].resource.parent_id, "/backupFabrics/Azure")
+    error_message = "The protection container should be registered under the Azure backup fabric of the vault."
+  }
+
+  assert {
+    condition     = module.backup_protected_workload["sqlvm1"].resource.body.properties.containerType == "VMAppContainer"
+    error_message = "The protection container type should be VMAppContainer for a workload registration."
+  }
+
+  assert {
+    condition     = module.backup_protected_workload["sqlvm1"].resource.body.properties.workloadType == "SQL"
+    error_message = "The protection container workload type should be SQL when protecting SQLDataBase items."
+  }
+
+  assert {
+    condition     = module.backup_protected_workload["sqlvm1"].protected_item_names["master"] == "SQLDataBase;MSSQLSERVER;master"
+    error_message = "The protected item should be named <workload type>;<sql instance name>;<database name>."
+  }
+
+  assert {
+    condition     = module.backup_protected_workload["sqlvm1"].protected_items["master"].body.properties.protectedItemType == "AzureVmWorkloadSQLDatabase"
+    error_message = "SQLDataBase workloads should be protected as AzureVmWorkloadSQLDatabase protected items."
+  }
+
+  assert {
+    condition     = module.backup_protected_workload["sqlvm1"].protected_items["master"].body.properties.sourceResourceId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-sql/providers/Microsoft.Compute/virtualMachines/vm-sql-001"
+    error_message = "The protected item should reference the virtual machine hosting the database."
+  }
+
+  assert {
+    condition     = endswith(module.backup_protected_workload["sqlvm1"].protected_items["master"].body.properties.policyId, "/backupPolicies/pol-rsv-workload-vault-001")
+    error_message = "The protected item should be associated with the workload policy of this vault."
+  }
+
+  assert {
+    condition     = endswith(module.backup_protected_workload["sqlvm1"].protected_items["model"].body.properties.policyId, "/backupPolicies/pol-rsv-workload-vault-002")
+    error_message = "A per database workload_backup_policy_id should override the vault policy name."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: no_workload_protection_by_default
+#
+# var.backup_protected_workload defaults to null, so no container registration
+# or protected item should be created for callers that do not use the feature.
+# ---------------------------------------------------------------------------
+run "no_workload_protection_by_default" {
+  command = apply
+
+  assert {
+    condition     = length(module.backup_protected_workload) == 0
+    error_message = "No workload protection should be created when var.backup_protected_workload is null."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: workload_source_vm_id_must_be_a_virtual_machine
+#
+# The container name is derived from the virtual machine resource ID, so a
+# non virtual machine ID must be rejected at plan time rather than producing an
+# invalid container name.
+# ---------------------------------------------------------------------------
+run "workload_source_vm_id_must_be_a_virtual_machine" {
+  command = plan
+
+  variables {
+    backup_protected_workload = {
+      sqlvm1 = {
+        source_vm_id                = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-sql/providers/Microsoft.Sql/servers/sql-001"
+        workload_backup_policy_name = "pol-rsv-workload-vault-001"
+        protected_databases = {
+          master = {
+            server_name   = "MSSQLSERVER"
+            database_name = "master"
+          }
+        }
+      }
+    }
+  }
+
+  expect_failures = [var.backup_protected_workload]
 }

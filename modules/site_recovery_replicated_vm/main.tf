@@ -1,80 +1,134 @@
-# Enables Azure Site Recovery (A2A) replication for a virtual machine.
-# Replaces the former `resource "azurerm_site_recovery_replicated_vm" "this"`.
-resource "azapi_resource" "this" {
-  name      = basename(var.site_recovery_replicated_vm.source_vm_id)
-  parent_id = local.source_protection_container_id
-  type      = var.resource_types.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items
+# Site Recovery creates a replicated item with PUT but removes it with
+# POST /remove. Action resources model those asymmetric operations without
+# issuing an unsupported generic DELETE request.
+resource "azapi_resource_action" "this" {
+  action      = ""
+  method      = "PUT"
+  resource_id = local.resource_id
+  type        = var.resource_types.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items
   body = {
     properties = {
-      policyId                = var.site_recovery_replicated_vm.recovery_replication_policy_id
-      providerSpecificDetails = local.provider_specific_details
+      policyId = var.site_recovery_replicated_vm.recovery_replication_policy_id
+      providerSpecificDetails = merge(
+        {
+          fabricObjectId          = var.site_recovery_replicated_vm.source_vm_id
+          instanceType            = "A2A"
+          recoveryContainerId     = var.site_recovery_replicated_vm.target_protection_container_id
+          recoveryResourceGroupId = local.target_resource_group_id
+        },
+        var.site_recovery_replicated_vm.multi_vm_group_name == null ? {} : {
+          multiVmGroupName = var.site_recovery_replicated_vm.multi_vm_group_name
+        },
+        var.site_recovery_replicated_vm.target_network_id == null ? {} : {
+          recoveryAzureNetworkId = var.site_recovery_replicated_vm.target_network_id
+        },
+        var.site_recovery_replicated_vm.target_subnet_name == null ? {} : {
+          recoverySubnetName = var.site_recovery_replicated_vm.target_subnet_name
+        },
+        length(local.unmanaged_disks) == 0 ? {} : {
+          vmDisks = local.unmanaged_disks
+        },
+        length(local.managed_disks) == 0 ? {} : {
+          vmManagedDisks = local.managed_disks
+        },
+      )
     }
   }
-  ignore_body_changes = length(var.ignore_body_changes.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items) > 0 ? var.ignore_body_changes.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items : null
-  # Azure Site Recovery normalizes the casing of ARM ID segments (for example
-  # "subscriptions" vs "Subscriptions") embedded in nested body properties such
-  # as `policyId` and `providerSpecificDetails.fabricObjectId` when it returns
-  # them, which otherwise causes perpetual external-change drift and forces
-  # unwanted replacements on every subsequent plan.
-  ignore_casing = true
-  read_query_parameters = {
-    "api-version" = [local.api_version]
+  response_export_values = ["*"]
+  retry                  = var.retry
+  when                   = "apply"
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
   }
-  replace_triggers_refs  = ["properties.providerSpecificDetails.fabricObjectId"]
+}
+
+# Azure Site Recovery accepts target network and VM settings only after initial
+# protection has completed. Retry settings can be used to cover that readiness window.
+resource "azapi_update_resource" "configuration" {
+  count = local.update_required ? 1 : 0
+
+  resource_id = local.resource_id
+  type        = var.resource_types.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items
+  body = {
+    properties = merge(
+      {
+        providerSpecificDetails = merge(
+          {
+            instanceType = "A2A"
+          },
+          length(local.managed_disk_updates) == 0 ? {} : {
+            managedDiskUpdateDetails = local.managed_disk_updates
+          },
+        )
+        recoveryAzureVMName = local.target_resource_name
+      },
+      var.site_recovery_replicated_vm.target_virtual_machine_size == null ? {} : {
+        recoveryAzureVMSize = var.site_recovery_replicated_vm.target_virtual_machine_size
+      },
+      var.site_recovery_replicated_vm.target_network_id == null ? {} : {
+        selectedRecoveryAzureNetworkId = var.site_recovery_replicated_vm.target_network_id
+      },
+      var.site_recovery_replicated_vm.test_network_id == null ? {} : {
+        selectedTfoAzureNetworkId = var.site_recovery_replicated_vm.test_network_id
+      },
+    )
+  }
   response_export_values = []
   retry                  = var.retry
 
   dynamic "timeouts" {
-    for_each = anytrue([for t in values(local.effective_timeouts) : t != null]) ? [local.effective_timeouts] : []
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
       create = timeouts.value.create
-      delete = timeouts.value.delete
       read   = timeouts.value.read
       update = timeouts.value.update
+      delete = timeouts.value.delete
     }
   }
 
-  # Azure Site Recovery mutates these fields after enablement.
-  # Ignoring them avoids perpetual replacement loops in subsequent plans.
-  # The disk collections are the body-relative equivalents of the former
-  # `managed_disk` / `unmanaged_disk` blocks; the NIC details (`vmNics`) are
-  # response-only under AzAPI and therefore never part of the configured body.
-  lifecycle {
-    ignore_changes = [
-      body.properties.providerSpecificDetails.vmManagedDisks,
-      body.properties.providerSpecificDetails.vmDisks,
-    ]
-  }
+  depends_on = [azapi_resource_action.this]
 }
 
-# `target_virtual_machine_size` and `test_network_id` are read-only on the
-# enable-protection (PUT) contract, so Azure Site Recovery only accepts them
-# through the update (PATCH) contract after replication has been enabled. This
-# mirrors what the AzureRM provider did internally with a follow-up update call.
-# Because the action is not refreshed from Azure, later ASR-side changes to the
-# target size or test network do not produce drift, preserving the intent of the
-# former `lifecycle.ignore_changes` on those two attributes.
-resource "azapi_resource_action" "target_settings" {
-  count = length(local.post_enablement_settings) > 0 ? 1 : 0
-
-  resource_id = azapi_resource.this.id
+resource "azapi_resource_action" "remove" {
+  action      = "remove"
+  method      = "POST"
+  resource_id = local.resource_id
   type        = var.resource_types.recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items
   body = {
-    properties = merge(local.post_enablement_settings, {
-      providerSpecificDetails = {
-        instanceType = "A2A"
+    properties = {
+      disableProtectionReason = "NotSpecified"
+      replicationProviderInput = {
+        instanceType = "DisableProtectionProviderSpecificInput"
       }
-    })
+    }
   }
-  method                 = "PATCH"
+  ignore_not_found       = true
   response_export_values = []
-  retry                  = local.target_settings_retry
+  retry                  = var.retry
+  when                   = "destroy"
 
-  timeouts {
-    create = local.target_settings_timeouts.create
-    delete = local.target_settings_timeouts.delete
-    read   = local.target_settings_timeouts.read
-    update = local.target_settings_timeouts.update
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
+    }
   }
+
+  depends_on = [
+    azapi_resource_action.this,
+    azapi_update_resource.configuration,
+  ]
 }
