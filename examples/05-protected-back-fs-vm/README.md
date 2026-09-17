@@ -223,6 +223,7 @@ module "recovery_services_vault" {
   }
   classic_vmware_replication_enabled = false
   cross_region_restore_enabled       = false
+  enable_telemetry                   = false
   file_share_backup_policy = {
     fs_obj_key_pol_001 = {
       name     = "pol-rsv-fileshare-vault-005"

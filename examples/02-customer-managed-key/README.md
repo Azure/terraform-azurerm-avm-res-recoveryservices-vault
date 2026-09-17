@@ -86,6 +86,7 @@ module "recovery_services_vault" {
       resource_id = azapi_resource.this_identity.id
     }
   }
+  enable_telemetry = false
   managed_identities = {
     system_assigned            = true
     user_assigned_resource_ids = [azapi_resource.this_identity.id]
