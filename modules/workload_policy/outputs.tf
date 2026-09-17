@@ -1,16 +1,19 @@
+output "body" {
+  description = "The configured AzAPI request body sent to Azure for the workload backup policy, or `null` when no policy is created."
+  value       = var.workload_backup_policy == null ? null : azapi_resource.this[0].body
+}
+
+output "name" {
+  description = "The name of the workload backup policy, or `null` when no policy is created."
+  value       = var.workload_backup_policy == null ? null : azapi_resource.this[0].name
+}
+
 output "output_protection_policy" {
   description = "The output protection policy"
   value       = local.backup
 }
 
-output "resource" {
-  description = "resource Id output"
-  value       = var.workload_backup_policy == null ? null : azapi_resource.this[0]
-}
-
-# Module owners should include the full resource via a 'resource' output
-# https://azure.github.io/Azure-Verified-Modules/specs/terraform/#id-tffr2---category-outputs---additional-terraform-outputs
 output "resource_id" {
-  description = "resource Id output"
+  description = "The resource ID of the workload backup policy, or `null` when no policy is created."
   value       = var.workload_backup_policy == null ? null : azapi_resource.this[0].id
 }

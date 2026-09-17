@@ -28,10 +28,22 @@ variable "sku" {
   description = "(required) Specify SKU for Azure Recovery Service Vaults. Standard, RS0 (default)"
 }
 
+variable "alerts_for_all_failover_issues_enabled" {
+  type        = bool
+  default     = false
+  description = "(optional) Specify Setting for Monitoring 'Alerts for All Failover Issues'. true, false (default)"
+}
+
 variable "alerts_for_all_job_failures_enabled" {
   type        = bool
   default     = true
   description = "(optional) Specify Setting for Monitoring 'Alerts for All Job Failures'. true (default), false"
+}
+
+variable "alerts_for_all_replication_issues_enabled" {
+  type        = bool
+  default     = false
+  description = "(optional) Specify Setting for Monitoring 'Alerts for All Replication Issues'. true, false (default)"
 }
 
 variable "alerts_for_critical_operation_failures_enabled" {

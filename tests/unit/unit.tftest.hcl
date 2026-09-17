@@ -309,6 +309,50 @@ run "soft_delete_invalid_value" {
 }
 
 # ---------------------------------------------------------------------------
+# run: monitoring_alerts_defaults
+#
+# Replication and failover alerts default to "Disabled", job failure alerts to
+# "Enabled".
+# ---------------------------------------------------------------------------
+run "monitoring_alerts_defaults" {
+  command = apply
+
+  assert {
+    condition     = azapi_resource.this.body.properties.monitoringSettings.azureMonitorAlertSettings.alertsForAllReplicationIssues == "Disabled"
+    error_message = "Alerts for all replication issues should default to 'Disabled'."
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.monitoringSettings.azureMonitorAlertSettings.alertsForAllFailoverIssues == "Disabled"
+    error_message = "Alerts for all failover issues should default to 'Disabled'."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: monitoring_alerts_enabled
+#
+# Verifies that replication and failover alerts can be enabled.
+# ---------------------------------------------------------------------------
+run "monitoring_alerts_enabled" {
+  command = apply
+
+  variables {
+    alerts_for_all_replication_issues_enabled = true
+    alerts_for_all_failover_issues_enabled    = true
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.monitoringSettings.azureMonitorAlertSettings.alertsForAllReplicationIssues == "Enabled"
+    error_message = "Alerts for all replication issues should be 'Enabled' when alerts_for_all_replication_issues_enabled is true."
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.monitoringSettings.azureMonitorAlertSettings.alertsForAllFailoverIssues == "Enabled"
+    error_message = "Alerts for all failover issues should be 'Enabled' when alerts_for_all_failover_issues_enabled is true."
+  }
+}
+
+# ---------------------------------------------------------------------------
 # run: resource_guard_operation_requests_applied
 #
 # Verifies that Resource Guard operation request IDs are passed through to the
@@ -541,27 +585,27 @@ run "workload_daily_full_uses_retention_weekly_monthly_yearly_config" {
   }
 
   assert {
-    condition     = module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.weeklySchedule != null
+    condition     = module.recovery_workload_policy["daily_full"].body.properties.subProtectionPolicy[0].retentionPolicy.weeklySchedule != null
     error_message = "weeklySchedule should be set when retention_weekly is configured, even when backup_frequency is Daily."
   }
 
   assert {
-    condition     = contains(module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Saturday") && !contains(module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Monday")
+    condition     = contains(module.recovery_workload_policy["daily_full"].body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Saturday") && !contains(module.recovery_workload_policy["daily_full"].body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Monday")
     error_message = "Monthly retention weekly days should come from retention_monthly.weekdays, not backup.weekdays."
   }
 
   assert {
-    condition     = module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleFormatType == "Weekly"
+    condition     = module.recovery_workload_policy["daily_full"].body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleFormatType == "Weekly"
     error_message = "Monthly retention schedule format should be Weekly when retention_monthly.weekdays is set."
   }
 
   assert {
-    condition     = contains(module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Sunday") && !contains(module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Monday")
+    condition     = contains(module.recovery_workload_policy["daily_full"].body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Sunday") && !contains(module.recovery_workload_policy["daily_full"].body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly.daysOfTheWeek, "Monday")
     error_message = "Yearly retention weekly days should come from retention_yearly.weekdays, not backup.weekdays."
   }
 
   assert {
-    condition     = module.recovery_workload_policy["daily_full"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleFormatType == "Weekly"
+    condition     = module.recovery_workload_policy["daily_full"].body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleFormatType == "Weekly"
     error_message = "Yearly retention schedule format should be Weekly when retention_yearly.weekdays is set."
   }
 }
@@ -602,22 +646,22 @@ run "workload_daily_full_uses_monthdays_for_daily_monthly_yearly_retention" {
   }
 
   assert {
-    condition     = module.recovery_workload_policy["daily_full_monthdays"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleFormatType == "Daily"
+    condition     = module.recovery_workload_policy["daily_full_monthdays"].body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleFormatType == "Daily"
     error_message = "Monthly retention schedule format should be Daily when retention_monthly.monthdays is set."
   }
 
   assert {
-    condition     = module.recovery_workload_policy["daily_full_monthdays"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly == null
+    condition     = module.recovery_workload_policy["daily_full_monthdays"].body.properties.subProtectionPolicy[0].retentionPolicy.monthlySchedule.retentionScheduleWeekly == null
     error_message = "Monthly retention weekly schedule should be null when retention_monthly.weekdays is not set."
   }
 
   assert {
-    condition     = module.recovery_workload_policy["daily_full_monthdays"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleFormatType == "Daily"
+    condition     = module.recovery_workload_policy["daily_full_monthdays"].body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleFormatType == "Daily"
     error_message = "Yearly retention schedule format should be Daily when retention_yearly.monthdays is set."
   }
 
   assert {
-    condition     = module.recovery_workload_policy["daily_full_monthdays"].resource.body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly == null
+    condition     = module.recovery_workload_policy["daily_full_monthdays"].body.properties.subProtectionPolicy[0].retentionPolicy.yearlySchedule.retentionScheduleWeekly == null
     error_message = "Yearly retention weekly schedule should be null when retention_yearly.weekdays is not set."
   }
 }
@@ -655,17 +699,17 @@ run "file_share_hourly_policy_parses_without_error" {
   }
 
   assert {
-    condition     = module.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.scheduleRunFrequency == "Hourly"
+    condition     = module.recovery_services_vault_file_share_policy["hourly"].body.properties.schedulePolicy.scheduleRunFrequency == "Hourly"
     error_message = "scheduleRunFrequency should be Hourly for an hourly file share backup policy."
   }
 
   assert {
-    condition     = module.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.hourlySchedule.interval == 4
+    condition     = module.recovery_services_vault_file_share_policy["hourly"].body.properties.schedulePolicy.hourlySchedule.interval == 4
     error_message = "hourlySchedule.interval should match the configured backup interval."
   }
 
   assert {
-    condition     = module.recovery_services_vault_file_share_policy["hourly"].resource.body.properties.schedulePolicy.hourlySchedule.scheduleWindowDuration == 12
+    condition     = module.recovery_services_vault_file_share_policy["hourly"].body.properties.schedulePolicy.hourlySchedule.scheduleWindowDuration == 12
     error_message = "hourlySchedule.scheduleWindowDuration should match the configured window_duration."
   }
 }
