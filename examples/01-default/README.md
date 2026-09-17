@@ -69,6 +69,7 @@ module "recovery_services_vault" {
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
+  enable_telemetry                               = false
   public_network_access_enabled                  = true
   storage_mode_type                              = "GeoRedundant"
   tags = {

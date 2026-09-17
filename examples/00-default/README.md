@@ -80,6 +80,7 @@ module "recovery_services_vault" {
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
+  enable_telemetry                               = false
   file_share_backup_policy = {
     pol-rsv-fileshare-vault-001 = {
       name     = "pol-rsv-fileshare-vault-001"

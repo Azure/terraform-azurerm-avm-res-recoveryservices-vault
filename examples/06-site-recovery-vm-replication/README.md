@@ -281,6 +281,7 @@ module "recovery_services_vault_primary" {
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
+  enable_telemetry                               = false
   managed_identities = {
     system_assigned = true
   }
@@ -297,6 +298,7 @@ module "recovery_services_vault_secondary" {
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
+  enable_telemetry                               = false
 }
 
 resource "azapi_resource" "storage_account_contributor_assignment" {
