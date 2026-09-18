@@ -1,0 +1,7 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Azure/azure-verified-modules-tools/main/src/Avm.Authoring/Resources/Schemas/v1/avm-module-metadata.schema.json",
+  "moduleDisplayName": "Backup Protected VM",
+  "moduleDescription": "Enables Azure Backup protection for an existing Azure IaaS virtual machine in a Recovery Services vault.",
+  "canonicalType": "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems",
+  "telemetryIdPrefix": "46d3xtrf.res.97eec18"
+}

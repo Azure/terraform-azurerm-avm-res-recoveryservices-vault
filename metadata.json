@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Azure/azure-verified-modules-tools/main/src/Avm.Authoring/Resources/Schemas/v1/avm-module-metadata.schema.json",
+  "moduleDisplayName": "Recovery Services Vault",
+  "moduleDescription": "AVM Resource Module for Recovery Services Vault",
+  "canonicalType": "Microsoft.RecoveryServices/vaults",
+  "owners": [
+    "elsalvos"
+  ],
+  "telemetryIdPrefix": "46d3xtrf.res.c4f4084"
+}
