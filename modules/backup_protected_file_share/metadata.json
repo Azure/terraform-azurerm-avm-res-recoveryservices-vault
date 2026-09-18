@@ -1,0 +1,7 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Azure/azure-verified-modules-tools/main/src/Avm.Authoring/Resources/Schemas/v1/avm-module-metadata.schema.json",
+  "moduleDisplayName": "Backup Protected File Share",
+  "moduleDescription": "Registers a storage account with a Recovery Services vault and enables Azure Backup protection for one Azure file share.",
+  "canonicalType": "Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems",
+  "telemetryIdPrefix": "46d3xtrf.res.da050a0"
+}
