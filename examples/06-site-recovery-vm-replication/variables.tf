@@ -77,3 +77,13 @@ variable "site_recovery_replication_timeouts" {
   }
   description = "Timeouts for replicated VM Site Recovery operations. Increase these when Azure replication operations are slow to report completion."
 }
+
+variable "enable_telemetry" {
+  type        = bool
+  default     = false
+  description = <<DESCRIPTION
+This variable controls whether or not telemetry is enabled for the module.
+For more information see <https://aka.ms/avm/telemetryinfo>.
+If it is set to false, then no telemetry will be collected.
+DESCRIPTION
+}
