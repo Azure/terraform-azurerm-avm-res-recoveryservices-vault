@@ -62,7 +62,7 @@ module "recovery_services_vault" {
   alerts_for_critical_operation_failures_enabled = true
   classic_vmware_replication_enabled             = false
   cross_region_restore_enabled                   = false
-  enable_telemetry                               = false
+  enable_telemetry                               = var.enable_telemetry
   managed_identities = {
     system_assigned            = true
     user_assigned_resource_ids = [azapi_resource.this_identity.id]

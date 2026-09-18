@@ -223,7 +223,7 @@ module "recovery_services_vault" {
   }
   classic_vmware_replication_enabled = false
   cross_region_restore_enabled       = false
-  enable_telemetry                   = false
+  enable_telemetry                   = var.enable_telemetry
   file_share_backup_policy = {
     fs_obj_key_pol_001 = {
       name     = "pol-rsv-fileshare-vault-005"
@@ -332,7 +332,17 @@ No required inputs.
 
 ## Optional Inputs
 
-No optional inputs.
+The following input variables are optional (have default values):
+
+### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
+
+Description: This variable controls whether or not telemetry is enabled for the module.  
+For more information see <https://aka.ms/avm/telemetryinfo>.  
+If it is set to false, then no telemetry will be collected.
+
+Type: `bool`
+
+Default: `false`
 
 ## Outputs
 
