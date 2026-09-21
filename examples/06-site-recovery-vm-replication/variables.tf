@@ -80,7 +80,7 @@ variable "site_recovery_replication_timeouts" {
 
 variable "enable_telemetry" {
   type        = bool
-  default     = false
+  default     = true
   description = <<DESCRIPTION
 This variable controls whether or not telemetry is enabled for the module.
 For more information see <https://aka.ms/avm/telemetryinfo>.
