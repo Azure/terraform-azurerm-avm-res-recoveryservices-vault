@@ -838,3 +838,74 @@ run "workload_source_vm_id_must_be_a_virtual_machine" {
 
   expect_failures = [var.backup_protected_workload]
 }
+
+# ---------------------------------------------------------------------------
+# run: protected_item_bodies_omit_read_only_properties
+#
+# `friendlyName`, `virtualMachineId` and `workloadType` are read-only on
+# protected items. Sending them makes the AzAPI embedded schema validation fail
+# at plan time, so the protected VM and file share bodies must only carry the
+# writable properties.
+# ---------------------------------------------------------------------------
+run "protected_item_bodies_omit_read_only_properties" {
+  command = apply
+
+  variables {
+    backup_protected_vm = {
+      vm1 = {
+        source_vm_id          = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-vm/providers/Microsoft.Compute/virtualMachines/vm-001"
+        vm_backup_policy_name = "pol-rsv-vm-001"
+        sleep_timer           = "0s"
+      }
+    }
+    backup_protected_file_share = {
+      share1 = {
+        source_storage_account_id     = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-st/providers/Microsoft.Storage/storageAccounts/st001"
+        backup_file_share_policy_name = "pol-rsv-fs-001"
+        source_file_share_name        = "share01"
+        sleep_timer                   = "0s"
+      }
+    }
+  }
+
+  override_data {
+    target = module.backup_protected_file_share["share1"].data.azapi_resource_list.protectable_items
+    values = {
+      output = {
+        value = [
+          {
+            name = "azurefileshare;share01"
+            properties = {
+              friendlyName                = "share01"
+              parentContainerFriendlyName = "st001"
+            }
+          }
+        ]
+      }
+    }
+  }
+
+  override_data {
+    target = module.backup_protected_file_share["share1"].data.azapi_resource_list.protected_items
+    values = {
+      output = {
+        value = []
+      }
+    }
+  }
+
+  assert {
+    condition     = length(setintersection(keys(module.backup_protected_vm["vm1"].resource.body.properties), ["friendlyName", "virtualMachineId", "workloadType"])) == 0
+    error_message = "The protected VM body must not set the read-only friendlyName, virtualMachineId or workloadType properties."
+  }
+
+  assert {
+    condition     = module.backup_protected_vm["vm1"].resource.body.properties.sourceResourceId == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-vm/providers/Microsoft.Compute/virtualMachines/vm-001"
+    error_message = "The protected VM body should still reference the source virtual machine."
+  }
+
+  assert {
+    condition     = !contains(keys(module.backup_protected_file_share["share1"].resource.body.properties), "workloadType")
+    error_message = "The protected file share body must not set the read-only workloadType property."
+  }
+}

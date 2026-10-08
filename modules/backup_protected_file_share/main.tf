@@ -99,7 +99,6 @@ resource "azapi_resource" "this" {
       policyId          = var.backup_protected_file_share.backup_policy_id
       protectedItemType = "AzureFileShareProtectedItem"
       sourceResourceId  = var.backup_protected_file_share.source_storage_account_id
-      workloadType      = "AzureFileShare"
     }
   }
   ignore_body_changes = length(var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items) > 0 ? var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items : null
