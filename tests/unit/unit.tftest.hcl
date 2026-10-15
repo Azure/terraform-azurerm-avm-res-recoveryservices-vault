@@ -16,8 +16,9 @@
 mock_provider "azapi" {
   mock_data "azapi_client_config" {
     defaults = {
-      subscription_id = "00000000-0000-0000-0000-000000000000"
-      tenant_id       = "00000000-0000-0000-0000-000000000001"
+      subscription_id          = "00000000-0000-0000-0000-000000000000"
+      tenant_id                = "00000000-0000-0000-0000-000000000001"
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
     }
   }
   mock_resource "azapi_resource" {
@@ -27,9 +28,7 @@ mock_provider "azapi" {
   }
 }
 
-mock_provider "modtm" {}
 mock_provider "time" {}
-mock_provider "random" {}
 
 # ---------------------------------------------------------------------------
 # Shared variable defaults applied to every run block.
@@ -133,7 +132,7 @@ run "telemetry_enabled_by_default" {
   command = apply
 
   assert {
-    condition     = can(modtm_telemetry.telemetry)
+    condition     = can(azapi_resource.telemetry)
     error_message = "Telemetry resource should be created when enable_telemetry is true (default)."
   }
 }

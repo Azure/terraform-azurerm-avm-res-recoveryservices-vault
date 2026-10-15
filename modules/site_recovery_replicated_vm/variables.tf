@@ -1,3 +1,9 @@
+variable "location" {
+  type        = string
+  description = "The Azure region for this module's resources or telemetry deployment."
+  nullable    = false
+}
+
 variable "parent_id" {
   type        = string
   description = "The fully-qualified ARM resource ID of the source Site Recovery protection container."
@@ -148,6 +154,17 @@ variable "site_recovery_replicated_vm" {
     ])
     error_message = "Each unmanaged disk must resolve valid staging and target storage account resource IDs."
   }
+}
+
+variable "enable_telemetry" {
+  type        = bool
+  default     = true
+  description = <<DESCRIPTION
+This variable controls whether or not telemetry is enabled for the module.
+For more information see <https://aka.ms/avm/telemetryinfo>.
+If it is set to false, then no telemetry will be collected.
+DESCRIPTION
+  nullable    = false
 }
 
 # tflint-ignore: terraform_unused_declarations

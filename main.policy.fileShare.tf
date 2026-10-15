@@ -2,7 +2,9 @@ module "recovery_services_vault_file_share_policy" {
   source   = "./modules/file_share_policy"
   for_each = var.file_share_backup_policy != null ? var.file_share_backup_policy : {}
 
+  location                 = var.location
   recovery_vault_name      = azapi_resource.this.name
   resource_group_name      = var.resource_group_name
+  enable_telemetry         = var.enable_telemetry
   file_share_backup_policy = each.value
 }
