@@ -19,6 +19,12 @@ variable "backup_protected_file_share" {
   }
 }
 
+variable "location" {
+  type        = string
+  description = "The Azure region for this module's resources or telemetry deployment."
+  nullable    = false
+}
+
 variable "parent_id" {
   type        = string
   description = "The fully-qualified ARM resource ID of the Azure Backup storage protection container that will contain the protected file share."
@@ -28,6 +34,17 @@ variable "parent_id" {
     condition     = can(provider::azapi::parse_resource_id("Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers", var.parent_id))
     error_message = "`parent_id` must be a valid Azure Backup protection container resource ID."
   }
+}
+
+variable "enable_telemetry" {
+  type        = bool
+  default     = true
+  description = <<DESCRIPTION
+This variable controls whether or not telemetry is enabled for the module.
+For more information see <https://aka.ms/avm/telemetryinfo>.
+If it is set to false, then no telemetry will be collected.
+DESCRIPTION
+  nullable    = false
 }
 
 variable "ignore_body_changes" {
