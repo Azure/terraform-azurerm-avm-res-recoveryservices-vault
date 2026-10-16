@@ -35,9 +35,7 @@ resource "azapi_resource" "this" {
         immutabilitySettings = var.immutability != null ? {
           state = var.immutability
         } : null
-        softDeleteSettings = {
-          softDeleteState = var.soft_delete_enabled
-        }
+        softDeleteSettings = local.soft_delete_settings
       }
       monitoringSettings = {
         azureMonitorAlertSettings = {
