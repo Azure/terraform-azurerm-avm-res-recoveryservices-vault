@@ -254,6 +254,11 @@ run "soft_delete_enabled_by_default" {
     condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "Enabled"
     error_message = "Soft delete state should default to 'Enabled'."
   }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.enhancedSecurityState == null
+    error_message = "Enhanced security state should not be sent unless always-on soft delete is enabled."
+  }
 }
 
 # ---------------------------------------------------------------------------
@@ -277,9 +282,35 @@ run "soft_delete_disabled" {
 # ---------------------------------------------------------------------------
 # run: soft_delete_always_on
 #
-# Verifies that the "AlwaysOn" always-on soft delete state can be configured.
+# Verifies that always-on soft delete sends "AlwaysON" for both softDeleteState
+# (cloud) and enhancedSecurityState (hybrid). ARM silently ignores softDeleteState
+# "AlwaysON" unless enhancedSecurityState is "AlwaysON" in the same request.
 # ---------------------------------------------------------------------------
 run "soft_delete_always_on" {
+  command = apply
+
+  variables {
+    soft_delete_enabled = "AlwaysON"
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "AlwaysON"
+    error_message = "Soft delete state should be 'AlwaysON' when always-on soft delete is enabled."
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.enhancedSecurityState == "AlwaysON"
+    error_message = "Enhanced security state should be 'AlwaysON' when always-on soft delete is enabled."
+  }
+}
+
+# ---------------------------------------------------------------------------
+# run: soft_delete_always_on_legacy_casing
+#
+# The deprecated "AlwaysOn" alias must normalise to the API value "AlwaysON"
+# for both fields so existing callers keep working.
+# ---------------------------------------------------------------------------
+run "soft_delete_always_on_legacy_casing" {
   command = apply
 
   variables {
@@ -287,8 +318,13 @@ run "soft_delete_always_on" {
   }
 
   assert {
-    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "AlwaysOn"
-    error_message = "Soft delete state should be 'AlwaysON' when always-on soft delete is enabled."
+    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.softDeleteState == "AlwaysON"
+    error_message = "The 'AlwaysOn' alias should normalise softDeleteState to the API enum value 'AlwaysON'."
+  }
+
+  assert {
+    condition     = azapi_resource.this.body.properties.securitySettings.softDeleteSettings.enhancedSecurityState == "AlwaysON"
+    error_message = "The 'AlwaysOn' alias should also set enhancedSecurityState to 'AlwaysON'."
   }
 }
 

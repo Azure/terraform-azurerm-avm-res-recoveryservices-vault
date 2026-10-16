@@ -37,6 +37,19 @@ locals {
   }
 }
 
+# Always-on soft delete covers both cloud (softDeleteState) and hybrid (enhancedSecurityState)
+# workloads, so both must be sent as "AlwaysON" in the same request. Both fields are extensible
+# enums: a mis-cased value, or softDeleteState "AlwaysON" without enhancedSecurityState "AlwaysON",
+# is accepted by ARM without error and silently leaves the vault's soft delete state unchanged.
+# "AlwaysOn" is accepted for backwards compatibility and normalised to the API value.
+locals {
+  soft_delete_always_on = contains(["AlwaysON", "AlwaysOn"], var.soft_delete_enabled)
+  soft_delete_settings = {
+    softDeleteState       = local.soft_delete_always_on ? "AlwaysON" : var.soft_delete_enabled
+    enhancedSecurityState = local.soft_delete_always_on ? "AlwaysON" : null
+  }
+}
+
 locals {
   managed_private_endpoints = {
     for k, v in var.private_endpoints : k => v
