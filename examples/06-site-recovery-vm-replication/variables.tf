@@ -1,3 +1,35 @@
+variable "enable_telemetry" {
+  type        = bool
+  default     = true
+  description = <<DESCRIPTION
+This variable controls whether or not telemetry is enabled for the module.
+For more information see <https://aka.ms/avm/telemetryinfo>.
+If it is set to false, then no telemetry will be collected.
+DESCRIPTION
+}
+
+variable "site_recovery_replication_timeouts" {
+  type = object({
+    create = string
+    update = string
+    delete = string
+    read   = string
+  })
+  default = {
+    create = "180m"
+    update = "180m"
+    delete = "120m"
+    read   = "15m"
+  }
+  description = "Timeouts for replicated VM Site Recovery operations. Increase these when Azure replication operations are slow to report completion."
+}
+
+variable "source_vm_size" {
+  type        = string
+  default     = "Standard_D2as_v5"
+  description = "VM SKU for source VMs used in the Site Recovery example."
+}
+
 variable "source_vms" {
   type = map(object({
     data_disks = map(object({
@@ -50,40 +82,8 @@ variable "source_vms" {
   }
 }
 
-variable "source_vm_size" {
-  type        = string
-  default     = "Standard_D2as_v5"
-  description = "VM SKU for source VMs used in the Site Recovery example."
-}
-
 variable "target_vm_size" {
   type        = string
   default     = "Standard_D2as_v5"
   description = "VM SKU used for failover target replicated VMs. Must be compatible with the source VM's disk controller type (SCSI) and generation; incompatible sizes cause Azure Site Recovery error 1400148. Defaults to the source VM size to guarantee compatibility."
-}
-
-variable "site_recovery_replication_timeouts" {
-  type = object({
-    create = string
-    update = string
-    delete = string
-    read   = string
-  })
-  default = {
-    create = "180m"
-    update = "180m"
-    delete = "120m"
-    read   = "15m"
-  }
-  description = "Timeouts for replicated VM Site Recovery operations. Increase these when Azure replication operations are slow to report completion."
-}
-
-variable "enable_telemetry" {
-  type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see <https://aka.ms/avm/telemetryinfo>.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
 }
