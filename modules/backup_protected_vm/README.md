@@ -75,12 +75,6 @@ object({
   })
 ```
 
-### <a name="input_location"></a> [location](#input\_location)
-
-Description: The Azure region for this module's resources or telemetry deployment.
-
-Type: `string`
-
 ### <a name="input_parent_id"></a> [parent\_id](#input\_parent\_id)
 
 Description: The fully-qualified ARM resource ID of the Azure Backup protection container that will contain the protected virtual machine.
@@ -117,6 +111,14 @@ object({
 ```
 
 Default: `{}`
+
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: The Azure region for this module's resources or telemetry deployment.
+
+Type: `string`
+
+Default: `null`
 
 ### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
 
