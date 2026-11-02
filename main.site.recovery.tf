@@ -7,10 +7,10 @@ module "backup_protected_vm" {
     sleep_timer      = each.value.sleep_timer
     source_vm_id     = each.value.source_vm_id
   }
-  location            = var.location
   parent_id           = "${azapi_resource.this.id}/backupFabrics/Azure/protectionContainers/iaasvmcontainer;iaasvmcontainerv2;${split("/", each.value.source_vm_id)[4]};${basename(each.value.source_vm_id)}"
   enable_telemetry    = var.enable_telemetry
   ignore_body_changes = var.ignore_body_changes.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
+  location            = var.location
   resource_types      = var.resource_types.recoveryservices_vaults_backup_fabrics_protection_containers_protected_items
   retry               = var.retry
   timeouts            = var.timeouts
