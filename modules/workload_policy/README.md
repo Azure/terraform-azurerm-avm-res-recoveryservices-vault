@@ -36,12 +36,6 @@ The following resources are used by this module:
 
 The following input variables are required:
 
-### <a name="input_location"></a> [location](#input\_location)
-
-Description: The Azure region for this module's resources or telemetry deployment.
-
-Type: `string`
-
 ### <a name="input_recovery_vault_name"></a> [recovery\_vault\_name](#input\_recovery\_vault\_name)
 
 Description: recovery\_vault\_name: specify a recovery\_vault\_name for the Azure Recovery Services Vault. Upper/Lower case letters, numbers and hyphens. number of characters 2-50
@@ -85,6 +79,14 @@ object({
 ```
 
 Default: `{}`
+
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: The Azure region for this module's resources or telemetry deployment.
+
+Type: `string`
+
+Default: `null`
 
 ### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
 

@@ -1,9 +1,3 @@
-variable "location" {
-  type        = string
-  description = "The Azure region for this module's resources or telemetry deployment."
-  nullable    = false
-}
-
 variable "recovery_vault_name" {
   type        = string
   description = "recovery_vault_name: specify a recovery_vault_name for the Azure Recovery Services Vault. Upper/Lower case letters, numbers and hyphens. number of characters 2-50"
@@ -167,6 +161,17 @@ This argument is provider-private, so changes take effect only after apply, and 
 - `recoveryservices_vaults_backup_policies` - Body-relative paths ignored on the `Microsoft.RecoveryServices/vaults/backupPolicies` resource.
 DESCRIPTION
   nullable    = false
+}
+
+variable "location" {
+  type        = string
+  default     = null
+  description = "The Azure region for this module's resources or telemetry deployment."
+
+  validation {
+    condition     = !var.enable_telemetry || var.location != null
+    error_message = "The location must not be null when telemetry is enabled."
+  }
 }
 
 variable "resource_types" {
