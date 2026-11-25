@@ -19,12 +19,6 @@ variable "backup_protected_file_share" {
   }
 }
 
-variable "location" {
-  type        = string
-  description = "The Azure region for this module's resources or telemetry deployment."
-  nullable    = false
-}
-
 variable "parent_id" {
   type        = string
   description = "The fully-qualified ARM resource ID of the Azure Backup storage protection container that will contain the protected file share."
@@ -61,6 +55,17 @@ Changes take effect only after apply. Ignored configuration is not sent to Azure
 - `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Paths ignored on the protected file share.
 DESCRIPTION
   nullable    = false
+}
+
+variable "location" {
+  type        = string
+  default     = null
+  description = "The Azure region for this module's resources or telemetry deployment."
+
+  validation {
+    condition     = !var.enable_telemetry || var.location != null
+    error_message = "The location must not be null when telemetry is enabled."
+  }
 }
 
 variable "resource_types" {

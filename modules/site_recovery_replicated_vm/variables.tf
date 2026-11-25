@@ -1,9 +1,3 @@
-variable "location" {
-  type        = string
-  description = "The Azure region for this module's resources or telemetry deployment."
-  nullable    = false
-}
-
 variable "parent_id" {
   type        = string
   description = "The fully-qualified ARM resource ID of the source Site Recovery protection container."
@@ -180,6 +174,17 @@ Changes take effect only after apply. Ignored configuration is not sent to Azure
 - `recoveryservices_vaults_replication_fabrics_replication_protection_containers_replication_protected_items` - Reserved for the replicated item. The AzAPI action and update resources currently do not expose `ignore_body_changes`, so non-empty values cannot yet be applied.
 DESCRIPTION
   nullable    = false
+}
+
+variable "location" {
+  type        = string
+  default     = null
+  description = "The Azure region for this module's resources or telemetry deployment."
+
+  validation {
+    condition     = !var.enable_telemetry || var.location != null
+    error_message = "The location must not be null when telemetry is enabled."
+  }
 }
 
 variable "resource_types" {

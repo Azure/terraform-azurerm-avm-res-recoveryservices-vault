@@ -39,12 +39,6 @@ DESCRIPTION
   }
 }
 
-variable "location" {
-  type        = string
-  description = "The Azure region for this module's resources or telemetry deployment."
-  nullable    = false
-}
-
 variable "enable_telemetry" {
   type        = bool
   default     = true
@@ -69,6 +63,17 @@ Body-relative paths ignored on each AzAPI resource. Paths use dot notation. Chan
 - `recoveryservices_vaults_backup_fabrics_protection_containers_protected_items` - Paths ignored on protected SQL database resources.
 DESCRIPTION
   nullable    = false
+}
+
+variable "location" {
+  type        = string
+  default     = null
+  description = "The Azure region for this module's resources or telemetry deployment."
+
+  validation {
+    condition     = !var.enable_telemetry || var.location != null
+    error_message = "The location must not be null when telemetry is enabled."
+  }
 }
 
 variable "resource_types" {
